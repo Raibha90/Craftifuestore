@@ -3,6 +3,9 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Save, Loader2, Layout, FileText, Image as ImageIcon, Sparkles, Target, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 type PageType = 'home' | 'about_story' | 'about_mission';
 
@@ -11,6 +14,53 @@ export default function AdminCMS() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [content, setContent] = useState<any>(null);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [targetField, setTargetField] = useState<string | null>(null);
+
+  const handleGenerateAIImage = async () => {
+    if (!aiPrompt || !targetField) return;
+
+    setGeneratingAI(true);
+    try {
+      const result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: [{ text: aiPrompt }],
+      });
+
+      let imageUrl = '';
+      for (const candidate of result.candidates) {
+        for (const part of candidate.content.parts) {
+          if (part.inlineData) {
+            imageUrl = `data:image/png;base64,${part.inlineData.data}`;
+            break;
+          }
+        }
+        if (imageUrl) break;
+      }
+
+      if (!imageUrl) throw new Error('No image generated');
+
+      // Update local state
+      const updatedContent = { ...content, [targetField]: imageUrl };
+      setContent(updatedContent);
+
+      // Automatically save to DB as requested
+      await setDoc(doc(db, 'cms', currentPage), {
+        ...updatedContent,
+        updatedAt: new Date().toISOString(),
+      });
+
+      setIsAiModalOpen(false);
+      setAiPrompt('');
+    } catch (err: any) {
+      console.error(err);
+      alert('Error generating image: ' + err.message);
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -30,10 +80,10 @@ export default function AdminCMS() {
           about_story: {
             title: 'Where Tradition Meets Transformation',
             subtitle: '"Craftifue was born from a simple observation: the incredible talent of local artisans was often hidden from the world."',
-            storyHeading: 'Our Story',
+            storyHeading: 'Ethical Sourcing & Heritage',
             storyParagraph1: 'Started in 2024, Craftifue began as a small initiative to support bamboo craftsmen in North East India...',
             storyParagraph2: 'Today, we have expanded to include brass artisans, meenakari jewelry makers...',
-            mainImage: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=1915&auto=format&fit=crop'
+            mainImage: 'https://images.unsplash.com/photo-1596752002341-2a6c1e549da7?q=80&w=2070&auto=format&fit=crop'
           },
           about_mission: {
             title: 'Our Mission & Vision',
@@ -117,7 +167,21 @@ export default function AdminCMS() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Spotlight Image URL</label>
+                <div className="flex justify-between items-center px-1">
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Spotlight Image URL</label>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setTargetField('philosophyImage');
+                      setAiPrompt(content.philosophyHeading ? `A professional high-end photography of ${content.philosophyHeading}, ${content.philosophyContent.substring(0, 50)}, luxury aesthetic, cinematic lighting.` : '');
+                      setIsAiModalOpen(true);
+                    }}
+                    className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Generate AI</span>
+                  </button>
+                </div>
                 <input 
                   type="text" 
                   className="w-full px-6 py-4 bg-white border border-transparent rounded-2xl focus:border-brand-gold outline-none transition-all"
@@ -185,7 +249,21 @@ export default function AdminCMS() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Story Image URL</label>
+                   <div className="flex justify-between items-center px-1">
+                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Story Image URL</label>
+                     <button 
+                        type="button"
+                        onClick={() => {
+                          setTargetField('mainImage');
+                          setAiPrompt(content.storyHeading ? `A high-end heritage-focused photography of ${content.storyHeading}, ${content.storyParagraph1.substring(0, 50)}, elegant, authentic Indian artisan theme.` : '');
+                          setIsAiModalOpen(true);
+                        }}
+                        className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
+                     >
+                       <Sparkles className="w-3 h-3" />
+                       <span>Generate AI</span>
+                     </button>
+                   </div>
                    <input 
                       type="text" 
                       className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
@@ -193,7 +271,7 @@ export default function AdminCMS() {
                       onChange={e => setContent({...content, mainImage: e.target.value})}
                    />
                    <div className="mt-4 aspect-[4/5] rounded-[2rem] overflow-hidden">
-                      <img src={content.mainImage} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={content.mainImage} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                    </div>
                 </div>
               </div>
@@ -234,15 +312,37 @@ export default function AdminCMS() {
                   value={content.missionText}
                   onChange={e => setContent({...content, missionText: e.target.value})}
                 />
-                <input 
-                  type="text" 
-                  className="w-full px-6 py-2 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-brand-gold outline-none transition-all text-[10px]"
-                  placeholder="Mission Image URL"
-                  value={content.missionImage}
-                  onChange={e => setContent({...content, missionImage: e.target.value})}
-                />
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Mission Image URL</label>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setTargetField('missionImage');
+                        setAiPrompt(content.missionHeading ? `A symbolic professional photograph representing ${content.missionHeading}, ${content.missionText.substring(0, 50)}, inspiring, clean aesthetic.` : '');
+                        setIsAiModalOpen(true);
+                      }}
+                      className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Generate AI</span>
+                    </button>
+                  </div>
+                  <input 
+                    type="text" 
+                    className="w-full px-6 py-2 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-brand-gold outline-none transition-all text-[10px]"
+                    placeholder="Mission Image URL"
+                    value={content.missionImage}
+                    onChange={e => setContent({...content, missionImage: e.target.value})}
+                  />
+                  {content.missionImage && (
+                    <div className="mt-2 h-20 rounded-xl overflow-hidden border border-brand-olive/5">
+                      <img src={content.missionImage} alt="Mission Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    </div>
+                  )}
+                </div>
               </div>
-
+ 
               <div className="bg-white p-10 rounded-[3rem] border border-brand-olive/5 shadow-sm space-y-6">
                 <div className="flex items-center space-x-3 text-brand-gold">
                    <Eye className="w-5 h-5" />
@@ -262,13 +362,35 @@ export default function AdminCMS() {
                   value={content.visionText}
                   onChange={e => setContent({...content, visionText: e.target.value})}
                 />
-                <input 
-                  type="text" 
-                  className="w-full px-6 py-2 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-brand-gold outline-none transition-all text-[10px]"
-                  placeholder="Vision Image URL"
-                  value={content.visionImage}
-                  onChange={e => setContent({...content, visionImage: e.target.value})}
-                />
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Vision Image URL</label>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setTargetField('visionImage');
+                        setAiPrompt(content.visionHeading ? `A symbolic professional photograph representing ${content.visionHeading}, ${content.visionText.substring(0, 50)}, inspiring, visionary aesthetic.` : '');
+                        setIsAiModalOpen(true);
+                      }}
+                      className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Generate AI</span>
+                    </button>
+                  </div>
+                  <input 
+                    type="text" 
+                    className="w-full px-6 py-2 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-brand-gold outline-none transition-all text-[10px]"
+                    placeholder="Vision Image URL"
+                    value={content.visionImage}
+                    onChange={e => setContent({...content, visionImage: e.target.value})}
+                  />
+                  {content.visionImage && (
+                    <div className="mt-2 h-20 rounded-xl overflow-hidden border border-brand-olive/5">
+                      <img src={content.visionImage} alt="Vision Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -337,6 +459,72 @@ export default function AdminCMS() {
           </div>
         )}
       </form>
+
+      {/* AI Image Generation Modal */}
+      <AnimatePresence>
+        {isAiModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-brand-olive/40 backdrop-blur-md"
+              onClick={() => setIsAiModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 space-y-8"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-brand-gold/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Sparkles className="w-8 h-8 text-brand-gold" />
+                </div>
+                <h3 className="font-serif text-2xl font-bold text-brand-olive">Generate Brand Visual</h3>
+                <p className="text-gray-400 text-sm">Visualize your brand narrative. Describe the aesthetic, mood, and subject matter.</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">AI Visual Prompt</label>
+                <textarea 
+                  rows={4}
+                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm leading-relaxed"
+                  placeholder="e.g. A serene photograph of a skilled artisan crafting intricate jewelry in a sunlit workshop..."
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setIsAiModalOpen(false)}
+                  className="flex-1 px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs text-gray-400 hover:text-brand-olive transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleGenerateAIImage}
+                  disabled={generatingAI}
+                  className="flex-1 bg-brand-olive text-brand-cream px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-brand-olive/20 transition-all flex items-center justify-center space-x-2"
+                >
+                  {generatingAI ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Generate & Save</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

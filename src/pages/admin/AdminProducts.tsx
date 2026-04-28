@@ -55,6 +55,15 @@ export default function AdminProducts() {
             const newImages = [...newProduct.images];
             newImages[idx] = imageUrl;
             setNewProduct({ ...newProduct, images: newImages });
+
+            // Automatically save to DB if editing an existing product
+            if (editingId) {
+              await updateDoc(doc(db, 'products', editingId), {
+                images: newImages,
+                updatedAt: serverTimestamp()
+              });
+            }
+
             foundImage = true;
             break;
           }

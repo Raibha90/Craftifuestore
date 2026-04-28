@@ -172,6 +172,15 @@ export default function AdminWorkbook() {
             const base64 = part.inlineData.data;
             const imageUrl = `data:image/png;base64,${base64}`;
             setEditingItem({ ...editingItem, imageUrl });
+            
+            // Automatically save to DB if SKU exists
+            if (editingItem?.sku) {
+              await setDoc(doc(db, 'jewellery_master', editingItem.sku), {
+                imageUrl,
+                updatedAt: new Date().toISOString()
+              }, { merge: true });
+            }
+            
             foundImage = true;
             break;
           }
