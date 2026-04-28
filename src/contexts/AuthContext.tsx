@@ -34,36 +34,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        const docRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          const data = docSnap.data() as UserProfile;
-          // Ensure primary email is always admin
-          if (user.email === 'rd14190@gmail.com' && data.role !== 'admin') {
-            await updateDoc(doc(db, 'users', user.uid), { role: 'admin' });
-            data.role = 'admin';
+      try {
+        setUser(user);
+        if (user) {
+          const docRef = doc(db, 'users', user.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const data = docSnap.data() as UserProfile;
+            // Ensure primary email is always admin
+            if (user.email === 'rd14190@gmail.com' && data.role !== 'admin') {
+              await updateDoc(doc(db, 'users', user.uid), { role: 'admin' });
+              data.role = 'admin';
+            }
+            setProfile(data);
+          } else {
+            // Create a new profile if it doesn't exist
+            const newProfile: UserProfile = {
+              uid: user.uid,
+              displayName: user.displayName || 'Guest',
+              email: user.email || '',
+              photoURL: user.photoURL || '',
+              role: user.email === 'rd14190@gmail.com' ? 'admin' : 'customer',
+              addresses: [],
+            };
+            await setDoc(docRef, newProfile);
+            setProfile(newProfile);
           }
-          setProfile(data);
         } else {
-          // Create a new profile if it doesn't exist
-          const newProfile: UserProfile = {
-            uid: user.uid,
-            displayName: user.displayName || 'Guest',
-            email: user.email || '',
-            photoURL: user.photoURL || '',
-            role: user.email === 'rd14190@gmail.com' ? 'admin' : 'customer',
-            addresses: [],
-          };
-          await setDoc(docRef, newProfile);
-          setProfile(newProfile);
+          setProfile(null);
         }
-      } else {
-        setProfile(null);
+      } catch (error) {
+        console.error('Auth Context Error:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     // Auto-refresh user state when window gains focus (useful for email verification)
