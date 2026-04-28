@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { collection, getDocs, query, orderBy, limit, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Order, Product } from '../../types';
-import { ShoppingCart, Users, DollarSign, Package, TrendingUp, Clock } from 'lucide-react';
+import { ShoppingCart, Users, DollarSign, Package, TrendingUp, Clock, Settings, Save, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function AdminDashboard() {
@@ -14,6 +14,17 @@ export default function AdminDashboard() {
   });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logoUrl, setLogoUrl] = useState('');
+  const [savingLogo, setSavingLogo] = useState(false);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'general'), (doc) => {
+      if (doc.exists()) {
+        setLogoUrl(doc.data().logoUrl || '');
+      }
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -44,6 +55,21 @@ export default function AdminDashboard() {
 
     fetchStats();
   }, []);
+
+  const handleSaveLogo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingLogo(true);
+    try {
+      await setDoc(doc(db, 'settings', 'general'), {
+        logoUrl: logoUrl,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.error('Error saving logo:', err);
+    } finally {
+      setSavingLogo(false);
+    }
+  };
 
   const cards = [
     { label: 'Total Revenue', value: `₹${stats.revenue.toLocaleString()}`, icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
@@ -130,21 +156,73 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Activity/Alerts */}
-        <div className="space-y-6">
-           <h3 className="font-serif text-2xl font-bold text-brand-olive">System Alerts</h3>
-           <div className="space-y-4">
-             {[
-               { label: 'Low Inventory', desc: 'Antique Brass Necklace is below 5 units.', color: 'text-orange-600', bg: 'bg-orange-50' },
-               { label: 'Pending Payout', desc: '₹45,200 ready for transfer.', color: 'text-brand-olive', bg: 'bg-brand-gold/10' },
-               { label: 'New Feedback', desc: 'A customer left a 5-star review.', color: 'text-green-600', bg: 'bg-green-50' }
-             ].map((alert, i) => (
-               <div key={i} className={`p-6 ${alert.bg} rounded-3xl border border-transparent hover:border-current/10 transition-all cursor-pointer`}>
-                 <p className={`text-[10px] font-bold uppercase tracking-widest ${alert.color} mb-1`}>{alert.label}</p>
-                 <p className="text-sm font-medium text-gray-600 leading-snug">{alert.desc}</p>
-               </div>
-             ))}
-           </div>
+        {/* Activity/Alerts & Settings */}
+        <div className="space-y-12">
+          <div className="space-y-6">
+            <h3 className="font-serif text-2xl font-bold text-brand-olive">System Alerts</h3>
+            <div className="space-y-4">
+              {[
+                { label: 'Low Inventory', desc: 'Antique Brass Necklace is below 5 units.', color: 'text-orange-600', bg: 'bg-orange-50' },
+                { label: 'Pending Payout', desc: '₹45,200 ready for transfer.', color: 'text-brand-olive', bg: 'bg-brand-gold/10' },
+                { label: 'New Feedback', desc: 'A customer left a 5-star review.', color: 'text-green-600', bg: 'bg-green-50' }
+              ].map((alert, i) => (
+                <div key={i} className={`p-6 ${alert.bg} rounded-3xl border border-transparent hover:border-current/10 transition-all cursor-pointer`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${alert.color} mb-1`}>{alert.label}</p>
+                  <p className="text-sm font-medium text-gray-600 leading-snug">{alert.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            <h3 className="font-serif text-2xl font-bold text-brand-olive flex items-center space-x-3">
+              <Settings className="w-6 h-6" />
+              <span>Store Identity</span>
+            </h3>
+            <div className="bg-white p-8 rounded-[2.5rem] border border-brand-olive/5 shadow-sm">
+               <form onSubmit={handleSaveLogo} className="space-y-6">
+                  <div className="space-y-2">
+                     <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Store Logo URL</label>
+                     <div className="relative">
+                        <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input 
+                          type="text" 
+                          value={logoUrl}
+                          onChange={(e) => setLogoUrl(e.target.value)}
+                          placeholder="https://example.com/logo.png" 
+                          className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all" 
+                        />
+                     </div>
+                  </div>
+                  
+                  {logoUrl && (
+                    <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100 flex flex-col items-center justify-center space-y-4">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Logo Preview</p>
+                      <img 
+                        src={logoUrl} 
+                        alt="Logo Preview" 
+                        className="h-16 w-auto object-contain"
+                        onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/150?text=Invalid+URL")}
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
+
+                  <button 
+                    disabled={savingLogo}
+                    type="submit"
+                    className="w-full bg-brand-olive text-brand-cream py-4 rounded-full font-bold uppercase tracking-widest text-[10px] shadow-lg hover:shadow-brand-olive/20 transition-all flex items-center justify-center space-x-3"
+                  >
+                    {savingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Save Settings</span>
+                      </>
+                    )}
+                  </button>
+               </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>

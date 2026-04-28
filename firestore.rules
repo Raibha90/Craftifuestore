@@ -42,6 +42,11 @@ service cloud.firestore {
       );
       // Admin can update anything including roles
       allow update: if isAdmin();
+
+      // Wishlist subcollection
+      match /wishlist/{productId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Rules for Products
@@ -65,6 +70,12 @@ service cloud.firestore {
 
     // Rules for Banners
     match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Rules for Settings
+    match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
     }

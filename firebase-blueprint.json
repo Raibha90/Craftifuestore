@@ -71,6 +71,26 @@
         "link": { "type": "string" },
         "order": { "type": "integer" }
       }
+    },
+    "Setting": {
+      "title": "Application Setting",
+      "description": "Global application configuration.",
+      "type": "object",
+      "properties": {
+        "logoUrl": { "type": "string", "description": "URL of the application logo." },
+        "storeName": { "type": "string" },
+        "contactEmail": { "type": "string" }
+      }
+    },
+    "WishlistItem": {
+      "title": "Wishlist Item",
+      "description": "A product saved by a user to their wishlist.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "addedAt"]
     }
   },
   "firestore": {
@@ -86,6 +106,10 @@
       "schema": "User",
       "description": "Collection of user profiles."
     },
+    "/users/{userId}/wishlist/{productId}": {
+      "schema": "WishlistItem",
+      "description": "A user's personal wishlist items."
+    },
     "/coupons/{couponId}": {
       "schema": "Coupon",
       "description": "Collection of available discount coupons."
@@ -93,6 +117,10 @@
     "/banners/{bannerId}": {
       "schema": "Banner",
       "description": "Collection of homepage hero banners."
+    },
+    "/settings/{settingId}": {
+      "schema": "Setting",
+      "description": "Global application settings (e.g., /settings/general)."
     }
   }
 }

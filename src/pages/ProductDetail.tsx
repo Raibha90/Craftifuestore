@@ -1,6 +1,8 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
+import { useAuth } from '../contexts/AuthContext';
 import { ShoppingCart, Heart, ShieldCheck, Truck, RefreshCw, Star } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Product } from '../types';
@@ -25,11 +27,27 @@ const mockProducts: Product[] = [
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
 
   const product = useMemo(() => mockProducts.find(p => p.id === id) || mockProducts[0], [id]);
+  const isFavorited = isInWishlist(product.id || '');
+
+  const handleWishlistToggle = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (isFavorited) {
+      await removeFromWishlist(product.id || '');
+    } else {
+      await addToWishlist(product.id || '');
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -112,8 +130,11 @@ export default function ProductDetail() {
                 <ShoppingCart className="w-4 h-4" />
                 <span>Add to Cart</span>
               </button>
-              <button className="p-5 rounded-full border border-brand-olive/20 text-gray-400 hover:text-red-500 hover:border-red-500 transition-all">
-                <Heart className="w-5 h-5" />
+              <button 
+                onClick={handleWishlistToggle}
+                className={`p-5 rounded-full border transition-all ${isFavorited ? 'border-red-500 text-red-500 bg-red-50' : 'border-brand-olive/20 text-gray-400 hover:text-red-500 hover:border-red-500'}`}
+              >
+                <Heart className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
               </button>
             </div>
 
