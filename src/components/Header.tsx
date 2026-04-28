@@ -7,7 +7,7 @@ import { useWishlist } from '../contexts/WishlistContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { auth, db } from '../lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Product } from '../types';
 
 export default function Header({ id }: { id: string }) {
@@ -29,12 +29,16 @@ export default function Header({ id }: { id: string }) {
       if (doc.exists()) {
         setLogoUrl(doc.data().logoUrl || null);
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'settings/general');
     });
     
     const unsubApp = onSnapshot(doc(db, 'settings', 'appearance'), (doc) => {
       if (doc.exists()) {
         setAppearance(doc.data());
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'settings/appearance');
     });
 
     return () => {
@@ -54,7 +58,7 @@ export default function Header({ id }: { id: string }) {
         })) as Product[];
         setAllProducts(products);
       } catch (error) {
-        console.error("Error fetching products for search:", error);
+        handleFirestoreError(error, OperationType.GET, 'products');
       }
     };
     fetchAllProducts();

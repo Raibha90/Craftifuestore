@@ -134,7 +134,7 @@ export default function AdminOrders() {
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Ship to</h4>
                     <div className="text-xs text-brand-olive space-y-1">
                       <p className="font-bold">{order.shippingAddress.street}</p>
-                      <p>{order.shippingAddress.city} - {order.zipCode || order.shippingAddress.zipCode}</p>
+                      <p>{order.shippingAddress.city} - {order.shippingAddress.zipCode}</p>
                       <p className="text-gray-400">{order.shippingAddress.country}</p>
                     </div>
                   </div>

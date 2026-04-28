@@ -3,7 +3,6 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
-import Stripe from "stripe";
 import { AfterShip } from "aftership";
 import twilio from "twilio";
 import Razorpay from "razorpay";
@@ -21,43 +20,7 @@ async function startServer() {
 
   // API Routes
 
-  // 1. Stripe Payment Gateway
-  app.post("/api/create-checkout-session", async (req, res) => {
-    const { items, successUrl, cancelUrl } = req.body;
-    
-    // Lazy init for safety
-    const stripeKey = process.env.STRIPE_SECRET_KEY;
-    if (!stripeKey) {
-       return res.status(500).json({ error: "Stripe key not configured" });
-    }
-    const stripe = new Stripe(stripeKey);
-
-    try {
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: items.map((item: any) => ({
-          price_data: {
-            currency: "inr",
-            product_data: {
-              name: item.name,
-              images: item.image ? [item.image] : [],
-            },
-            unit_amount: item.price * 100, // Stripe expects paise
-          },
-          quantity: item.quantity,
-        })),
-        mode: "payment",
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-      });
-
-      res.json({ id: session.id });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // 2. AfterShip Tracking
+  // 1. AfterShip Tracking
   app.get("/api/tracking/:trackingNumber", async (req, res) => {
     const { trackingNumber } = req.params;
     const aftershipKey = process.env.AFTERSHIP_API_KEY;
@@ -77,7 +40,7 @@ async function startServer() {
     }
   });
 
-  // 3. Twilio SMS
+  // 2. Twilio SMS
   app.post("/api/send-sms", async (req, res) => {
     const { to, message } = req.body;
     const sid = process.env.TWILIO_ACCOUNT_SID;
@@ -101,12 +64,12 @@ async function startServer() {
     }
   });
 
-  // 4. Placeholder for Zevu API
+  // 3. Placeholder for Zevu API
   app.post("/api/zevu", async (req, res) => {
     res.json({ message: "Zevu integration endpoint ready. Please provide specific API documentation or requirements for Zevu." });
   });
 
-  // 5. Razorpay Integration
+  // 4. Razorpay Integration
   app.post("/api/create-razorpay-order", async (req, res) => {
     const { amount, currency = "INR", receipt } = req.body;
     const keyId = process.env.RAZORPAY_KEY_ID;

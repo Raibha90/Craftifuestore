@@ -324,13 +324,15 @@ export default function Dashboard() {
                         <div className="p-2 bg-brand-gold/10 rounded-xl text-brand-gold">
                           <MapPin className="w-4 h-4" />
                         </div>
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-brand-olive">{addr.type}</span>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-brand-olive">Shipping Address</span>
                       </div>
                       {addr.isDefault && (
                         <span className="text-[10px] bg-green-50 text-green-600 px-2 py-1 rounded-full font-bold uppercase tracking-widest">Primary</span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 leading-relaxed">{addr.address}</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                      {addr.street}, {addr.city}, {addr.state} {addr.zipCode}
+                    </p>
                     <div className="mt-8 flex space-x-4">
                       <button className="text-[10px] font-bold uppercase tracking-widest text-brand-gold hover:text-brand-olive transition-colors">Edit</button>
                       <button className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-500 transition-colors">Remove</button>
@@ -364,7 +366,7 @@ export default function Dashboard() {
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Phone</label>
-                          <input type="tel" defaultValue={profile?.phone} className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30" />
+                          <input type="tel" defaultValue={profile?.phoneNumber} className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30" />
                        </div>
                     </div>
                     <div className="space-y-2">

@@ -74,6 +74,24 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Rules for Categories
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Rules for CMS Content
+    match /cms/{pageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Rules for Jewellery Master (Workbook)
+    match /jewellery_master/{sku} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // Rules for Settings
     match /settings/{settingId} {
       allow read: if true;

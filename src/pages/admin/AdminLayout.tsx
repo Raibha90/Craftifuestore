@@ -1,11 +1,12 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, ListOrdered, Tag, LayoutPanelLeft, Home, FileText } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ListOrdered, Tag, LayoutPanelLeft, Home, FileText, Gem } from 'lucide-react';
 
 export default function AdminLayout() {
   const location = useLocation();
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Overview', path: '/admin' },
+    { icon: Gem, label: 'Jewellery Workbook', path: '/admin/workbook' },
     { icon: ShoppingBag, label: 'Products', path: '/admin/products' },
     { icon: ListOrdered, label: 'Orders', path: '/admin/orders' },
     { icon: Tag, label: 'Coupons', path: '/admin/coupons' },

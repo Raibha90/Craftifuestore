@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Target, Eye, Heart, Loader2 } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
 
 export default function MissionVision() {
   const [content, setContent] = useState<any>(null);
@@ -14,6 +14,8 @@ export default function MissionVision() {
         setContent(docSnap.data());
       }
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'cms/about_mission');
     });
     return () => unsub();
   }, []);

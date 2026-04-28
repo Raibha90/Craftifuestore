@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, Users, Globe, Loader2 } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
 
 export default function AboutCraftifue() {
   const [content, setContent] = useState<any>(null);
@@ -14,6 +14,8 @@ export default function AboutCraftifue() {
         setContent(docSnap.data());
       }
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'cms/about_story');
     });
     return () => unsub();
   }, []);

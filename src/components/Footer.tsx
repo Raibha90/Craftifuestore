@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram, Facebook, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 export default function Footer({ id }: { id: string }) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -14,12 +14,16 @@ export default function Footer({ id }: { id: string }) {
       if (doc.exists()) {
         setLogoUrl(doc.data().logoUrl || null);
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'settings/general');
     });
 
     const unsubApp = onSnapshot(doc(db, 'settings', 'appearance'), (doc) => {
       if (doc.exists()) {
         setAppearance(doc.data());
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'settings/appearance');
     });
 
     return () => {

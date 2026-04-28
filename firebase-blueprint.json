@@ -91,9 +91,48 @@
         "addedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["productId", "addedAt"]
+    },
+    "JewelleryMaster": {
+      "title": "Jewellery Master",
+      "description": "The single source of truth for all jewellery inventory.",
+      "type": "object",
+      "properties": {
+        "sku": { "type": "string" },
+        "productName": { "type": "string" },
+        "category": { "type": "string" },
+        "subCategory": { "type": "string" },
+        "collection": { "type": "string" },
+        "metal": { "type": "string" },
+        "purity": { "type": "string" },
+        "grossWt": { "type": "number" },
+        "netWt": { "type": "number" },
+        "stoneType": { "type": "string" },
+        "stoneWt": { "type": "number" },
+        "metalRate": { "type": "number" },
+        "stoneValue": { "type": "number" },
+        "makingPercent": { "type": "number" },
+        "discountPercent": { "type": "number" },
+        "stockQty": { "type": "integer" },
+        "imageUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Inactive", "Sold Out"] },
+        "metalValue": { "type": "number" },
+        "makingCharges": { "type": "number" },
+        "subtotal": { "type": "number" },
+        "gst": { "type": "number" },
+        "mrp": { "type": "number" },
+        "sellingPrice": { "type": "number" },
+        "stockValue": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sku", "productName", "category", "metal", "purity", "netWt", "status"]
     }
   },
   "firestore": {
+    "/jewellery_master/{sku}": {
+      "schema": "JewelleryMaster",
+      "description": "Collection of all jewellery inventory items."
+    },
     "/products/{productId}": {
       "schema": "Product",
       "description": "Collection of all products."

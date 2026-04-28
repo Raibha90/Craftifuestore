@@ -22,6 +22,7 @@ import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminBanners from './pages/admin/AdminBanners';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminCMS from './pages/admin/AdminCMS';
+import AdminWorkbook from './pages/admin/workbook/AdminWorkbook';
 import Wishlist from './pages/Wishlist';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
@@ -82,6 +83,7 @@ function App() {
                   <Route path="coupons" element={<AdminCoupons />} />
                   <Route path="banners" element={<AdminBanners />} />
                   <Route path="cms" element={<AdminCMS />} />
+                  <Route path="workbook" element={<AdminWorkbook />} />
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
               </Routes>

@@ -5,7 +5,7 @@ import { ArrowRight, Sparkles, Award, Truck, Star, Quote, ChevronLeft, ChevronRi
 import ProductCard from '../components/ProductCard';
 import { Product, Banner } from '../types';
 import { collection, getDocs, query, limit, orderBy, onSnapshot, doc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 const mockTestimonials = [
   {
@@ -68,6 +68,8 @@ export default function Home() {
     const unsub = onSnapshot(query(collection(db, 'banners'), orderBy('order', 'asc')), (snap) => {
       const fetchedBanners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner)).filter(b => b.active !== false);
       setBanners(fetchedBanners);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'banners');
     });
     return () => unsub();
   }, []);
@@ -88,7 +90,7 @@ export default function Home() {
           setProducts(fallbackProducts);
         }
       } catch (error) {
-        console.error("Error fetching products:", error);
+        handleFirestoreError(error, OperationType.LIST, 'products');
         setProducts(fallbackProducts);
       } finally {
         setLoading(false);
@@ -138,6 +140,8 @@ export default function Home() {
       if (docSnap.exists()) {
         setCmsHome(docSnap.data());
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'cms/home');
     });
     return () => unsub();
   }, []);

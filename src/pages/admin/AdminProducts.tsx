@@ -2,14 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Product } from '../../types';
-import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag } from 'lucide-react';
+import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [generatingAI, setGeneratingAI] = useState<number | null>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [currentAiIdx, setCurrentAiIdx] = useState<number | null>(null);
   const [newProduct, setNewProduct] = useState({
     name: '',
     description: '',
@@ -23,6 +30,51 @@ export default function AdminProducts() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+
+  const handleGenerateAIImage = async (idx: number) => {
+    if (!aiPrompt && !newProduct.name) {
+      alert('Please provide a prompt or at least a product name.');
+      return;
+    }
+
+    setGeneratingAI(idx);
+    try {
+      const prompt = aiPrompt || `A high-quality, professional product photograph of ${newProduct.name} - ${newProduct.description}. Elegant, luxury jewellery aesthetic, soft lighting, clean background.`;
+      
+      const result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: [{ text: prompt }],
+      });
+
+      let foundImage = false;
+      for (const candidate of result.candidates) {
+        for (const part of candidate.content.parts) {
+          if (part.inlineData) {
+            const base64 = part.inlineData.data;
+            const imageUrl = `data:image/png;base64,${base64}`;
+            const newImages = [...newProduct.images];
+            newImages[idx] = imageUrl;
+            setNewProduct({ ...newProduct, images: newImages });
+            foundImage = true;
+            break;
+          }
+        }
+        if (foundImage) break;
+      }
+
+      if (!foundImage) {
+        throw new Error('No image was generated. Please try again.');
+      }
+      
+      setIsAiModalOpen(false);
+      setAiPrompt('');
+    } catch (err: any) {
+      console.error(err);
+      alert('Error generating image: ' + err.message);
+    } finally {
+      setGeneratingAI(null);
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -294,28 +346,55 @@ export default function AdminProducts() {
                       </button>
                     </div>
                     {newProduct.images.map((img, idx) => (
-                      <div key={idx} className="relative flex items-center">
-                        <ImageIcon className="absolute left-6 w-4 h-4 text-gray-300" />
-                        <input 
-                          type="url" 
-                          required 
-                          placeholder="https://..."
-                          className="w-full pl-14 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" 
-                          value={img} 
-                          onChange={e => {
-                            const newImages = [...newProduct.images];
-                            newImages[idx] = e.target.value;
-                            setNewProduct({...newProduct, images: newImages});
-                          }} 
-                        />
-                        {newProduct.images.length > 1 && (
-                          <button 
-                            type="button" 
-                            onClick={() => setNewProduct({...newProduct, images: newProduct.images.filter((_, i) => i !== idx)})}
-                            className="absolute right-4 p-2 text-red-300 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                      <div key={idx} className="space-y-3">
+                        <div className="relative flex items-center">
+                          <ImageIcon className="absolute left-6 w-4 h-4 text-gray-300" />
+                          <input 
+                            type="url" 
+                            required 
+                            placeholder="https://..."
+                            className="w-full pl-14 pr-24 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" 
+                            value={img} 
+                            onChange={e => {
+                              const newImages = [...newProduct.images];
+                              newImages[idx] = e.target.value;
+                              setNewProduct({...newProduct, images: newImages});
+                            }} 
+                          />
+                          <div className="absolute right-4 flex items-center space-x-2">
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setCurrentAiIdx(idx);
+                                setIsAiModalOpen(true);
+                                setAiPrompt(newProduct.name ? `A professional studio product photograph of ${newProduct.name}, highly detailed, elegant lighting, plain background, photorealistic.` : '');
+                              }}
+                              disabled={generatingAI !== null}
+                              className="p-2 text-brand-gold hover:bg-brand-gold/10 rounded-xl transition-all"
+                              title="Generate with AI"
+                            >
+                              {generatingAI === idx ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-4 h-4" />
+                              )}
+                            </button>
+                            {newProduct.images.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => setNewProduct({...newProduct, images: newProduct.images.filter((_, i) => i !== idx)})}
+                                className="p-2 text-red-300 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {img && (
+                          <div className="flex items-center space-x-4 ml-2">
+                            <img src={img} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-brand-olive/10" referrerPolicy="no-referrer" />
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Image Preview</p>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -408,6 +487,70 @@ export default function AdminProducts() {
                   {editingId ? 'Update Masterpiece' : 'Add to Catalog'}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Image Generation Modal */}
+      <AnimatePresence>
+        {isAiModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-brand-olive/40 backdrop-blur-md"
+              onClick={() => setIsAiModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 space-y-8"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-brand-gold/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Sparkles className="w-8 h-8 text-brand-gold" />
+                </div>
+                <h3 className="font-serif text-2xl font-bold text-brand-olive">Generate Product Imagery</h3>
+                <p className="text-gray-400 text-sm">Describe the masterpiece you want to visualize. Be specific about materials, lighting, and background.</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">AI Visual Prompt</label>
+                <textarea 
+                  rows={4}
+                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm leading-relaxed"
+                  placeholder="e.g. A close-up shot of an intricate 22K gold necklace with ruby accents, displayed on a minimalist marble pedestal, cinematic lighting..."
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setIsAiModalOpen(false)}
+                  className="flex-1 px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs text-gray-400 hover:text-brand-olive transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => handleGenerateAIImage(currentAiIdx!)}
+                  disabled={generatingAI !== null}
+                  className="flex-1 bg-brand-olive text-brand-cream px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-brand-olive/20 transition-all flex items-center justify-center space-x-2"
+                >
+                  {generatingAI !== null ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Generate</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
