@@ -1,17 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, Users, Globe } from 'lucide-react';
+import { Sparkles, Users, Globe, Loader2 } from 'lucide-react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 export default function AboutCraftifue() {
+  const [content, setContent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'cms', 'about_story'), (docSnap) => {
+      if (docSnap.exists()) {
+        setContent(docSnap.data());
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
+        <p className="text-brand-olive font-serif italic">Gathering our story...</p>
+      </div>
+    );
+  }
+
+  const data = content || {
+    title: 'Where Tradition Meets Transformation',
+    subtitle: '"Craftifue was born from a simple observation: the incredible talent of local artisans was often hidden from the world."',
+    storyHeading: 'Our Story',
+    storyParagraph1: 'Started in 2024, Craftifue began as a small initiative to support bamboo craftsmen in North East India...',
+    storyParagraph2: 'Today, we have expanded to include brass artisans, meenakari jewelry makers...',
+    mainImage: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=1915&auto=format&fit=crop'
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-32">
       {/* Intro */}
       <section className="text-center max-w-4xl mx-auto space-y-8">
-        <h1 className="text-6xl font-serif font-bold text-brand-olive leading-tight">
-          Where Tradition Meets <span className="italic font-light">Transformation</span>
+        <h1 className="text-4xl md:text-6xl font-serif font-bold text-brand-olive leading-tight">
+          {data.title.split(' ').slice(0, -1).join(' ')} <span className="italic font-light">{data.title.split(' ').slice(-1)}</span>
         </h1>
         <p className="text-xl text-gray-500 leading-relaxed font-serif italic">
-          "Craftifue was born from a simple observation: the incredible talent of local artisans was often hidden from the world. We set out to change that."
+          {data.subtitle}
         </p>
         <div className="w-16 h-1 bg-brand-gold mx-auto" />
       </section>
@@ -19,14 +52,10 @@ export default function AboutCraftifue() {
       {/* Story */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
         <div className="space-y-8">
-          <h2 className="text-4xl font-serif font-bold text-brand-olive">Our Story</h2>
+          <h2 className="text-4xl font-serif font-bold text-brand-olive">{data.storyHeading}</h2>
           <div className="space-y-6 text-gray-600 leading-relaxed text-lg">
-            <p>
-              Started in 2024, Craftifue began as a small initiative to support bamboo craftsmen in North East India. We were amazed by the precision and beauty of their work, yet saddened by their lack of access to broader markets.
-            </p>
-            <p>
-              Today, we have expanded to include brass artisans, meenakari jewelry makers, and diverse home decor specialists. Every product we host is carefully curated to ensure it meets our high standards of quality and ethical production.
-            </p>
+            <p>{data.storyParagraph1}</p>
+            <p>{data.storyParagraph2}</p>
           </div>
           <div className="grid grid-cols-3 gap-8 pt-8">
             <div className="text-center">
@@ -46,9 +75,10 @@ export default function AboutCraftifue() {
         <div className="relative">
           <div className="rounded-[4rem] overflow-hidden shadow-2xl h-[600px]">
             <img 
-               src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=1915&auto=format&fit=crop" 
+               src={data.mainImage} 
                alt="Artisan Story" 
                className="w-full h-full object-cover"
+               referrerPolicy="no-referrer"
             />
           </div>
           <div className="absolute -bottom-10 -left-10 bg-brand-gold p-12 rounded-[3rem] text-brand-olive shadow-xl hidden md:block max-w-xs">

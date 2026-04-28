@@ -1,3 +1,11 @@
+export interface ProductVariant {
+  id: string;
+  name: string;
+  type: 'size' | 'color' | 'material' | 'other';
+  price?: number;
+  stock: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -8,6 +16,7 @@ export interface Product {
   material?: string;
   stock: number;
   isFeatured?: boolean;
+  variants?: ProductVariant[];
   createdAt: string;
 }
 
@@ -40,10 +49,11 @@ export interface Order {
   userId: string;
   items: CartItem[];
   totalAmount: number;
-  status: 'pending' | 'processed' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'processed' | 'shipped' | 'delivered' | 'cancelled' | 'pending_payment';
   shippingAddress: Address;
   paymentId?: string;
   trackingNumber?: string;
+  courierName?: string;
   createdAt: any;
 }
 
@@ -54,4 +64,15 @@ export interface Banner {
   subtitle?: string;
   link?: string;
   order: number;
+  active?: boolean;
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minPurchase?: number;
+  expiryDate?: string;
+  active: boolean;
 }

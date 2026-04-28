@@ -21,15 +21,26 @@ export default function Header({ id }: { id: string }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [appearance, setAppearance] = useState<any>(null);
 
-  // Real-time logo listener
+  // Real-time settings listeners
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'settings', 'general'), (doc) => {
+    const unsubGen = onSnapshot(doc(db, 'settings', 'general'), (doc) => {
       if (doc.exists()) {
         setLogoUrl(doc.data().logoUrl || null);
       }
     });
-    return () => unsub();
+    
+    const unsubApp = onSnapshot(doc(db, 'settings', 'appearance'), (doc) => {
+      if (doc.exists()) {
+        setAppearance(doc.data());
+      }
+    });
+
+    return () => {
+      unsubGen();
+      unsubApp();
+    };
   }, []);
 
   // Fetch all products once for instant local search (better UX for small-medium catalogs)
@@ -106,9 +117,26 @@ export default function Header({ id }: { id: string }) {
   ];
 
   return (
-    <header id={id} className="fixed top-0 left-0 right-0 z-50 bg-brand-cream/90 backdrop-blur-md border-b border-brand-olive/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-24">
+    <header id={id} className="fixed top-0 left-0 right-0 z-50">
+      {/* Dynamic Announcement Bar */}
+      {appearance?.topBarMessage && (
+        <div className="bg-brand-gold text-brand-olive py-2 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-center shadow-sm">
+          {appearance.topBarMessage}
+        </div>
+      )}
+
+      {/* Special Header Alert */}
+      {appearance?.headerAlert && (
+         <div className="bg-brand-olive/95 text-brand-cream py-3 text-[10px] font-black uppercase tracking-[0.3em] text-center flex items-center justify-center space-x-3 px-4">
+            <span className="w-1.5 h-1.5 bg-brand-gold rounded-full animate-pulse" />
+            <span>{appearance.headerAlert}</span>
+            <span className="w-1.5 h-1.5 bg-brand-gold rounded-full animate-pulse" />
+         </div>
+      )}
+      
+      <div className="bg-brand-cream/90 backdrop-blur-md border-b border-brand-olive/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20 md:h-24">
           
           {/* Logo */}
           <Link to="/" className="flex items-center">
@@ -187,11 +215,9 @@ export default function Header({ id }: { id: string }) {
 
             <Link to="/cart" className="relative p-2 text-gray-600 hover:bg-brand-olive/5 rounded-full transition-colors">
               <ShoppingCart className="w-5 h-5" />
-              {totalItems > 0 && (
-                <span className="absolute top-1 right-1 bg-brand-gold text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  {totalItems}
-                </span>
-              )}
+              <span className="absolute top-1 right-1 bg-brand-gold text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {totalItems}
+              </span>
             </Link>
             <div className="flex items-center space-x-2">
               {user ? (
@@ -261,6 +287,7 @@ export default function Header({ id }: { id: string }) {
             <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               <Menu className="w-6 h-6" />
             </button>
+          </div>
           </div>
         </div>
       </div>

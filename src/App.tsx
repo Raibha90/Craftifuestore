@@ -18,12 +18,20 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminCoupons from './pages/admin/AdminCoupons';
+import AdminBanners from './pages/admin/AdminBanners';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminCMS from './pages/admin/AdminCMS';
 import Wishlist from './pages/Wishlist';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 
 import AboutCraftifue from './pages/about/AboutCraftifue';
 import MissionVision from './pages/about/MissionVision';
+import ReturnPolicy from './pages/ReturnPolicy';
+import TermsConditions from './pages/TermsConditions';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import StoreLocator from './pages/StoreLocator';
 
 function App() {
   return (
@@ -51,6 +59,10 @@ function App() {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/about/mission-vision" element={<MissionVision />} />
                 <Route path="/about/craftifue" element={<AboutCraftifue />} />
+                <Route path="/returns" element={<ReturnPolicy />} />
+                <Route path="/terms" element={<TermsConditions />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/stores" element={<StoreLocator />} />
                 
                 <Route path="/dashboard" element={
                   <PrivateRoute>
@@ -67,6 +79,10 @@ function App() {
                   <Route index element={<AdminDashboard />} />
                   <Route path="products" element={<AdminProducts />} />
                   <Route path="orders" element={<AdminOrders />} />
+                  <Route path="coupons" element={<AdminCoupons />} />
+                  <Route path="banners" element={<AdminBanners />} />
+                  <Route path="cms" element={<AdminCMS />} />
+                  <Route path="settings" element={<AdminSettings />} />
                 </Route>
               </Routes>
             </main>

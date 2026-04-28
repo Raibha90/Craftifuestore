@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { collection, query, where, getDocs, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Order } from '../types';
-import { Package, MapPin, User, LogOut, ChevronRight, Clock, Heart, ShoppingBag, ShieldAlert, Mail, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Package, MapPin, User, LogOut, ChevronRight, Clock, Heart, ShoppingBag, ShieldAlert, Mail, RefreshCw, CheckCircle2, Truck, ArrowRight } from 'lucide-react';
 import { signOut, sendEmailVerification } from 'firebase/auth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -264,6 +264,25 @@ export default function Dashboard() {
                             <p className="text-lg font-serif font-bold text-brand-olive">₹{order.totalAmount.toLocaleString()}</p>
                           </div>
                         </div>
+
+                        {/* Tracking Link if available */}
+                        {order.trackingNumber && (
+                           <div className="mb-6 p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center justify-between">
+                             <div className="flex items-center space-x-3 text-green-700">
+                               <Truck className="w-4 h-4" />
+                               <span className="text-[10px] uppercase font-bold tracking-widest">Tracking Number: {order.trackingNumber}</span>
+                             </div>
+                             <a 
+                               href={`https://track.aftership.com/${order.trackingNumber}`} 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="text-[10px] font-bold uppercase tracking-widest text-brand-gold hover:underline flex items-center space-x-1"
+                             >
+                               <span>Track with AfterShip</span>
+                               <ChevronRight className="w-3 h-3" />
+                             </a>
+                           </div>
+                        )}
 
                         <div className="flex flex-wrap gap-4">
                           {order.items.slice(0, 3).map((item, idx) => (

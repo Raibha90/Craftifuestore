@@ -15,12 +15,15 @@ export default function AdminDashboard() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [logoUrl, setLogoUrl] = useState('');
-  const [savingLogo, setSavingLogo] = useState(false);
+  const [shippingThreshold, setShippingThreshold] = useState(0);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'settings', 'general'), (doc) => {
       if (doc.exists()) {
-        setLogoUrl(doc.data().logoUrl || '');
+        const data = doc.data();
+        setLogoUrl(data.logoUrl || '');
+        setShippingThreshold(data.shippingThreshold || 0);
       }
     });
     return () => unsub();
@@ -56,18 +59,19 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  const handleSaveLogo = async (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingLogo(true);
+    setSavingSettings(true);
     try {
       await setDoc(doc(db, 'settings', 'general'), {
         logoUrl: logoUrl,
+        shippingThreshold: Number(shippingThreshold),
         updatedAt: new Date().toISOString()
       }, { merge: true });
     } catch (err) {
-      console.error('Error saving logo:', err);
+      console.error('Error saving settings:', err);
     } finally {
-      setSavingLogo(false);
+      setSavingSettings(false);
     }
   };
 
@@ -180,7 +184,7 @@ export default function AdminDashboard() {
               <span>Store Identity</span>
             </h3>
             <div className="bg-white p-8 rounded-[2.5rem] border border-brand-olive/5 shadow-sm">
-               <form onSubmit={handleSaveLogo} className="space-y-6">
+               <form onSubmit={handleSaveSettings} className="space-y-6">
                   <div className="space-y-2">
                      <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Store Logo URL</label>
                      <div className="relative">
@@ -193,6 +197,16 @@ export default function AdminDashboard() {
                           className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all" 
                         />
                      </div>
+                  </div>
+
+                  <div className="space-y-2">
+                     <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Free Shipping Threshold (₹)</label>
+                     <input 
+                        type="number" 
+                        value={shippingThreshold}
+                        onChange={(e) => setShippingThreshold(Number(e.target.value))}
+                        className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all" 
+                     />
                   </div>
                   
                   {logoUrl && (
@@ -209,14 +223,14 @@ export default function AdminDashboard() {
                   )}
 
                   <button 
-                    disabled={savingLogo}
+                    disabled={savingSettings}
                     type="submit"
                     className="w-full bg-brand-olive text-brand-cream py-4 rounded-full font-bold uppercase tracking-widest text-[10px] shadow-lg hover:shadow-brand-olive/20 transition-all flex items-center justify-center space-x-3"
                   >
-                    {savingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                    {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                       <>
                         <Save className="w-4 h-4" />
-                        <span>Save Settings</span>
+                        <span>Save Store Settings</span>
                       </>
                     )}
                   </button>

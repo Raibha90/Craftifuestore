@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Award, Truck, Star, Quote, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import { Product } from '../types';
-import { collection, getDocs, query, limit, orderBy } from 'firebase/firestore';
+import { Product, Banner } from '../types';
+import { collection, getDocs, query, limit, orderBy, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 const mockTestimonials = [
@@ -61,7 +61,16 @@ export default function Home() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(query(collection(db, 'banners'), orderBy('order', 'asc')), (snap) => {
+      const fetchedBanners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner)).filter(b => b.active !== false);
+      setBanners(fetchedBanners);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -121,46 +130,100 @@ export default function Home() {
     })
   };
 
+  const [bannerIndex, setBannerIndex] = useState(0);
+  const [cmsHome, setCmsHome] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'cms', 'home'), (docSnap) => {
+      if (docSnap.exists()) {
+        setCmsHome(docSnap.data());
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (banners.length > 1) {
+      const timer = setInterval(() => {
+        setBannerIndex(prev => (prev + 1) % banners.length);
+      }, 7000);
+      return () => clearInterval(timer);
+    }
+  }, [banners]);
+
+  const activeBanner = banners[bannerIndex] || {
+    title: 'Artisan Crafted Elegance',
+    subtitle: 'Discover unique handcrafted treasures from across India. Every piece tells a story of tradition, patience, and unparalleled skill.',
+    imageUrl: 'https://images.unsplash.com/photo-1561715276-a2d087060f1d?q=80&w=2070&auto=format&fit=crop',
+    link: '/category/all'
+  };
+
   return (
     <div className="space-y-24 pb-24">
       {/* Hero Section */}
       <section className="relative h-[85vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1561715276-a2d087060f1d?q=80&w=2070&auto=format&fit=crop"
-            alt="Handcrafted Elegance"
-            className="w-full h-full object-cover grayscale-[0.1]"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-brand-olive/20" />
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={bannerIndex}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0 z-0"
+          >
+            <img
+              src={activeBanner.imageUrl}
+              alt={activeBanner.title}
+              className="w-full h-full object-cover grayscale-[0.1]"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-brand-olive/20" />
+          </motion.div>
+        </AnimatePresence>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-2xl text-brand-cream"
-          >
-            <h5 className="text-sm font-bold uppercase tracking-[0.4em] mb-4 text-brand-gold">
-              New Collection 2026
-            </h5>
-            <h1 className="text-6xl md:text-8xl font-serif font-bold leading-[0.9] mb-8">
-              Artisan Crafted <br />
-              <span className="italic font-light">Elegance</span>
-            </h1>
-            <p className="text-lg text-brand-cream/80 mb-10 max-w-lg leading-relaxed">
-              Discover unique handcrafted treasures from across India. Every piece tells a story of tradition, patience, and unparalleled skill.
-            </p>
-            <Link
-              to="/category/all"
-              className="inline-flex items-center space-x-3 bg-brand-gold text-brand-olive px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-cream transition-colors group shadow-lg"
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={bannerIndex}
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="max-w-2xl text-brand-cream"
             >
-              <span>Explore Collection</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </motion.div>
+              <h5 className="text-sm font-bold uppercase tracking-[0.4em] mb-4 text-brand-gold">
+                New Collection 2026
+              </h5>
+              <h1 className="text-6xl md:text-8xl font-serif font-bold leading-[0.9] mb-8">
+                {activeBanner.title.split(' ').slice(0, -1).join(' ')} <br />
+                <span className="italic font-light">{activeBanner.title.split(' ').slice(-1)}</span>
+              </h1>
+              <p className="text-lg text-brand-cream/80 mb-10 max-w-lg leading-relaxed">
+                {activeBanner.subtitle}
+              </p>
+              <Link
+                to={activeBanner.link || '/category/all'}
+                className="inline-flex items-center space-x-3 bg-brand-gold text-brand-olive px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-cream transition-colors group shadow-lg"
+              >
+                <span>Explore Collection</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+          </AnimatePresence>
         </div>
+
+        {/* Carousel indicators if more than 1 banner */}
+        {banners.length > 1 && (
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex space-x-3">
+             {banners.map((_, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => setBannerIndex(i)}
+                  className={`w-2 h-2 rounded-full transition-all ${i === bannerIndex ? 'bg-brand-gold w-8' : 'bg-white/50'}`}
+                />
+             ))}
+          </div>
+        )}
       </section>
 
       {/* Process Section - MOVED TO TOP */}
@@ -323,9 +386,11 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center gap-16">
             <div className="flex-1 space-y-8">
               <h5 className="text-xs font-bold uppercase tracking-[0.5em] text-brand-gold">Our Philosophy</h5>
-              <h2 className="text-5xl font-serif font-bold leading-tight">Craftsmanship with Conscious Soul</h2>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold leading-tight">
+                {cmsHome?.philosophyHeading || 'Craftsmanship with Conscious Soul'}
+              </h2>
               <p className="text-brand-cream/70 leading-relaxed text-lg">
-                Craftifue is dedicated to bringing you the finest handmade treasures from across India. Every product in our collection is a testament to the skill of our artisans and our commitment to sustainable luxury.
+                {cmsHome?.philosophyContent || 'Craftifue is dedicated to bringing you the finest handmade treasures from across India. Every product in our collection is a testament to the skill of our artisans and our commitment to sustainable luxury.'}
               </p>
               <ul className="space-y-4">
                 {[
@@ -349,8 +414,8 @@ export default function Home() {
             <div className="flex-1 relative">
               <div className="relative z-10 rounded-[4rem] overflow-hidden aspect-[4/5] shadow-2xl">
                 <img
-                  src="https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=1915&auto=format&fit=crop"
-                  alt="Bamboo Craft"
+                  src={cmsHome?.philosophyImage || "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=1915&auto=format&fit=crop"}
+                  alt="Philosophy spotlight"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />

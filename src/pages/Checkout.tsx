@@ -32,21 +32,92 @@ export default function Checkout() {
 
     setLoading(true);
     try {
-      const orderData = {
-        userId: user.uid,
-        items,
-        totalAmount: totalPrice,
-        status: 'pending',
-        shippingAddress: address,
-        createdAt: serverTimestamp(),
+      const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      if (!razorpayKeyId) {
+        throw new Error('Razorpay Key ID is missing');
+      }
+
+      // 1. Create order in our backend to get Razorpay Order ID
+      const orderRes = await fetch('/api/create-razorpay-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totalPrice * 100, // Amount in paise
+          currency: 'INR',
+          receipt: `rcpt_${Math.random().toString(36).substring(7)}`,
+        }),
+      });
+
+      const rzpOrder = await orderRes.json();
+      if (!rzpOrder.id) {
+        throw new Error(rzpOrder.error || 'Failed to create Razorpay order');
+      }
+
+      // 2. Initialize Razorpay Modal
+      const options = {
+        key: razorpayKeyId,
+        amount: rzpOrder.amount,
+        currency: rzpOrder.currency,
+        name: 'Artisan Treasures',
+        description: 'Handcrafted Luxury Purchase',
+        image: 'https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=200&auto=format&fit=crop',
+        order_id: rzpOrder.id,
+        handler: async (response: any) => {
+          try {
+            // 3. Verify Payment Signature
+            const verifyRes = await fetch('/api/verify-razorpay-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.success) {
+              // 4. Create record in Firestore
+              await addDoc(collection(db, 'orders'), {
+                userId: user.uid,
+                items,
+                totalAmount: totalPrice,
+                status: 'pending', // Now it's paid
+                shippingAddress: address,
+                paymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                createdAt: serverTimestamp(),
+              });
+
+              clearCart();
+              setCurrentStep(4);
+            } else {
+              alert('Payment verification failed. Please contact support.');
+            }
+          } catch (err) {
+            console.error('Verification error:', err);
+            alert('Something went wrong during verification.');
+          }
+        },
+        prefill: {
+          name: user.displayName || '',
+          email: user.email || '',
+        },
+        theme: {
+          color: '#1A2F23', // brand-olive
+        },
       };
-      
-      const docRef = await addDoc(collection(db, 'orders'), orderData);
-      clearCart();
-      setCurrentStep(4); // Success step
-    } catch (err) {
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        alert(`Payment failed: ${response.error.description}`);
+      });
+      rzp.open();
+
+    } catch (err: any) {
       console.error('Error placing order:', err);
-      alert('Failed to place order. Please try again.');
+      alert(err.message || 'Failed to place order. Please try again.');
     } finally {
       setLoading(false);
     }
