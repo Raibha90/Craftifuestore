@@ -243,7 +243,7 @@ export default function Home() {
             {
               title: "Ethical Sourcing",
               desc: "We handpick sustainable bamboo and pure brass directly from rural artisan clusters who share our ethics.",
-              img: "https://images.unsplash.com/photo-1591122941067-e455952bb74e?q=80&w=1974&auto=format&fit=crop"
+              img: "https://images.unsplash.com/photo-1596752002341-2a6c1e549da7?q=80&w=2070&auto=format&fit=crop"
             },
             {
               title: "Master Weaving",
@@ -267,20 +267,26 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.6 }}
-              className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-brand-olive/5 group"
+              className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-brand-gold/10 transition-all duration-500 border border-brand-olive/5 group flex flex-col"
             >
-              <div className="h-48 overflow-hidden">
+              <div className="h-64 overflow-hidden relative">
+                <div className="absolute inset-0 bg-brand-olive/20 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center">
+                   <div className="w-12 h-12 rounded-full bg-brand-cream flex items-center justify-center scale-0 group-hover:scale-100 transition-transform duration-500 shadow-xl">
+                      <ArrowRight className="w-6 h-6 text-brand-gold" />
+                   </div>
+                </div>
                 <img 
                   src={step.img} 
                   alt={step.title} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <div className="p-8">
-                <span className="text-3xl font-extra-light text-brand-gold/30 mb-4 block">0{i + 1}</span>
-                <h4 className="text-xl font-serif font-bold text-brand-olive mb-3">{step.title}</h4>
-                <p className="text-sm text-gray-500 leading-relaxed">
+              <div className="p-10 flex-grow flex flex-col items-center text-center">
+                <span className="text-4xl font-extra-light text-brand-gold/20 mb-4 block italic font-serif">0{i + 1}</span>
+                <h4 className="text-2xl font-serif font-bold text-brand-olive mb-4 group-hover:text-brand-gold transition-colors">{step.title}</h4>
+                <div className="w-8 h-[1px] bg-brand-gold/30 mb-4 group-hover:w-16 transition-all" />
+                <p className="text-sm text-gray-500 leading-relaxed font-serif italic">
                   {step.desc}
                 </p>
               </div>

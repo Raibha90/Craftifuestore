@@ -32,10 +32,10 @@ export default function AboutCraftifue() {
   const data = content || {
     title: 'Where Tradition Meets Transformation',
     subtitle: '"Craftifue was born from a simple observation: the incredible talent of local artisans was often hidden from the world."',
-    storyHeading: 'Our Story',
-    storyParagraph1: 'Started in 2024, Craftifue began as a small initiative to support bamboo craftsmen in North East India...',
-    storyParagraph2: 'Today, we have expanded to include brass artisans, meenakari jewelry makers...',
-    mainImage: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=1915&auto=format&fit=crop'
+    storyHeading: 'Ethical Sourcing & Heritage',
+    storyParagraph1: 'Our journey begins in the heart of rural India, where we handpick sustainable materials directly from artisan clusters. By cutting out middlemen, we ensure that every rupee goes towards preserving ancient crafts and supporting local families.',
+    storyParagraph2: 'From the bamboo groves of the North East to the brass workshops of Central India, we prioritize ethical practices, fair wages, and natural materials that respect both the artisan and the environment.',
+    mainImage: 'https://images.unsplash.com/photo-1596752002341-2a6c1e549da7?q=80&w=2070&auto=format&fit=crop'
   };
 
   return (

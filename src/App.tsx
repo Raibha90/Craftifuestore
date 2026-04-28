@@ -34,66 +34,70 @@ import TermsConditions from './pages/TermsConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import StoreLocator from './pages/StoreLocator';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 function App() {
   return (
-    <AuthProvider>
-      <WishlistProvider>
-        <CartProvider>
-          <Router>
-          <div className="flex flex-col min-h-screen">
-            <Header id="main-header" />
-            <main className="flex-grow pt-20">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/category/:category" element={<CategoryProducts />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/wishlist" element={
-                  <PrivateRoute>
-                    <Wishlist />
-                  </PrivateRoute>
-                } />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<CreateAccount />} />
-                <Route path="/customer-login" element={<CustomerLogin />} />
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/about/mission-vision" element={<MissionVision />} />
-                <Route path="/about/craftifue" element={<AboutCraftifue />} />
-                <Route path="/returns" element={<ReturnPolicy />} />
-                <Route path="/terms" element={<TermsConditions />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/stores" element={<StoreLocator />} />
-                
-                <Route path="/dashboard" element={
-                  <PrivateRoute>
-                    <Dashboard />
-                  </PrivateRoute>
-                } />
-
-                {/* Admin Routes */}
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <AdminLayout />
-                  </AdminRoute>
-                }>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="products" element={<AdminProducts />} />
-                  <Route path="orders" element={<AdminOrders />} />
-                  <Route path="coupons" element={<AdminCoupons />} />
-                  <Route path="banners" element={<AdminBanners />} />
-                  <Route path="cms" element={<AdminCMS />} />
-                  <Route path="workbook" element={<AdminWorkbook />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                </Route>
-              </Routes>
-            </main>
-            <Footer id="main-footer" />
-          </div>
-        </Router>
-      </CartProvider>
-    </WishlistProvider>
-  </AuthProvider>
+    <ErrorBoundary id="app-error-boundary">
+      <AuthProvider>
+        <WishlistProvider>
+          <CartProvider>
+            <Router>
+            <div className="flex flex-col min-h-screen">
+              <Header id="main-header" />
+              <main className="flex-grow pt-20">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/category/:category" element={<CategoryProducts />} />
+                  <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/wishlist" element={
+                    <PrivateRoute>
+                      <Wishlist />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<CreateAccount />} />
+                  <Route path="/customer-login" element={<CustomerLogin />} />
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/about/mission-vision" element={<MissionVision />} />
+                  <Route path="/about/craftifue" element={<AboutCraftifue />} />
+                  <Route path="/returns" element={<ReturnPolicy />} />
+                  <Route path="/terms" element={<TermsConditions />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/stores" element={<StoreLocator />} />
+                  
+                  <Route path="/dashboard" element={
+                    <PrivateRoute>
+                      <Dashboard />
+                    </PrivateRoute>
+                  } />
+  
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={
+                    <AdminRoute>
+                      <AdminLayout />
+                    </AdminRoute>
+                  }>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="products" element={<AdminProducts />} />
+                    <Route path="orders" element={<AdminOrders />} />
+                    <Route path="coupons" element={<AdminCoupons />} />
+                    <Route path="banners" element={<AdminBanners />} />
+                    <Route path="cms" element={<AdminCMS />} />
+                    <Route path="workbook" element={<AdminWorkbook />} />
+                    <Route path="settings" element={<AdminSettings />} />
+                  </Route>
+                </Routes>
+              </main>
+              <Footer id="main-footer" />
+            </div>
+          </Router>
+        </CartProvider>
+      </WishlistProvider>
+    </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
