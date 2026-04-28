@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A handcrafted item for sale in the store.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the product." },
+        "description": { "type": "string", "description": "A detailed description of the product." },
+        "price": { "type": "number", "description": "The price of the product." },
+        "category": { "type": "string", "description": "The category the product belongs to (e.g., Necklace, Bangles)." },
+        "images": { "type": "array", "description": "URLs of the product images." },
+        "material": { "type": "string", "description": "The material used to make the product." },
+        "stock": { "type": "integer", "description": "The number of items currently in stock." },
+        "isFeatured": { "type": "boolean", "description": "Whether the product should be highlighted on the homepage." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "category", "images", "stock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer's purchase order.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who placed the order." },
+        "items": { "type": "array", "description": "The products purchased in this order." },
+        "totalAmount": { "type": "number", "description": "The total price of the order." },
+        "status": { "type": "string", "enum": ["pending", "processed", "shipped", "delivered", "cancelled"], "description": "The current status of the order." },
+        "shippingAddress": { "type": "object", "description": "The address where the order will be shipped." },
+        "paymentId": { "type": "string", "description": "The Razorpay payment ID." },
+        "trackingNumber": { "type": "string", "description": "The tracking number for the shipment." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "items", "totalAmount", "status", "shippingAddress"]
+    },
+    "User": {
+      "title": "User Profile",
+      "description": "Information about a registered user.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phoneNumber": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "admin"] },
+        "addresses": { "type": "array" }
+      }
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "A discount coupon for orders.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"] },
+        "discountValue": { "type": "number" },
+        "minOrderAmount": { "type": "number" },
+        "expiryDate": { "type": "string", "format": "date-time" },
+        "isActive": { "type": "boolean" }
+      }
+    },
+    "Banner": {
+      "title": "Homepage Banner",
+      "description": "A banner images displayed on the homepage.",
+      "type": "object",
+      "properties": {
+        "imageUrl": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "link": { "type": "string" },
+        "order": { "type": "integer" }
+      }
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of all products."
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of all orders."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles."
+    },
+    "/coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Collection of available discount coupons."
+    },
+    "/banners/{bannerId}": {
+      "schema": "Banner",
+      "description": "Collection of homepage hero banners."
+    }
+  }
+}
