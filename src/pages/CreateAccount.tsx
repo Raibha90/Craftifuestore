@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
@@ -12,6 +12,8 @@ export default function CreateAccount() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [sentCode, setSentCode] = useState('');
+  
+  const [isSuccess, setIsSuccess] = useState(false);
   
   const [signupData, setSignupData] = useState({
     name: '',
@@ -59,6 +61,9 @@ export default function CreateAccount() {
 
       await updateProfile(user, { displayName: signupData.name });
 
+      // Send Email Verification
+      await sendEmailVerification(user);
+
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         displayName: signupData.name,
@@ -74,7 +79,7 @@ export default function CreateAccount() {
         createdAt: new Date().toISOString()
       });
 
-      navigate(from, { replace: true });
+      setIsSuccess(true);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -105,7 +110,34 @@ export default function CreateAccount() {
           )}
 
           <AnimatePresence mode="wait">
-            {!isVerifying ? (
+            {isSuccess ? (
+              <motion.div 
+                key="success" 
+                initial={{ opacity: 0, scale: 0.9 }} 
+                animate={{ opacity: 1, scale: 1 }} 
+                className="text-center py-6"
+              >
+                <div className="inline-flex p-6 bg-green-50 rounded-[2rem] mb-8">
+                  <Mail className="w-10 h-10 text-green-500" />
+                </div>
+                <h2 className="text-3xl font-serif font-bold text-brand-olive mb-4">Activation Email Sent!</h2>
+                <p className="text-sm text-gray-500 mb-8 max-w-[320px] mx-auto leading-relaxed">
+                  We've sent a verification link to <span className="font-bold text-brand-olive">{signupData.email}</span>. 
+                  Please check your inbox (and spam folder) to activate your account.
+                </p>
+                <div className="space-y-4">
+                  <button 
+                    onClick={() => navigate('/login')}
+                    className="w-full bg-brand-olive text-brand-cream py-5 rounded-full font-bold uppercase tracking-widest text-[10px] shadow-xl transition-all"
+                  >
+                    Go to Login
+                  </button>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                    Verification link expires in 1 hour.
+                  </p>
+                </div>
+              </motion.div>
+            ) : !isVerifying ? (
               <motion.div key="signup-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <h2 className="text-3xl font-serif font-bold text-brand-olive mb-2">Create Account</h2>
                 <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-10">Start your artisan journey</p>

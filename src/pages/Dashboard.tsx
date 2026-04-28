@@ -3,17 +3,43 @@ import { useAuth } from '../contexts/AuthContext';
 import { collection, query, where, getDocs, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Order } from '../types';
-import { Package, MapPin, User, LogOut, ChevronRight, Clock, Heart, ShoppingBag } from 'lucide-react';
-import { signOut } from 'firebase/auth';
-import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { Package, MapPin, User, LogOut, ChevronRight, Clock, Heart, ShoppingBag, ShieldAlert, Mail, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { signOut, sendEmailVerification } from 'firebase/auth';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function Dashboard() {
-  const { profile, user } = useAuth();
+  const { profile, user, refreshUser } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'addresses' | 'profile'>('orders');
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Show success toast if user just became verified in this session
+    if (user?.emailVerified && sessionStorage.getItem('was_unverified') === 'true') {
+      setShowSuccessToast(true);
+      sessionStorage.removeItem('was_unverified');
+      setTimeout(() => setShowSuccessToast(false), 8000);
+    }
+    
+    if (user && !user.emailVerified) {
+      sessionStorage.setItem('was_unverified', 'true');
+    }
+  }, [user?.emailVerified]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'orders' || tab === 'addresses' || tab === 'profile') {
+      setActiveTab(tab as any);
+    }
+  }, [location]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -42,6 +68,29 @@ export default function Dashboard() {
     navigate('/');
   };
 
+  const handleResendVerification = async () => {
+    if (!user) return;
+    setResending(true);
+    try {
+      await sendEmailVerification(user);
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 5000);
+    } catch (err) {
+      console.error('Error resending verification:', err);
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleRefreshStatus = async () => {
+    setRefreshing(true);
+    try {
+      await refreshUser();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'delivered': return 'bg-green-100 text-green-600';
@@ -53,6 +102,80 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Activation Success Toast */}
+      <AnimatePresence>
+        {showSuccessToast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed bottom-12 right-12 z-[100] bg-brand-olive text-brand-cream p-8 rounded-[2.5rem] shadow-2xl border border-brand-gold/20 max-w-sm"
+          >
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="w-12 h-12 bg-brand-gold rounded-2xl flex items-center justify-center text-white">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h3 className="font-serif font-bold text-xl">Profile Activated!</h3>
+            </div>
+            <p className="text-sm opacity-80 leading-relaxed">
+              Welcome to the inner circle! Your account is now fully verified and you can explore all artisan collections.
+            </p>
+            <button 
+              onClick={() => setShowSuccessToast(false)}
+              className="mt-6 w-full text-[10px] font-bold uppercase tracking-widest bg-white/10 hover:bg-white/20 py-3 rounded-full transition-colors"
+            >
+              Dismiss
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Verification Banner */}
+      {!user?.emailVerified && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 bg-brand-gold/10 border border-brand-gold/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-gold shadow-sm">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-serif font-bold text-brand-olive">Account Pending Activation</h3>
+              <p className="text-xs text-gray-500 mt-1">Please verify your email address to unlock all artisan features.</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={handleRefreshStatus}
+              disabled={refreshing}
+              className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest text-brand-olive hover:text-brand-gold transition-colors py-3 px-6 rounded-full bg-white shadow-sm disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <span>Check Status</span>
+            </button>
+            <button 
+              onClick={handleResendVerification}
+              disabled={resending || resendSuccess}
+              className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest text-white py-3 px-6 rounded-full bg-brand-gold shadow-lg shadow-brand-gold/20 disabled:opacity-50 disabled:bg-green-500"
+            >
+              {resendSuccess ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Email Sent!</span>
+                </>
+              ) : (
+                <>
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>{resending ? 'Sending...' : 'Resend Link'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
         {/* Sidebar */}
         <div className="space-y-8">

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, ChevronDown, X, ArrowRight, Heart } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, ChevronDown, X, ArrowRight, Heart, LogOut, Settings, ShoppingBag } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, getDocs, doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
+import { auth, db } from '../lib/firebase';
 import { Product } from '../types';
 
 export default function Header({ id }: { id: string }) {
@@ -193,17 +194,69 @@ export default function Header({ id }: { id: string }) {
               )}
             </Link>
             <div className="flex items-center space-x-2">
-              <Link 
-                to={user ? (isAdmin ? "/admin" : "/dashboard") : "/login"} 
-                className="p-2 text-gray-600 hover:bg-brand-olive/5 rounded-full transition-colors flex items-center"
-              >
-                <div className="relative">
-                  <User className="w-5 h-5" />
-                  {user && (
-                    <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-gold rounded-full border-2 border-white" />
-                  )}
+              {user ? (
+                <div className="relative group/account">
+                  <button className="flex items-center space-x-2 p-2 text-gray-600 hover:text-brand-gold transition-all">
+                    <div className="relative">
+                      <User className="w-5 h-5" />
+                      <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-gold rounded-full border-2 border-white" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:inline-block">
+                      {user.displayName?.split(' ')[0] || 'Hello'}
+                    </span>
+                    <ChevronDown className="w-3 h-3 transition-transform group-hover/account:rotate-180" />
+                  </button>
+                  
+                  {/* Dropdown Tray */}
+                  <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-300 transform translate-y-2 group-hover/account:translate-y-0 z-50">
+                    <div className="bg-white shadow-2xl rounded-[2rem] border border-brand-olive/5 p-2 w-56 overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-50 mb-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Signed in as</p>
+                        <p className="text-sm font-serif font-bold text-brand-olive truncate">{user.displayName || user.email}</p>
+                      </div>
+                      {isAdmin && (
+                        <Link 
+                          to="/admin"
+                          className="flex items-center space-x-3 px-6 py-3 text-xs font-bold text-brand-gold hover:bg-brand-gold hover:text-white rounded-xl transition-all mb-1"
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      )}
+                      {[
+                        { label: 'My Profile', path: '/dashboard?tab=profile', icon: User },
+                        { label: 'My Account', path: '/dashboard?tab=orders', icon: ShoppingBag },
+                        { label: 'Account Settings', path: '/dashboard?tab=profile', icon: Settings },
+                      ].map((item) => (
+                        <Link 
+                          key={item.label}
+                          to={item.path}
+                          className="flex items-center space-x-3 px-6 py-3 text-xs font-medium text-gray-600 hover:bg-brand-olive hover:text-brand-cream rounded-xl transition-all"
+                        >
+                          <item.icon className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      ))}
+                      <div className="h-[1px] bg-gray-50 my-1 mx-4" />
+                      <button 
+                        onClick={() => signOut(auth)}
+                        className="w-full flex items-center space-x-3 px-6 py-3 text-xs font-medium text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </Link>
+              ) : (
+                <Link 
+                  to="/login" 
+                  className="p-2 text-gray-600 hover:bg-brand-olive/5 rounded-full transition-colors flex items-center space-x-1"
+                >
+                  <User className="w-5 h-5" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest px-1 hidden lg:block">Sign In</span>
+                </Link>
+              )}
             </div>
             <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               <Menu className="w-6 h-6" />
