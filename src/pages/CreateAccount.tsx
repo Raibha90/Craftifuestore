@@ -305,7 +305,7 @@ export default function CreateAccount() {
                 </div>
                 <h2 className="text-3xl font-serif font-bold text-brand-olive mb-4">OTP Verification</h2>
                 <div className="text-sm text-gray-500 mb-6 max-w-[320px] mx-auto leading-relaxed">
-                  Enter the 6-digit code sent to <span className="font-bold text-brand-olive">{signupData.phone}</span> via WhatsApp.<br/><br/>
+                  Enter the 6-digit code sent to <span className="font-bold text-brand-olive">{signupData.phone}</span> via SMS.<br/><br/>
                   <span className="font-bold text-brand-olive text-lg">{formatTime(timeLeft)}</span> remaining
                 </div>
                 {isOtpExpired && (

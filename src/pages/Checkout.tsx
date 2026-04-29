@@ -79,7 +79,7 @@ export default function Checkout() {
 
             if (verifyData.success) {
               // 4. Create record in Firestore
-              await addDoc(collection(db, 'orders'), {
+              const orderRef = await addDoc(collection(db, 'orders'), {
                 userId: user.uid,
                 items,
                 totalAmount: totalPrice,
@@ -90,7 +90,7 @@ export default function Checkout() {
                 createdAt: serverTimestamp(),
               });
 
-              // 5. Send order confirmation email and WhatsApp via our backend route
+              // 5. Send order confirmation email and SMS via our backend route
               const orderItemsHtml = items.map(item => `
                 <tr>
                   <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4b5563;">${item.name} <span style="color: #9ca3af; font-size: 12px;">x ${item.quantity}</span></td>
@@ -103,7 +103,7 @@ export default function Checkout() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   orderId: orderRef.id,
-                  phone: address.phone,
+                  phone: (address as any).phone || user.phoneNumber,
                   email: user.email,
                   status: 'confirmed',
                   itemsHtml: orderItemsHtml,
@@ -163,7 +163,7 @@ export default function Checkout() {
           <CheckCircle className="w-12 h-12" />
         </motion.div>
         <h1 className="text-4xl font-serif font-bold text-brand-olive mb-4">Mubarak! Order Placed</h1>
-        <p className="text-gray-500 mb-12 max-w-md mx-auto">Your handcrafted treasures are being prepared. You will receive an update via WhatsApp shortly.</p>
+        <p className="text-gray-500 mb-12 max-w-md mx-auto">Your handcrafted treasures are being prepared. You will receive an update via SMS shortly.</p>
         <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
           <button 
             onClick={() => navigate('/dashboard')}

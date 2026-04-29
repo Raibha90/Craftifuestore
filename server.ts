@@ -185,16 +185,16 @@ async function startServer() {
          
          await client.messages.create({
            body: `Your Craftifue verification code is ${otp}. It is valid for 5 minutes.`,
-           to: `whatsapp:${formattedPhone}`,
-           from: `whatsapp:${formattedFrom}`
+           to: formattedPhone,
+           from: formattedFrom
          });
-         return res.json({ success: true, message: "OTP sent via WhatsApp" });
+         return res.json({ success: true, message: "OTP sent via SMS" });
        } catch (err: any) {
-         logAudit(phone, "WHATSAPP_DISPATCH", "FAILED", err.message);
-         return res.status(500).json({ error: "Failed to send WhatsApp gateway." });
+         logAudit(phone, "SMS_DISPATCH", "FAILED", err.message);
+         return res.status(500).json({ error: "Failed to send SMS gateway." });
        }
     } else {
-       logAudit(phone, "WHATSAPP_DISPATCH", "MOCKED", `OTP is ${otp}`);
+       logAudit(phone, "SMS_DISPATCH", "MOCKED", `OTP is ${otp}`);
        return res.json({ success: true, mock: true, message: "Mock OTP sent (check console)", mockOTP: otp });
     }
   });
@@ -392,7 +392,7 @@ async function startServer() {
     }
   });
 
-  // Order Status Notification (Email & WhatsApp)
+  // Order Status Notification (Email & SMS)
   app.post("/api/orders/notify-status", async (req, res) => {
     const { orderId, phone, email, status, itemsHtml, totalAmount, order } = req.body;
     
@@ -522,7 +522,7 @@ async function startServer() {
       }
     }
 
-    // 2. Send SMS/WhatsApp Notification via Twilio
+    // 2. Send SMS Notification via Twilio
     if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
       try {
         const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -532,12 +532,12 @@ async function startServer() {
         
         await client.messages.create({
           body: `Craftifue Update: Your order #${orderId.slice(-6).toUpperCase()} is now ${status.toUpperCase()}. Thank you!`,
-          to: `whatsapp:${formattedPhone}`,
-          from: `whatsapp:${formattedFrom}`
+          to: formattedPhone,
+          from: formattedFrom
         });
         smssent = true;
       } catch (err) {
-        console.error("WhatsApp notification error:", err);
+        console.error("SMS notification error:", err);
       }
     }
 

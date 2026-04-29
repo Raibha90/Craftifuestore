@@ -49,7 +49,7 @@ export default function AdminOrders() {
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
              orderId: order.id,
-             phone: order.address?.phone, // used for SMS
+             phone: (order.shippingAddress as any)?.phone, // used for SMS
              email: localStorage.getItem('last_user_email') || "", // Admin would fetch it
              status,
              itemsHtml,
@@ -75,7 +75,7 @@ export default function AdminOrders() {
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
              orderId: order.id,
-             phone: order.address?.phone,
+             phone: (order.shippingAddress as any)?.phone,
              status: 'shipped (tracking updated)',
              totalAmount: order.totalAmount.toLocaleString()
            })

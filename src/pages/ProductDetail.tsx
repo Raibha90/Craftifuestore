@@ -3,9 +3,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
-import { ShoppingCart, Heart, ShieldCheck, Truck, RefreshCw, Star, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Heart, ShieldCheck, Truck, RefreshCw, Star, ArrowLeft, ImagePlus, X, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, ProductVariant } from '../types';
 
@@ -21,9 +21,16 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewFormOpen, setReviewFormOpen] = useState(false);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductAndReviews = async () => {
       if (!id) return;
       setLoading(true);
       try {
@@ -33,15 +40,88 @@ export default function ProductDetail() {
           setProduct({ id: docSnap.id, ...docSnap.data() } as Product);
         } else {
           navigate('/category/all');
+          return;
         }
+
+        // Fetch reviews
+        const q = query(collection(db, 'reviews'), where('productId', '==', id), where('status', '==', 'approved'));
+        const reviewSnap = await getDocs(q);
+        setReviews(reviewSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (err) {
-        console.error('Error fetching product:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
+    fetchProductAndReviews();
   }, [id, navigate]);
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const max = 800;
+          if (width > height) {
+            if (width > max) { height *= max / width; width = max; }
+          } else {
+            if (height > max) { width *= max / height; height = max; }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const file = e.target.files[0];
+    const base64 = await compressImage(file);
+    setReviewImages(prev => [...prev, base64].slice(0, 3)); // Max 3 images
+  };
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      alert("Please login to submit a review");
+      navigate('/login');
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await addDoc(collection(db, 'reviews'), {
+        productId: id,
+        productName: product?.name || '',
+        userId: user.uid,
+        userName: user.displayName || 'Customer',
+        rating: reviewRating,
+        comment: reviewText,
+        images: reviewImages,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+      alert('Review submitted successfully! It will appear once approved.');
+      setReviewFormOpen(false);
+      setReviewText('');
+      setReviewRating(5);
+      setReviewImages([]);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
   const isFavorited = isInWishlist(product?.id || '');
 
   if (loading) {
@@ -212,6 +292,137 @@ export default function ProductDetail() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Customer Reviews Section */}
+      <div className="mt-24 max-w-4xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-12">
+           <h2 className="text-3xl font-serif font-bold text-brand-olive text-center md:text-left mb-6 md:mb-0">Customer Reviews</h2>
+           <button 
+             onClick={() => {
+                if (!user) {
+                   navigate('/login');
+                } else {
+                   setReviewFormOpen(!reviewFormOpen);
+                }
+             }}
+             className="px-6 py-3 border-2 border-brand-olive text-brand-olive font-bold uppercase tracking-widest text-xs rounded-full hover:bg-brand-olive hover:text-brand-cream transition-colors"
+           >
+             {reviewFormOpen ? 'Cancel' : 'Write a Review'}
+           </button>
+        </div>
+        
+        <AnimatePresence>
+           {reviewFormOpen && (
+              <motion.div 
+                 initial={{ opacity: 0, height: 0 }}
+                 animate={{ opacity: 1, height: 'auto' }}
+                 exit={{ opacity: 0, height: 0 }}
+                 className="overflow-hidden mb-12"
+              >
+                 <form onSubmit={submitReview} className="bg-white p-8 rounded-3xl border border-brand-olive/10 shadow-sm space-y-6">
+                    <div>
+                       <label className="block text-xs font-bold uppercase tracking-widest text-brand-olive mb-2">Rating</label>
+                       <div className="flex space-x-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                             <button
+                                key={star}
+                                type="button"
+                                onClick={() => setReviewRating(star)}
+                                className="focus:outline-none"
+                             >
+                                <Star className={`w-8 h-8 ${reviewRating >= star ? 'text-brand-gold fill-current' : 'text-gray-200'}`} />
+                             </button>
+                          ))}
+                       </div>
+                    </div>
+                    
+                    <div>
+                       <label className="block text-xs font-bold uppercase tracking-widest text-brand-olive mb-2">Your Review</label>
+                       <textarea 
+                          required
+                          rows={4}
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                          placeholder="What did you love about this item?"
+                          className="w-full px-4 py-3 rounded-2xl border-brand-olive/20 focus:border-brand-gold focus:ring-brand-gold transition-colors outline-none"
+                       />
+                    </div>
+                    
+                    <div>
+                       <label className="block text-xs font-bold uppercase tracking-widest text-brand-olive mb-2">Add Photos (up to 3)</label>
+                       <div className="flex flex-wrap gap-4">
+                          {reviewImages.map((img, i) => (
+                             <div key={i} className="relative w-24 h-24 rounded-2xl border bg-gray-50">
+                                <img src={img} alt="Upload" className="w-full h-full object-cover rounded-2xl" />
+                                <button
+                                   type="button"
+                                   onClick={() => setReviewImages(reviewImages.filter((_, idx) => idx !== i))}
+                                   className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg"
+                                >
+                                   <X className="w-3 h-3" />
+                                </button>
+                             </div>
+                          ))}
+                          
+                          {reviewImages.length < 3 && (
+                             <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-brand-gold hover:bg-brand-gold/5 transition-colors text-gray-400 hover:text-brand-gold">
+                                <ImagePlus className="w-6 h-6 mb-1" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Add Photo</span>
+                                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                             </label>
+                          )}
+                       </div>
+                    </div>
+                    
+                    <button 
+                       type="submit"
+                       disabled={submittingReview}
+                       className="w-full bg-brand-olive text-brand-cream py-4 rounded-full font-bold uppercase tracking-widest text-sm hover:bg-brand-olive/90 transition-colors disabled:opacity-50"
+                    >
+                       {submittingReview ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                 </form>
+              </motion.div>
+           )}
+        </AnimatePresence>
+        
+        <div className="space-y-8">
+          {reviews.length > 0 ? reviews.map((review) => (
+            <div key={review.id} className="bg-white p-8 rounded-3xl shadow-sm border border-brand-olive/5">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h4 className="font-bold text-brand-olive text-lg">{review.userName}</h4>
+                  <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest">
+                     {review.createdAt?.seconds ? new Date(review.createdAt.seconds * 1000).toLocaleDateString() : 'Just now'}
+                  </p>
+                </div>
+                <div className="flex space-x-1">
+                  {[...Array(5)].map((_, j) => (
+                    <Star key={j} className={`w-4 h-4 ${j < review.rating ? 'text-brand-gold fill-current' : 'text-gray-200'}`} />
+                  ))}
+                </div>
+              </div>
+              <p className="text-gray-600 leading-relaxed">{review.comment}</p>
+              
+              {review.images && review.images.length > 0 && (
+                 <div className="flex space-x-4 mt-6">
+                    {review.images.map((img: string, i: number) => (
+                       <a key={i} href={img} target="_blank" rel="noreferrer">
+                          <img src={img} alt="Customer upload" className="w-24 h-24 object-cover rounded-2xl border" />
+                       </a>
+                    ))}
+                 </div>
+              )}
+            </div>
+          )) : (
+            <div className="text-center p-12 bg-gray-50 rounded-3xl border border-gray-100">
+              <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <h4 className="font-serif text-xl font-bold text-brand-olive mb-2">No reviews yet</h4>
+              <p className="text-gray-500 max-w-sm mx-auto">Be the first to share your experience with this beautiful piece of handcrafted elegance.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

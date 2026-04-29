@@ -81,6 +81,7 @@ export default function AdminWorkbook() {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [imageReqs, setImageReqs] = useState({ width: '800', height: '800', format: 'PNG' });
 
   // Formula logic
   const calculateDerived = (item: Partial<JewelleryItem>): Partial<JewelleryItem> => {
@@ -155,7 +156,8 @@ export default function AdminWorkbook() {
 
     setIsGeneratingAi(true);
     try {
-      const prompt = aiPrompt || `A professional high-end jewellery photograph of ${editingItem?.productName}, ${editingItem?.metal} ${editingItem?.purity}, ${editingItem?.category}. Studio lighting, elegant display, photorealistic.`;
+      const explicitInstruction = `Required Image Properties: Dimension strictly ${imageReqs.width}x${imageReqs.height} pixels, output format must be ${imageReqs.format}.`;
+      const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A professional high-end jewellery photograph of ${editingItem?.productName}, ${editingItem?.metal} ${editingItem?.purity}, ${editingItem?.category}. Studio lighting, elegant display, photorealistic. ${explicitInstruction}`;
       
       const response = await fetch('/api/gemini', {
         method: 'POST',
@@ -716,6 +718,34 @@ export default function AdminWorkbook() {
                   value={aiPrompt}
                   onChange={e => setAiPrompt(e.target.value)}
                 />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Width (px)</label>
+                  <input type="number" 
+                         className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm" 
+                         value={imageReqs.width}
+                         onChange={e => setImageReqs({...imageReqs, width: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Height (px)</label>
+                  <input type="number" 
+                         className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm" 
+                         value={imageReqs.height}
+                         onChange={e => setImageReqs({...imageReqs, height: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Format</label>
+                  <select 
+                         className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm" 
+                         value={imageReqs.format}
+                         onChange={e => setImageReqs({...imageReqs, format: e.target.value})}>
+                    <option value="PNG">PNG</option>
+                    <option value="JPG">JPG</option>
+                    <option value="WEBP">WEBP</option>
+                  </select>
+                </div>
               </div>
 
               <div className="flex gap-4">

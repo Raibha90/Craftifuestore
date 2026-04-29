@@ -94,6 +94,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Rules for Reviews
+    match /reviews/{reviewId} {
+      allow read: if existing().status == 'approved' || isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && incoming().status == 'pending';
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+    }
+
     // Rules for Settings
     match /settings/{settingId} {
       allow read: if true;
