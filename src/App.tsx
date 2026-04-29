@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { WishlistProvider } from './contexts/WishlistContext';
@@ -52,6 +53,7 @@ function App() {
             <Router>
               <FloatingGiftBox />
               <WhatsAppChatbot />
+              <SpeedInsights />
               <Routes>
                 {/* Admin Routes */}
                 <Route path="/admin">
