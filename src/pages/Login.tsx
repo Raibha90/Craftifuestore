@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, ShieldCheck, Eye, EyeOff, Home, Facebook, Check } from 'lucide-react';
 
 export default function Login() {
-  const [role, setRole] = useState<'customer' | 'vendor'>('customer');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,12 +23,15 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      if (role === 'vendor') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate(from, { replace: true });
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      if (userDoc.exists() && userDoc.data().role === 'admin') {
+         await auth.signOut();
+         setError('Admin access from this portal is restricted. Please use the Admin Portal.');
+         setLoading(false);
+         return;
       }
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError('Invalid email or password');
     } finally {
@@ -41,12 +44,15 @@ export default function Login() {
     setError('');
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      if (role === 'vendor') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate(from, { replace: true });
+      const result = await signInWithPopup(auth, provider);
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      if (userDoc.exists() && userDoc.data().role === 'admin') {
+         await auth.signOut();
+         setError('Admin access from this portal is restricted. Please use the Admin Portal.');
+         setLoading(false);
+         return;
       }
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Google login failed');
     } finally {
@@ -59,12 +65,15 @@ export default function Login() {
     setError('');
     try {
       const provider = new FacebookAuthProvider();
-      await signInWithPopup(auth, provider);
-      if (role === 'vendor') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate(from, { replace: true });
+      const result = await signInWithPopup(auth, provider);
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      if (userDoc.exists() && userDoc.data().role === 'admin') {
+         await auth.signOut();
+         setError('Admin access from this portal is restricted. Please use the Admin Portal.');
+         setLoading(false);
+         return;
       }
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Facebook login failed');
     } finally {
@@ -108,7 +117,7 @@ export default function Login() {
         
         {/* Top right button */}
         <div className="absolute top-8 right-8 z-10 hidden sm:flex items-center">
-            <Link to={role === 'customer' ? '/signup' : '/vendor-signup'} className="bg-black text-white px-8 py-3 rounded-full text-sm font-semibold hover:bg-black/90 transition-all shadow-lg">
+            <Link to="/signup" className="bg-black text-white px-8 py-3 rounded-full text-sm font-semibold hover:bg-black/90 transition-all shadow-lg">
               Sign Up
             </Link>
         </div>
@@ -118,24 +127,6 @@ export default function Login() {
             <h2 className="text-4xl text-[#18183B] font-bold mb-3 tracking-tight">Welcome Back to Artisan Treasures!</h2>
             <p className="text-gray-400 text-sm mb-2">Sign in your account</p>
             <p className="text-xs text-red-500 font-medium">Fields marked with <span className="font-bold">(*)</span> are mandatory.</p>
-          </div>
-          
-          <div className="flex p-1 bg-gray-100 rounded-full mb-8 relative">
-            <div className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-white rounded-full shadow transition-transform duration-300 ${role === 'vendor' ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'}`} />
-            <button 
-              type="button"
-              onClick={() => { setRole('customer'); setEmail(''); setPassword(''); setError(''); }}
-              className={`w-1/2 py-2 text-sm font-semibold rounded-full z-10 transition-colors ${role === 'customer' ? 'text-gray-900' : 'text-gray-500'}`}
-            >
-              Customer
-            </button>
-            <button 
-              type="button"
-              onClick={() => { setRole('vendor'); setEmail(''); setPassword(''); setError(''); }}
-              className={`w-1/2 py-2 text-sm font-semibold rounded-full z-10 transition-colors ${role === 'vendor' ? 'text-gray-900' : 'text-gray-500'}`}
-            >
-              Vendor
-            </button>
           </div>
 
           <AnimatePresence mode="wait">
@@ -210,17 +201,12 @@ export default function Login() {
               disabled={loading}
               type="button"
               onClick={() => {
-                if (role === 'vendor') {
-                  setEmail('admin@craftifue.store');
-                  setPassword('admin123456');
-                } else {
-                  setEmail('demo@example.com');
-                  setPassword('demo123456');
-                }
+                setEmail('demo@example.com');
+                setPassword('demo123456');
               }}
               className="w-full bg-white text-[#1C1C1E] border border-gray-300 py-4 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-all flex items-center justify-center space-x-2 mt-3"
             >
-              <span>Use {role === 'vendor' ? 'Vendor/Admin' : 'Customer'} Demo</span>
+              <span>Use Customer Demo</span>
             </button>
           </form>
 
@@ -256,7 +242,7 @@ export default function Login() {
           </div>
 
           <div className="text-center mt-6 text-sm text-gray-500 pb-12 lg:pb-0">
-            Don't have any account? <Link to={role === 'customer' ? '/signup' : '/vendor-signup'} className="text-blue-600 font-medium hover:underline">Register</Link>
+            Don't have any account? <Link to="/signup" className="text-blue-600 font-medium hover:underline">Register</Link>
           </div>
         </div>
       </div>

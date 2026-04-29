@@ -73,6 +73,31 @@ export default function CreateAccount() {
         createdAt: new Date().toISOString()
       });
 
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: signupData.email,
+            subject: 'Welcome to Craftifue - HandCrafts!',
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h2 style="color: #4a5d23; font-size: 24px;">Welcome to Craftifue, ${signupData.name}!</h2>
+                </div>
+                <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Thank you for joining our Artisan Community. We are thrilled to have you.</p>
+                <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Start exploring our handcrafted luxury products today!</p>
+                <div style="text-align: center; margin: 40px 0;">
+                  <a href="https://craftifue.store/shop" style="background-color: #d4af37; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; text-transform: uppercase;">Explore Collection</a>
+                </div>
+              </div>
+            `
+          })
+        });
+      } catch (emailErr) {
+        console.error('Failed to send welcome email', emailErr);
+      }
+
       setIsSuccess(true);
     } catch (err: any) {
       setError(err.message);

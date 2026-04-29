@@ -45,6 +45,7 @@ import WhatsAppChatbot from './components/WhatsAppChatbot';
 import AIPersonalizerModal from './components/AIPersonalizerModal';
 
 import ErrorBoundary from './components/ErrorBoundary';
+import { Analytics } from "@vercel/analytics/react";
 
 import React, { useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -74,6 +75,7 @@ function DynamicHead() {
 function App() {
   return (
     <ErrorBoundary id="app-error-boundary">
+      <Analytics />
       <DynamicHead />
       <AuthProvider>
         <WishlistProvider>
