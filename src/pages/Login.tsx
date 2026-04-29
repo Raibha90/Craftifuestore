@@ -206,6 +206,22 @@ export default function Login() {
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>Login</span>}
             </button>
+            <button
+              disabled={loading}
+              type="button"
+              onClick={() => {
+                if (role === 'vendor') {
+                  setEmail('admin@craftifue.store');
+                  setPassword('admin123456');
+                } else {
+                  setEmail('demo@example.com');
+                  setPassword('demo123456');
+                }
+              }}
+              className="w-full bg-white text-[#1C1C1E] border border-gray-300 py-4 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-all flex items-center justify-center space-x-2 mt-3"
+            >
+              <span>Use {role === 'vendor' ? 'Vendor/Admin' : 'Customer'} Demo</span>
+            </button>
           </form>
 
           <div className="mt-10 relative flex items-center justify-center">
