@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Save, Loader2, Globe, Settings, Mail, Phone, Instagram, Facebook, Layout } from 'lucide-react';
+import { Save, Loader2, Globe, Settings, Mail, Phone, Instagram, Facebook, Layout, Image as ImageIcon, Upload } from 'lucide-react';
 import { motion } from 'motion/react';
+import { processImage } from '../../lib/imageUtils';
 
 export default function AdminSettings() {
   const [loading, setLoading] = useState(true);
@@ -13,6 +14,7 @@ export default function AdminSettings() {
     footerAbout: 'Cultivating a heritage of fine craftsmanship and timeless artistry since 2026.',
     copyrightText: '© 2026 Artisan Treasures. All rights reserved.',
     logoUrl: '',
+    faviconUrl: '',
     whatsapp: '+91 98765 43210',
     email: 'hello@artisantreasures.in',
     instagram: 'artisantreasures',
@@ -28,7 +30,8 @@ export default function AdminSettings() {
     // Sync with general settings for logo
     const unsubGen = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
       if (docSnap.exists()) {
-        setSettings(prev => ({ ...prev, logoUrl: docSnap.data().logoUrl || '' }));
+        const data = docSnap.data();
+        setSettings(prev => ({ ...prev, logoUrl: data.logoUrl || '', faviconUrl: data.faviconUrl || '' }));
       }
     });
 
@@ -52,10 +55,11 @@ export default function AdminSettings() {
       // Save Logo to general settings
       await setDoc(doc(db, 'settings', 'general'), {
         logoUrl: settings.logoUrl,
+        faviconUrl: settings.faviconUrl,
       }, { merge: true });
 
       // Save Appearance settings
-      const { logoUrl, ...appearance } = settings;
+      const { logoUrl, faviconUrl, ...appearance } = settings;
       await setDoc(doc(db, 'settings', 'appearance'), {
         ...appearance,
         updatedAt: new Date().toISOString(),
@@ -87,23 +91,65 @@ export default function AdminSettings() {
             <h3 className="text-lg font-serif font-bold uppercase tracking-widest text-brand-olive">Header Controls</h3>
           </div>
           <div className="bg-white p-10 rounded-[3rem] border border-brand-olive/5 shadow-sm space-y-8">
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Brand Logo URL</label>
-              <input 
-                type="text" 
-                className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
-                value={settings.logoUrl}
-                onChange={e => setSettings({...settings, logoUrl: e.target.value})}
-                placeholder="https://example.com/logo.png"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 relative">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Brand Logo</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const compressed = await processImage(file, { maxWidth: 500, maxHeight: 500 });
+                      setSettings({ ...settings, logoUrl: compressed });
+                    }
+                  }}
+                  className="hidden"
+                  id="logo-upload"
+                />
+                <label htmlFor="logo-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                  <span className="text-xs font-bold text-brand-olive flex items-center"><Upload className="w-4 h-4 mr-2" /> Upload Logo</span>
+                </label>
+                {settings.logoUrl && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-xl flex items-center justify-center">
+                    <img src={settings.logoUrl} alt="Logo" className="w-auto h-12 object-contain" />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2 relative">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Favicon</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const compressed = await processImage(file, { isFavicon: true, format: 'image/png' });
+                      setSettings({ ...settings, faviconUrl: compressed });
+                    }
+                  }}
+                  className="hidden"
+                  id="favicon-upload"
+                />
+                <label htmlFor="favicon-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                  <span className="text-xs font-bold text-brand-olive flex items-center"><Upload className="w-4 h-4 mr-2" /> Upload Favicon</span>
+                </label>
+                {settings.faviconUrl && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-xl flex items-center justify-center">
+                    <img src={settings.faviconUrl} alt="Favicon" className="w-8 h-8 object-contain" />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Top Bar Announcement</label>
+              <p className="text-[10px] text-gray-500 ml-1 mb-2">This message will appear at the very top of the website header.</p>
               <input 
                 type="text" 
                 className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
                 value={settings.topBarMessage}
                 onChange={e => setSettings({...settings, topBarMessage: e.target.value})}
+                placeholder="e.g. FREE SHIPPING ON ORDERS OVER ₹2000"
               />
             </div>
             <div className="space-y-2">

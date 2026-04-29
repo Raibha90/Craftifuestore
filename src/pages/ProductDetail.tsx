@@ -67,37 +67,11 @@ export default function ProductDetail() {
     fetchProductAndReviews();
   }, [id, navigate]);
 
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const max = 800;
-          if (width > height) {
-            if (width > max) { height *= max / width; width = max; }
-          } else {
-            if (height > max) { width *= max / height; height = max; }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7));
-        };
-        img.src = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
     const file = e.target.files[0];
-    const base64 = await compressImage(file);
+    const { processImage } = await import('../lib/imageUtils');
+    const base64 = await processImage(file, { maxWidth: 800, maxHeight: 800, format: 'image/jpeg', quality: 0.7 });
     setReviewImages(prev => [...prev, base64].slice(0, 3)); // Max 3 images
   };
 

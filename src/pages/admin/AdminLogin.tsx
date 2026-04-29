@@ -14,7 +14,7 @@ export default function AdminLogin() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Admin Login | Craftifue - Handcrafted Elegance";
+    document.title = "Craftifue-HandCrafts";
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
       metaDescription.setAttribute('content', 'Craftifue Admin Portal - Secure entry point for administrative access.');

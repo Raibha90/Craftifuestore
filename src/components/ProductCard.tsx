@@ -50,17 +50,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
         </Link>
         <div className="absolute top-4 right-4 z-10">
-          <button 
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
             onClick={handleWishlistToggle}
-            className={`bg-white/90 backdrop-blur-sm p-2.5 rounded-full transition-all shadow-md group ${isFavorited ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+            className={`bg-white/90 backdrop-blur-sm p-2.5 rounded-full transition-all duration-300 shadow-md flex items-center justify-center ${isFavorited ? 'text-red-500' : 'text-gray-400 hover:text-red-500 hover:shadow-lg'}`}
           >
-            <Heart className={`w-4 h-4 transition-transform group-active:scale-125 ${isFavorited ? 'fill-current' : ''}`} />
-          </button>
+            <motion.div animate={isFavorited ? { scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.3 }}>
+              <Heart className={`w-4 h-4 transition-colors ${isFavorited ? 'fill-current text-red-500' : ''}`} />
+            </motion.div>
+          </motion.button>
         </div>
-        <div className="absolute bottom-4 left-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10">
+        <div className="absolute bottom-4 left-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out z-10">
           <button
-            onClick={() => addToCart(product)}
-            className="w-full bg-brand-olive text-brand-cream py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center space-x-2 shadow-lg"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              addToCart(product);
+            }}
+            className="w-full bg-brand-olive text-brand-cream py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center space-x-2 shadow-lg hover:bg-brand-olive/90 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <ShoppingCart className="w-4 h-4" />
             <span>Add to Cart</span>

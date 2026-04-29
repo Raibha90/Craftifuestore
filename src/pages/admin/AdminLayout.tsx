@@ -6,7 +6,7 @@ export default function AdminLayout() {
   const location = useLocation();
 
   useEffect(() => {
-    document.title = "Admin Portal | Craftifue - Handcrafted Elegance";
+    document.title = "Craftifue-HandCrafts";
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
       metaDescription.setAttribute('content', 'Craftifue Admin Dashboard - Manage products, orders, and store settings.');

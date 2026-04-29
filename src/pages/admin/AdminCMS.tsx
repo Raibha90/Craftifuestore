@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Save, Loader2, Layout, FileText, Image as ImageIcon, Sparkles, Target, Eye } from 'lucide-react';
+import { Save, Loader2, Layout, FileText, Image as ImageIcon, Sparkles, Target, Eye, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from '@google/genai';
+import { processImage } from '../../lib/imageUtils';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 type PageType = 'home' | 'about_story' | 'about_mission';
 
@@ -22,36 +26,29 @@ export default function AdminCMS() {
 
     setGeneratingAI(true);
     try {
-      const explicitInstruction = `Required Image Properties: Dimension strictly ${imageReqs.width}x${imageReqs.height} pixels, output format must be ${imageReqs.format}.`;
+      const explicitInstruction = `Cinematic luxury photography. High-end aesthetic, minimal background.`;
       const prompt = `${aiPrompt}. ${explicitInstruction}`;
 
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          model: 'gemini-1.5-flash',
-          contents: [{ text: prompt }] 
-        })
-      });
-      if (!response.ok) throw new Error('AI request failed');
-      const result = await response.json();
-
-      let imageUrl = '';
-      if (result.candidates) {
-        for (const candidate of result.candidates) {
-          if (candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData) {
-                imageUrl = `data:image/png;base64,${part.inlineData.data}`;
-                break;
-              }
-            }
-          }
-          if (imageUrl) break;
+      const response = await ai.models.generateImages({
+        model: 'imagen-3.0-generate-002',
+        prompt: prompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          aspectRatio: '16:9'
         }
+      });
+      
+      if (!response.generatedImages || response.generatedImages.length === 0) {
+        throw new Error('No image was generated. Please try again.');
       }
 
-      if (!imageUrl) throw new Error('No image generated');
+      const base64 = response.generatedImages[0].image.imageBytes;
+      const rawImageUrl = `data:image/jpeg;base64,${base64}`;
+      const res = await fetch(rawImageUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'ai_generated.jpg', { type: 'image/jpeg' });
+      const imageUrl = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg', quality: 0.8 });
 
       // Update local state
       const updatedContent = { ...content, [targetField]: imageUrl };
@@ -179,7 +176,7 @@ export default function AdminCMS() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center px-1">
-                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Spotlight Image URL</label>
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Spotlight Image Upload</label>
                   <button 
                     type="button"
                     onClick={() => {
@@ -193,12 +190,29 @@ export default function AdminCMS() {
                     <span>Generate AI</span>
                   </button>
                 </div>
-                <input 
-                  type="text" 
-                  className="w-full px-6 py-4 bg-white border border-transparent rounded-2xl focus:border-brand-gold outline-none transition-all"
-                  value={content.philosophyImage}
-                  onChange={e => setContent({...content, philosophyImage: e.target.value})}
-                />
+                <div className="relative">
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    id="philosophy-image-upload"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg' });
+                        setContent({...content, philosophyImage: compressed});
+                      }
+                    }}
+                    className="hidden" 
+                  />
+                  <label htmlFor="philosophy-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                     <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Spotlight Image</span>
+                  </label>
+                  {content.philosophyImage && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                      <img src={content.philosophyImage} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -261,7 +275,7 @@ export default function AdminCMS() {
                 </div>
                 <div className="space-y-2">
                    <div className="flex justify-between items-center px-1">
-                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Story Image URL</label>
+                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Story Image Upload</label>
                      <button 
                         type="button"
                         onClick={() => {
@@ -275,15 +289,29 @@ export default function AdminCMS() {
                        <span>Generate AI</span>
                      </button>
                    </div>
-                   <input 
-                      type="text" 
-                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
-                      value={content.mainImage}
-                      onChange={e => setContent({...content, mainImage: e.target.value})}
-                   />
-                   <div className="mt-4 aspect-[4/5] rounded-[2rem] overflow-hidden">
-                      <img src={content.mainImage} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                   <div className="relative">
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        id="story-image-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg' });
+                            setContent({...content, mainImage: compressed});
+                          }
+                        }}
+                        className="hidden" 
+                      />
+                      <label htmlFor="story-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                         <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Story Image</span>
+                      </label>
                    </div>
+                   {content.mainImage && (
+                     <div className="mt-4 aspect-[4/5] rounded-[2rem] overflow-hidden border border-brand-olive/5 shadow-sm">
+                        <img src={content.mainImage} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                     </div>
+                   )}
                 </div>
               </div>
             </div>
@@ -325,7 +353,7 @@ export default function AdminCMS() {
                 />
                 <div className="space-y-2">
                   <div className="flex justify-between items-center px-1">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Mission Image URL</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Mission Image Upload</label>
                     <button 
                       type="button"
                       onClick={() => {
@@ -340,12 +368,21 @@ export default function AdminCMS() {
                     </button>
                   </div>
                   <input 
-                    type="text" 
-                    className="w-full px-6 py-2 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-brand-gold outline-none transition-all text-[10px]"
-                    placeholder="Mission Image URL"
-                    value={content.missionImage}
-                    onChange={e => setContent({...content, missionImage: e.target.value})}
+                    type="file" 
+                    accept="image/*"
+                    id="mission-image-upload"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg' });
+                        setContent({...content, missionImage: compressed});
+                      }
+                    }}
+                    className="hidden" 
                   />
+                  <label htmlFor="mission-image-upload" className="flex items-center justify-center w-full px-6 py-2 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-all text-xs text-brand-olive font-bold">
+                    <ImageIcon className="w-3 h-3 mr-2" /> Upload Mission Image
+                  </label>
                   {content.missionImage && (
                     <div className="mt-2 h-20 rounded-xl overflow-hidden border border-brand-olive/5">
                       <img src={content.missionImage} alt="Mission Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -375,7 +412,7 @@ export default function AdminCMS() {
                 />
                 <div className="space-y-2">
                   <div className="flex justify-between items-center px-1">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Vision Image URL</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Vision Image Upload</label>
                     <button 
                       type="button"
                       onClick={() => {
@@ -390,12 +427,21 @@ export default function AdminCMS() {
                     </button>
                   </div>
                   <input 
-                    type="text" 
-                    className="w-full px-6 py-2 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-brand-gold outline-none transition-all text-[10px]"
-                    placeholder="Vision Image URL"
-                    value={content.visionImage}
-                    onChange={e => setContent({...content, visionImage: e.target.value})}
+                    type="file" 
+                    accept="image/*"
+                    id="vision-image-upload"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg' });
+                        setContent({...content, visionImage: compressed});
+                      }
+                    }}
+                    className="hidden" 
                   />
+                  <label htmlFor="vision-image-upload" className="flex items-center justify-center w-full px-6 py-2 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-all text-xs text-brand-olive font-bold">
+                    <ImageIcon className="w-3 h-3 mr-2" /> Upload Vision Image
+                  </label>
                   {content.visionImage && (
                     <div className="mt-2 h-20 rounded-xl overflow-hidden border border-brand-olive/5">
                       <img src={content.visionImage} alt="Vision Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />

@@ -46,9 +46,35 @@ import AIPersonalizerModal from './components/AIPersonalizerModal';
 
 import ErrorBoundary from './components/ErrorBoundary';
 
+import React, { useEffect } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from './lib/firebase';
+
+function DynamicHead() {
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.faviconUrl) {
+          let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+          }
+          link.href = data.faviconUrl;
+        }
+      }
+    });
+    return () => unsub();
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <ErrorBoundary id="app-error-boundary">
+      <DynamicHead />
       <AuthProvider>
         <WishlistProvider>
           <CartProvider>

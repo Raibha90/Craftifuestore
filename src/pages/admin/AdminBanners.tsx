@@ -5,6 +5,9 @@ import { Banner } from '../../types';
 import { Plus, Trash2, LayoutPanelLeft, Link as LinkIcon, Eye, Save, X, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { GoogleGenAI } from '@google/genai';
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 export default function AdminBanners() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,53 +74,40 @@ export default function AdminBanners() {
 
     setIsGeneratingAi(true);
     try {
-      const explicitInstruction = `Required Image Properties: Dimension strictly ${imageReqs.width}x${imageReqs.height} pixels, output format must be ${imageReqs.format}.`;
-      const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A cinematic, ultra-wide luxury photography of ${newBanner.title} - ${newBanner.subtitle}. High-end jewellery brand aesthetic, minimal background, soft ambient lighting, photorealistic. ${explicitInstruction}`;
+      const explicitInstruction = `Cinematic, ultra-wide luxury photography. High-end jewellery brand aesthetic, minimal background.`;
+      const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A cinematic, ultra-wide luxury photography of ${newBanner.title} - ${newBanner.subtitle}. High-end jewellery brand aesthetic, minimal background, soft ambient lighting, photorealistic.`;
       
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          model: 'gemini-1.5-flash',
-          contents: [{ text: prompt }] 
-        })
-      });
-      if (!response.ok) throw new Error('AI request failed');
-      const result = await response.json();
-
-      let foundImage = false;
-      if (result.candidates) {
-        for (const candidate of result.candidates) {
-          if (candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData) {
-                const base64 = part.inlineData.data;
-                const imageUrl = `data:image/png;base64,${base64}`;
-                
-                // Update local state
-                const updatedBanner = { ...newBanner, imageUrl };
-                setNewBanner(updatedBanner);
-
-                // Automatically save to DB if we are editing an existing banner
-                if (editingId) {
-                  await updateDoc(doc(db, 'banners', editingId), {
-                    imageUrl,
-                    updatedAt: serverTimestamp()
-                  });
-                  fetchBanners();
-                }
-                
-                foundImage = true;
-                break;
-              }
-            }
-          }
-          if (foundImage) break;
+      const response = await ai.models.generateImages({
+        model: 'imagen-3.0-generate-002',
+        prompt: prompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          aspectRatio: '16:9'
         }
+      });
+      
+      if (!response.generatedImages || response.generatedImages.length === 0) {
+        throw new Error('No image was generated. Please try again.');
       }
 
-      if (!foundImage) {
-        throw new Error('No image was generated. Please try again.');
+      const base64 = response.generatedImages[0].image.imageBytes;
+      const rawImageUrl = `data:image/jpeg;base64,${base64}`;
+      const res = await fetch(rawImageUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'ai_generated.jpg', { type: 'image/jpeg' });
+      const { processImage } = await import('../../lib/imageUtils');
+      const imageUrl = await processImage(file, { maxWidth: 1920, maxHeight: 1080, format: 'image/jpeg', quality: 0.8 });
+      
+      const updatedBanner = { ...newBanner, imageUrl };
+      setNewBanner(updatedBanner);
+
+      if (editingId) {
+        await updateDoc(doc(db, 'banners', editingId), {
+          imageUrl,
+          updatedAt: serverTimestamp()
+        });
+        fetchBanners();
       }
       
       setIsAiModalOpen(false);
@@ -303,7 +293,7 @@ export default function AdminBanners() {
                   </div>
                   <div className="space-y-2 col-span-2">
                     <div className="flex justify-between items-center px-1">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Background Image URL</label>
+                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Background Image Upload</label>
                       <button 
                         type="button"
                         onClick={() => {
@@ -317,14 +307,28 @@ export default function AdminBanners() {
                       </button>
                     </div>
                     <div className="relative">
-                      <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input 
-                        type="url" 
-                        required 
-                        className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" 
-                        value={newBanner.imageUrl} 
-                        onChange={e => setNewBanner({...newBanner, imageUrl: e.target.value})} 
-                      />
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          id="banner-image-upload"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const { processImage } = await import('../../lib/imageUtils');
+                              const compressed = await processImage(file, { maxWidth: 1920, maxHeight: 1080, format: 'image/jpeg', quality: 0.8 });
+                              setNewBanner({...newBanner, imageUrl: compressed});
+                            }
+                          }}
+                          className="hidden" 
+                        />
+                        <label htmlFor="banner-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                          <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Background Image</span>
+                        </label>
+                        {newBanner.imageUrl && (
+                          <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                            <img src={newBanner.imageUrl} alt="Preview" className="w-full h-24 object-cover rounded-lg" />
+                          </div>
+                        )}
                     </div>
                   </div>
                   <div className="space-y-2">

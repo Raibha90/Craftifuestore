@@ -12,7 +12,7 @@ export default function ForgotPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Password Recovery | Craftifue Admin";
+    document.title = "Craftifue-HandCrafts";
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {

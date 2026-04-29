@@ -2,56 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Product } from '../../types';
-import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkles, Loader2, Upload } from 'lucide-react';
+import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkles, Loader2, Upload, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI, Type } from '@google/genai';
 
-const compressImage = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const maxDim = 800; // max dimension
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-        if (width > height) {
-          if (width > maxDim) {
-            height *= maxDim / width;
-            width = maxDim;
-          }
-        } else {
-          if (height > maxDim) {
-            width *= maxDim / height;
-            height = maxDim;
-          }
-        }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Compress image to JPEG at 0.7 quality
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        resolve(dataUrl);
-      };
-      img.onerror = reject;
-      if (event.target?.result) {
-        img.src = event.target.result as string;
-      } else {
-        reject(new Error('Failed to read file'));
-      }
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
+import { processImage } from '../../lib/imageUtils';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -71,11 +29,64 @@ export default function AdminProducts() {
     images: [''],
     stock: 0,
     material: '',
+    seoTitle: '',
+    tags: [] as string[],
     variants: [] as any[]
   });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [stockFilter, setStockFilter] = useState('All');
+  const [priceFilter, setPriceFilter] = useState('All');
+
+  const [generatingMeta, setGeneratingMeta] = useState(false);
+
+  const handleGenerateMetadata = async () => {
+    if (!newProduct.name) {
+      alert('Please enter at least a Product Name first.');
+      return;
+    }
+    setGeneratingMeta(true);
+    try {
+      const prompt = `You are an expert e-commerce copywriter. Generate a compelling product description, SEO tags (list of strings), and an SEO title for this product:
+      Name: ${newProduct.name}
+      Category: ${newProduct.category}
+      Material: ${newProduct.material}
+      `;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              description: { type: Type.STRING },
+              tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+              seoTitle: { type: Type.STRING }
+            },
+            required: ["description", "tags", "seoTitle"]
+          }
+        }
+      });
+
+      const text = response.text || "{}";
+      const data = JSON.parse(text);
+
+      setNewProduct(prev => ({
+        ...prev,
+        description: data.description || prev.description,
+        tags: data.tags || prev.tags,
+        seoTitle: data.seoTitle || prev.seoTitle
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert('Error generating metadata: ' + err.message);
+    } finally {
+      setGeneratingMeta(false);
+    }
+  };
 
   const handleGenerateAIImage = async (idx: number) => {
     if (!aiPrompt && !newProduct.name) {
@@ -85,52 +96,41 @@ export default function AdminProducts() {
 
     setGeneratingAI(idx);
     try {
-      const explicitInstruction = `Required Image Properties: Dimension strictly ${imageReqs.width}x${imageReqs.height} pixels, output format must be ${imageReqs.format}.`;
-      const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A high-quality, professional product photograph of ${newProduct.name} - ${newProduct.description}. Elegant, luxury jewellery aesthetic, soft lighting, clean background. ${explicitInstruction}`;
+      const explicitInstruction = `Product photography, pure white background, studio lighting.`;
+      const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A high-quality, professional product photograph of ${newProduct.name} - ${newProduct.material}. Elegant aesthetic, soft lighting, clean white background.`;
       
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          model: 'gemini-1.5-flash',
-          contents: [{ text: prompt }] 
-        })
-      });
-      if (!response.ok) throw new Error('AI request failed');
-      const result = await response.json();
-
-      let foundImage = false;
-      // result here is the serialized object. Need to adjust check if it's the right property
-      if (result.candidates) {
-        for (const candidate of result.candidates) {
-          if (candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData) {
-                const base64 = part.inlineData.data;
-                const imageUrl = `data:image/png;base64,${base64}`;
-                const newImages = [...newProduct.images];
-                newImages[idx] = imageUrl;
-                setNewProduct({ ...newProduct, images: newImages });
-
-                // Automatically save to DB if editing an existing product
-                if (editingId) {
-                  await updateDoc(doc(db, 'products', editingId), {
-                    images: newImages,
-                    updatedAt: serverTimestamp()
-                  });
-                }
-
-                foundImage = true;
-                break;
-              }
-            }
-          }
-          if (foundImage) break;
+      const response = await ai.models.generateImages({
+        model: 'imagen-3.0-generate-002',
+        prompt: prompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          aspectRatio: '1:1'
         }
+      });
+      
+      if (!response.generatedImages || response.generatedImages.length === 0) {
+        throw new Error('No image was generated. Please try again.');
       }
 
-      if (!foundImage) {
-        throw new Error('No image was generated. Please try again.');
+      const base64 = response.generatedImages[0].image.imageBytes;
+      const rawImageUrl = `data:image/jpeg;base64,${base64}`;
+      const res = await fetch(rawImageUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'ai_generated.jpg', { type: 'image/jpeg' });
+      const { processImage } = await import('../../lib/imageUtils');
+      const imageUrl = await processImage(file, { maxWidth: 800, maxHeight: 800, format: 'image/jpeg', quality: 0.7 });
+      
+      const newImages = [...newProduct.images];
+      newImages[idx] = imageUrl;
+      setNewProduct({ ...newProduct, images: newImages });
+
+      // Automatically save to DB if editing an existing product
+      if (editingId) {
+        await updateDoc(doc(db, 'products', editingId), {
+          images: newImages,
+          updatedAt: serverTimestamp()
+        });
       }
       
       setIsAiModalOpen(false);
@@ -163,7 +163,17 @@ export default function AdminProducts() {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    
+    let matchesStock = true;
+    if (stockFilter === 'In Stock') matchesStock = p.stock > 0;
+    if (stockFilter === 'Out of Stock') matchesStock = p.stock === 0;
+
+    let matchesPrice = true;
+    if (priceFilter === 'Under ₹1000') matchesPrice = p.price < 1000;
+    if (priceFilter === '₹1000 - ₹5000') matchesPrice = p.price >= 1000 && p.price <= 5000;
+    if (priceFilter === 'Over ₹5000') matchesPrice = p.price > 5000;
+
+    return matchesSearch && matchesCategory && matchesStock && matchesPrice;
   });
 
   const categories = ['All', ...new Set(products.map(p => p.category))];
@@ -178,6 +188,8 @@ export default function AdminProducts() {
       images: product.images.length > 0 ? product.images : [''],
       stock: product.stock,
       material: product.material || '',
+      seoTitle: product.seoTitle || '',
+      tags: product.tags || [],
       variants: product.variants || []
     });
     setIsModalOpen(true);
@@ -232,7 +244,7 @@ export default function AdminProducts() {
       
       setIsModalOpen(false);
       setEditingId(null);
-      setNewProduct({ name: '', description: '', price: 0, category: 'Necklace', images: [''], stock: 0, material: '', variants: [] });
+      setNewProduct({ name: '', description: '', price: 0, category: 'Necklace', images: [''], stock: 0, material: '', seoTitle: '', tags: [], variants: [] });
       fetchProducts();
     } catch (err) {
       console.error(err);
@@ -257,33 +269,53 @@ export default function AdminProducts() {
           <h1 className="text-4xl font-serif font-bold text-brand-olive uppercase tracking-tight">Artisan Catalog</h1>
           <p className="text-gray-400 mt-2">Curate and manage your fine collection of handcrafted treasures.</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-          <div className="relative flex-grow min-w-[200px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search products..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-6 py-4 bg-white border border-brand-olive/5 rounded-full text-xs font-bold uppercase tracking-widest focus:ring-2 focus:ring-brand-gold/20 outline-none shadow-sm"
-            />
-          </div>
-          <select 
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-6 py-4 bg-white border border-brand-olive/5 rounded-full text-xs font-bold uppercase tracking-widest outline-none shadow-sm cursor-pointer"
-          >
-            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-          </select>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center space-x-3 bg-brand-olive text-brand-cream px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-brand-olive/20 transition-all group"
-          >
-            <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
-            <span>New Masterpiece</span>
-          </button>
-        </div>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center justify-center space-x-3 bg-brand-olive text-brand-cream px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-brand-olive/20 transition-all group shrink-0"
+        >
+          <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
+          <span>New Masterpiece</span>
+        </button>
       </header>
+
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-8">
+        <div className="relative flex-grow min-w-[200px]">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="Search products..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-6 py-4 bg-white border border-brand-olive/5 rounded-full text-xs font-bold uppercase tracking-widest focus:ring-2 focus:ring-brand-gold/20 outline-none shadow-sm"
+          />
+        </div>
+        <select 
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="px-6 py-4 bg-white border border-brand-olive/5 rounded-full text-xs font-bold uppercase tracking-widest outline-none shadow-sm cursor-pointer min-w-[140px]"
+        >
+          {categories.map(cat => <option key={cat} value={cat}>{cat === 'All' ? 'All Categories' : cat}</option>)}
+        </select>
+        <select 
+          value={stockFilter}
+          onChange={(e) => setStockFilter(e.target.value)}
+          className="px-6 py-4 bg-white border border-brand-olive/5 rounded-full text-xs font-bold uppercase tracking-widest outline-none shadow-sm cursor-pointer min-w-[140px]"
+        >
+          <option value="All">All Stock</option>
+          <option value="In Stock">In Stock</option>
+          <option value="Out of Stock">Out of Stock</option>
+        </select>
+        <select 
+          value={priceFilter}
+          onChange={(e) => setPriceFilter(e.target.value)}
+          className="px-6 py-4 bg-white border border-brand-olive/5 rounded-full text-xs font-bold uppercase tracking-widest outline-none shadow-sm cursor-pointer min-w-[140px]"
+        >
+          <option value="All">All Prices</option>
+          <option value="Under ₹1000">Under ₹1000</option>
+          <option value="₹1000 - ₹5000">₹1000 - ₹5000</option>
+          <option value="Over ₹5000">Over ₹5000</option>
+        </select>
+      </div>
 
       <div className="bg-white rounded-3xl border border-brand-olive/5 shadow-sm overflow-hidden">
         {loading ? (
@@ -367,14 +399,30 @@ export default function AdminProducts() {
                   onClick={() => {
                     setIsModalOpen(false);
                     setEditingId(null);
-                    setNewProduct({ name: '', description: '', price: 0, category: 'Necklace', images: [''], stock: 0, material: '', variants: [] });
+                    setNewProduct({ name: '', description: '', price: 0, category: 'Necklace', images: [''], stock: 0, material: '', seoTitle: '', tags: [], variants: [] });
                   }} 
                   className="p-2 hover:bg-gray-200 rounded-full transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <form onSubmit={handleSaveProduct} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
+              <form onSubmit={handleSaveProduct} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div className="flex items-center justify-between bg-brand-gold/10 p-4 rounded-2xl">
+                  <div>
+                    <h4 className="font-serif font-bold text-brand-olive text-sm">AI Product Assistant</h4>
+                    <p className="text-xs text-gray-500 mt-1">Generate SEO metadata automatically from name and category.</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={handleGenerateMetadata}
+                    disabled={generatingMeta}
+                    className="flex items-center space-x-2 bg-brand-gold text-brand-olive px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-yellow-400 transition-colors"
+                  >
+                    {generatingMeta ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                    <span>Auto Meta</span>
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2 col-span-2">
                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Product Name <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
@@ -383,6 +431,14 @@ export default function AdminProducts() {
                   <div className="space-y-2 col-span-2">
                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Description <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <textarea rows={3} required className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">SEO Title</label>
+                    <input type="text" className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" value={newProduct.seoTitle} onChange={e => setNewProduct({...newProduct, seoTitle: e.target.value})} />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Tags (Comma separated)</label>
+                    <input type="text" className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" value={newProduct.tags.join(', ')} onChange={e => setNewProduct({...newProduct, tags: e.target.value.split(',').map(t=>t.trim())})} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Price (₹) <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
@@ -441,7 +497,8 @@ export default function AdminProducts() {
                                 const file = e.target.files?.[0];
                                 if (file) {
                                   try {
-                                    const compressedDataUrl = await compressImage(file);
+                                    const { processImage } = await import('../../lib/imageUtils');
+                                    const compressedDataUrl = await processImage(file, { maxWidth: 800, maxHeight: 800, format: 'image/jpeg', quality: 0.7 });
                                     const newImages = [...newProduct.images];
                                     newImages[idx] = compressedDataUrl;
                                     setNewProduct({...newProduct, images: newImages});

@@ -26,7 +26,7 @@ export default function AIPersonalizerModal() {
   const [roomOutfit, setRoomOutfit] = useState('');
   
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
-  const { dispatch: cartDispatch } = useCart();
+  const { addToCart } = useCart();
   const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const navigate = useNavigate();
 
@@ -129,7 +129,7 @@ export default function AIPersonalizerModal() {
   };
 
   const handleAddToCart = (product: Product) => {
-    cartDispatch({ type: 'ADD_ITEM', payload: { product, quantity: 1 } });
+    addToCart(product, 1);
     navigate('/cart');
     setIsOpen(false);
   };

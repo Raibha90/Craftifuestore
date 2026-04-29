@@ -186,16 +186,25 @@ export default function AdminDashboard() {
             <div className="bg-white p-8 rounded-[2.5rem] border border-brand-olive/5 shadow-sm">
                <form onSubmit={handleSaveSettings} className="space-y-6">
                   <div className="space-y-2">
-                     <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Store Logo URL</label>
+                     <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Store Logo Upload</label>
                      <div className="relative">
-                        <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input 
-                          type="text" 
-                          value={logoUrl}
-                          onChange={(e) => setLogoUrl(e.target.value)}
-                          placeholder="https://example.com/logo.png" 
-                          className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all" 
+                           type="file" 
+                           accept="image/*"
+                           id="dashboard-logo-upload"
+                           onChange={async (e) => {
+                             const file = e.target.files?.[0];
+                             if (file) {
+                               const { processImage } = await import('../../lib/imageUtils');
+                               const compressed = await processImage(file, { maxWidth: 500, maxHeight: 500 });
+                               setLogoUrl(compressed);
+                             }
+                           }}
+                           className="hidden" 
                         />
+                        <label htmlFor="dashboard-logo-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-full cursor-pointer hover:bg-gray-100 transition-all">
+                          <span className="text-sm font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Logo</span>
+                        </label>
                      </div>
                   </div>
 

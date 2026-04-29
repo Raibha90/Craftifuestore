@@ -17,6 +17,8 @@ export interface Product {
   stock: number;
   isFeatured?: boolean;
   variants?: ProductVariant[];
+  tags?: string[];
+  seoTitle?: string;
   createdAt: string;
 }
 
