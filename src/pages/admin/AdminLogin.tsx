@@ -138,6 +138,18 @@ export default function AdminLogin() {
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Authorize Entry</span>}
           </button>
+          
+          <button
+            disabled={loading}
+            type="button"
+            onClick={() => {
+              setEmail('admin@craftifue.store');
+              setPassword('admin123456');
+            }}
+            className="w-full bg-white text-brand-olive border border-brand-olive/10 py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-olive/5 transition-all flex items-center justify-center space-x-3 mt-4"
+          >
+            <span>Use Admin Demo</span>
+          </button>
         </form>
 
         <div className="mt-10 pt-8 border-t border-gray-50 text-center">

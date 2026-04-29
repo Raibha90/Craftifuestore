@@ -2,8 +2,56 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Product } from '../../types';
-import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkles, Loader2, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 800; // max dimension
+
+        if (width > height) {
+          if (width > maxDim) {
+            height *= maxDim / width;
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width *= maxDim / height;
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress image to JPEG at 0.7 quality
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = reject;
+      if (event.target?.result) {
+        img.src = event.target.result as string;
+      } else {
+        reject(new Error('Failed to read file'));
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -384,6 +432,33 @@ export default function AdminProducts() {
                             }} 
                           />
                           <div className="absolute right-4 flex items-center space-x-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id={`image-upload-${idx}`}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const compressedDataUrl = await compressImage(file);
+                                    const newImages = [...newProduct.images];
+                                    newImages[idx] = compressedDataUrl;
+                                    setNewProduct({...newProduct, images: newImages});
+                                  } catch (error) {
+                                    console.error('Image compression failed:', error);
+                                    alert('Failed to process image');
+                                  }
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`image-upload-${idx}`}
+                              className="p-2 text-brand-olive cursor-pointer hover:bg-brand-olive/10 rounded-xl transition-all"
+                              title="Upload Local Image"
+                            >
+                              <Upload className="w-4 h-4" />
+                            </label>
                             <button 
                               type="button"
                               onClick={() => {

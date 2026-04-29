@@ -26,6 +26,7 @@ import AdminCMS from './pages/admin/AdminCMS';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminVendors from './pages/admin/AdminVendors';
 import AdminWorkbook from './pages/admin/workbook/AdminWorkbook';
+import AdminAI from './pages/admin/AdminAI';
 import Wishlist from './pages/Wishlist';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
@@ -41,6 +42,8 @@ import Offers from './pages/Offers';
 import FloatingGiftBox from './components/FloatingGiftBox';
 import WhatsAppChatbot from './components/WhatsAppChatbot';
 
+import AIPersonalizerModal from './components/AIPersonalizerModal';
+
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -52,6 +55,7 @@ function App() {
             <Router>
               <FloatingGiftBox />
               <WhatsAppChatbot />
+              <AIPersonalizerModal />
               <Routes>
                 {/* Admin Routes */}
                 <Route path="/admin">
@@ -71,6 +75,7 @@ function App() {
                     <Route path="vendors" element={<AdminVendors />} />
                     <Route path="cms" element={<AdminCMS />} />
                     <Route path="workbook" element={<AdminWorkbook />} />
+                    <Route path="ai" element={<AdminAI />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
                 </Route>

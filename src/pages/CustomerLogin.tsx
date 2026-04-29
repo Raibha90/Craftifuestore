@@ -104,6 +104,18 @@ export default function CustomerLogin() {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Authorize Access</span>}
             </button>
             
+            <button
+              disabled={loading}
+              type="button"
+              onClick={() => {
+                setEmail('demo@example.com');
+                setPassword('demo123456');
+              }}
+              className="w-full bg-white text-brand-olive border border-brand-olive/10 py-5 rounded-full font-bold uppercase tracking-widest text-[10px] hover:bg-brand-olive/5 transition-all flex items-center justify-center space-x-3 mt-4"
+            >
+              <span>Use Demo Credentials</span>
+            </button>
+            
             <div className="text-center pt-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
                 New user? <Link to="/signup" className="text-brand-gold">Create Account</Link>

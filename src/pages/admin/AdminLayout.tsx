@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, ListOrdered, Tag, LayoutPanelLeft, Home, FileText, Gem, MessageSquare, Users } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ListOrdered, Tag, LayoutPanelLeft, Home, FileText, Gem, MessageSquare, Users, Sparkles } from 'lucide-react';
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -23,6 +23,7 @@ export default function AdminLayout() {
     { icon: Tag, label: 'Coupons', path: '/admin/coupons' },
     { icon: LayoutPanelLeft, label: 'Banners', path: '/admin/banners' },
     { icon: FileText, label: 'CMS Pages', path: '/admin/cms' },
+    { icon: Sparkles, label: 'AI Personalizer', path: '/admin/ai' },
     { icon: Home, label: 'Settings', path: '/admin/settings' },
   ];
 

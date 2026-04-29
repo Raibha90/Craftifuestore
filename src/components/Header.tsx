@@ -232,8 +232,15 @@ export default function Header({ id }: { id: string }) {
                 </Link>
               )}
             </div>
-            <button className="p-2 text-gray-600 hover:bg-brand-olive/5 rounded-full transition-colors relative z-[60]" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              <Menu className="w-6 h-6" />
+            <button 
+              className="p-2 text-brand-olive hover:bg-brand-olive/5 rounded-full transition-colors relative z-[60] w-10 h-10 flex flex-col items-center justify-center group" 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <div className="flex flex-col items-end space-y-1.5 w-6">
+                <span className="w-full h-[2px] bg-current rounded-full transform transition-all duration-300"></span>
+                <span className="w-4 h-[2px] bg-current rounded-full transform transition-all duration-300 group-hover:w-full"></span>
+                <span className="w-full h-[2px] bg-current rounded-full transform transition-all duration-300"></span>
+              </div>
             </button>
           </div>
           </div>
@@ -377,10 +384,11 @@ export default function Header({ id }: { id: string }) {
                     {item.path ? (
                       <Link 
                         to={item.path} 
-                        className="text-2xl md:text-3xl font-serif font-bold text-white hover:text-brand-gold transition-colors block"
+                        className="text-2xl md:text-3xl font-serif font-bold text-white transition-colors block group relative w-fit"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {item.name}
+                        <span className="absolute -bottom-2 left-0 w-0 h-0.5 bg-brand-gold transition-all duration-300 group-hover:w-full"></span>
                       </Link>
                     ) : (
                       <>
@@ -390,10 +398,11 @@ export default function Header({ id }: { id: string }) {
                             <Link
                               key={sub.label}
                               to={sub.path}
-                              className="block text-xl md:text-2xl font-serif text-white/80 hover:text-white transition-colors"
+                              className="block text-xl md:text-2xl font-serif text-white/80 transition-colors group relative w-fit"
                               onClick={() => setIsMenuOpen(false)}
                             >
                               {sub.label}
+                              <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-brand-gold transition-all duration-300 group-hover:w-full"></span>
                             </Link>
                           ))}
                         </div>

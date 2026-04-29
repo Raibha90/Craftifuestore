@@ -114,14 +114,24 @@ export default function CategoryProducts() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+    >
       {/* Header */}
-      <div className="text-center mb-16">
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+        className="text-center mb-16"
+      >
         <h1 className="text-5xl font-serif font-bold text-brand-olive mb-4">{categoryTitle}</h1>
         <p className="text-gray-500 max-w-2xl mx-auto">
           Explore our collection of {categoryTitle.toLowerCase()} handcrafted by expert artisans with premium materials.
         </p>
-      </div>
+      </motion.div>
 
       {/* Filters & Sorting */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-12 py-4 border-y border-brand-olive/10 relative z-30">
@@ -235,6 +245,6 @@ export default function CategoryProducts() {
           <p className="text-gray-500 italic">No products found in this category.</p>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

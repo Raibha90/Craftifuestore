@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Award, Truck, Star, Quote, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
@@ -58,6 +58,13 @@ const fallbackProducts: Product[] = [
 ];
 
 export default function Home() {
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"]
+  });
+  const yParallax = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
@@ -165,7 +172,7 @@ export default function Home() {
   return (
     <div className="space-y-24 pb-24">
       {/* Hero Section */}
-      <section className="relative h-[85vh] flex items-center overflow-hidden">
+      <section ref={heroRef} className="relative h-[85vh] flex items-center overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={bannerIndex}
@@ -173,7 +180,8 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1 }}
-            className="absolute inset-0 z-0"
+            className="absolute inset-0 z-0 origin-center"
+            style={{ y: yParallax, scale: 1.1 }}
           >
             <img
               src={activeBanner.imageUrl}
@@ -181,37 +189,58 @@ export default function Home() {
               className="w-full h-full object-cover grayscale-[0.1]"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-brand-olive/20" />
+            <div className="absolute inset-0 bg-brand-olive/40" />
           </motion.div>
         </AnimatePresence>
         
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-16">
           <AnimatePresence mode="wait">
             <motion.div
               key={bannerIndex}
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 50 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
               className="max-w-2xl text-brand-cream"
             >
-              <h5 className="text-sm font-bold uppercase tracking-[0.4em] mb-4 text-brand-gold">
+              <motion.h5 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="text-sm font-bold uppercase tracking-[0.4em] mb-4 text-brand-gold"
+              >
                 New Collection 2026
-              </h5>
-              <h1 className="text-6xl md:text-8xl font-serif font-bold leading-[0.9] mb-8">
+              </motion.h5>
+              <motion.h1 
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.5 }}
+                className="text-6xl md:text-8xl font-serif font-bold leading-[0.9] mb-8"
+              >
                 {activeBanner.title.split(' ').slice(0, -1).join(' ')} <br />
                 <span className="italic font-light">{activeBanner.title.split(' ').slice(-1)}</span>
-              </h1>
-              <p className="text-lg text-brand-cream/80 mb-10 max-w-lg leading-relaxed">
-                {activeBanner.subtitle}
-              </p>
-              <Link
-                to={activeBanner.link || '/category/all'}
-                className="inline-flex items-center space-x-3 bg-brand-gold text-brand-olive px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-cream transition-colors group shadow-lg"
+              </motion.h1>
+              <motion.p 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.7 }}
+                className="text-lg text-brand-cream/90 mb-10 max-w-lg leading-relaxed mix-blend-screen"
               >
-                <span>Explore Collection</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
+                {activeBanner.subtitle}
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.9 }}
+              >
+                <Link
+                  to={activeBanner.link || '/category/all'}
+                  className="inline-flex items-center space-x-3 bg-brand-gold text-brand-olive px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-cream transition-colors group shadow-lg"
+                >
+                  <span>Explore Collection</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
             </motion.div>
           </AnimatePresence>
         </div>
@@ -232,11 +261,17 @@ export default function Home() {
 
       {/* Process Section - MOVED TO TOP */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
+        >
           <h2 className="text-4xl font-serif font-bold text-brand-olive mb-4">The Crafting Process</h2>
           <p className="text-gray-500 max-w-xl mx-auto italic">How we bring traditional Indian artistry to your doorstep, step by meticulously handcrafted step.</p>
           <div className="w-24 h-1 bg-brand-gold mx-auto mt-6" />
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
@@ -297,11 +332,17 @@ export default function Home() {
 
       {/* Featured Categories */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
+        >
           <h2 className="text-4xl font-serif font-bold text-brand-olive mb-4">Explore Our World</h2>
           <p className="text-gray-400 text-xs uppercase tracking-widest font-bold">Handcrafted categories tailored for your lifestyle</p>
           <div className="w-24 h-1 bg-brand-gold mx-auto mt-4" />
-        </div>
+        </motion.div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
@@ -340,7 +381,13 @@ export default function Home() {
 
       {/* Signature Pieces */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="flex flex-col md:flex-row justify-between items-center mb-16 gap-4"
+        >
           <div className="space-y-4 text-center md:text-left">
             <h2 className="text-4xl font-serif font-bold text-brand-olive">Signature Treasures</h2>
             <p className="text-gray-500 italic">One exquisite piece from each of our core heritage collections.</p>
@@ -349,7 +396,7 @@ export default function Home() {
             <div className="w-12 h-[1px] bg-brand-gold mt-3 md:block hidden" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">Curated for 2026</span>
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {[
@@ -394,7 +441,13 @@ export default function Home() {
       <section className="bg-brand-olive py-24 text-brand-cream overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center gap-16">
-            <div className="flex-1 space-y-8">
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="flex-1 space-y-8"
+            >
               <h5 className="text-xs font-bold uppercase tracking-[0.5em] text-brand-gold">Our Philosophy</h5>
               <h2 className="text-4xl md:text-5xl font-serif font-bold leading-tight">
                 {cmsHome?.philosophyHeading || 'Craftsmanship with Conscious Soul'}
@@ -420,8 +473,14 @@ export default function Home() {
               >
                 Learn More
               </Link>
-            </div>
-            <div className="flex-1 relative">
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex-1 relative"
+            >
               <div className="relative z-10 rounded-[4rem] overflow-hidden aspect-[4/5] shadow-2xl">
                 <img
                   src={cmsHome?.philosophyImage || "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=1915&auto=format&fit=crop"}
@@ -432,14 +491,20 @@ export default function Home() {
               </div>
               <div className="absolute -top-12 -right-12 w-64 h-64 border-2 border-brand-gold/20 rounded-full animate-spin-slow" />
               <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-brand-gold/5 rounded-full blur-3xl" />
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Trending Products */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-end mb-16">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="flex justify-between items-end mb-16"
+        >
           <div className="space-y-4">
             <h2 className="text-4xl font-serif font-bold text-brand-olive">Trending Pieces</h2>
             <div className="w-16 h-1 bg-brand-gold" />
@@ -448,7 +513,7 @@ export default function Home() {
             <span>View All</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {loading ? (
@@ -467,11 +532,17 @@ export default function Home() {
       {/* Testimonials Carousel */}
       <section className="bg-brand-cream/50 py-24 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 space-y-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16 space-y-4"
+          >
             <h5 className="text-xs font-bold uppercase tracking-[0.4em] text-brand-gold">Kind Words</h5>
             <h2 className="text-4xl font-serif font-bold text-brand-olive">Customer Experiences</h2>
             <div className="w-16 h-1 bg-brand-gold mx-auto" />
-          </div>
+          </motion.div>
 
           <div className="relative max-w-4xl mx-auto h-[450px]">
             <AnimatePresence initial={false} custom={direction}>
