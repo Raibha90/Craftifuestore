@@ -1,8 +1,17 @@
+import { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ShoppingBag, ListOrdered, Tag, LayoutPanelLeft, Home, FileText, Gem } from 'lucide-react';
 
 export default function AdminLayout() {
   const location = useLocation();
+
+  useEffect(() => {
+    document.title = "Admin Portal | Craftifue - Handcrafted Elegance";
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'Craftifue Admin Dashboard - Manage products, orders, and store settings.');
+    }
+  }, []);
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Overview', path: '/admin' },

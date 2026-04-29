@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import { Lock, Mail, ShieldAlert, Loader2 } from 'lucide-react';
 
@@ -12,6 +12,14 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = "Admin Login | Craftifue - Handcrafted Elegance";
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'Craftifue Admin Portal - Secure entry point for administrative access.');
+    }
+  }, []);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +32,7 @@ export default function AdminLogin() {
 
       // Check if user is actually an admin
       const adminDoc = await getDoc(doc(db, 'users', user.uid));
-      const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@craftique.store';
+      const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@craftique.store' || user.email === 'admin@craftifue.store';
       
       let isRoleAdmin = false;
       if (adminDoc.exists() && adminDoc.data().role === 'admin') {
@@ -102,13 +110,16 @@ export default function AdminLogin() {
           </div>
 
           <div className="space-y-6">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all font-medium"
-            />
+            <div className="relative">
+              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all font-medium"
+              />
+            </div>
             <div className="text-right">
               <button 
                 type="button"

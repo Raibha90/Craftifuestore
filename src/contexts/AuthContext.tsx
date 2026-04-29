@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           if (docSnap.exists()) {
             const data = docSnap.data() as UserProfile;
-            const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@craftique.store';
+            const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@craftique.store' || user.email === 'admin@craftifue.store';
             // Ensure primary email is always admin
             if (isAdminEmail && data.role !== 'admin') {
               await updateDoc(doc(db, 'users', user.uid), { role: 'admin' });
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setProfile(data);
           } else {
             // Create a new profile if it doesn't exist
-            const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@craftique.store';
+            const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@craftique.store' || user.email === 'admin@craftifue.store';
             const newProfile: UserProfile = {
               uid: user.uid,
               displayName: user.displayName || 'Guest',

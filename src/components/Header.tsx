@@ -224,7 +224,7 @@ export default function Header({ id }: { id: string }) {
               </span>
             </Link>
             <div className="flex items-center space-x-2">
-              {user ? (
+              {(user && !isAdmin) ? (
                 <div className="relative group/account">
                   <button className="flex items-center space-x-2 p-2 text-gray-600 hover:text-brand-gold transition-all">
                     <div className="relative">
@@ -244,15 +244,6 @@ export default function Header({ id }: { id: string }) {
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Signed in as</p>
                         <p className="text-sm font-serif font-bold text-brand-olive truncate">{user.displayName || user.email}</p>
                       </div>
-                      {isAdmin && (
-                        <Link 
-                          to="/admin"
-                          className="flex items-center space-x-3 px-6 py-3 text-xs font-bold text-brand-gold hover:bg-brand-gold hover:text-white rounded-xl transition-all mb-1"
-                        >
-                          <Settings className="w-4 h-4" />
-                          <span>Admin Panel</span>
-                        </Link>
-                      )}
                       {[
                         { label: 'My Profile', path: '/dashboard?tab=profile', icon: User },
                         { label: 'My Account', path: '/dashboard?tab=orders', icon: ShoppingBag },

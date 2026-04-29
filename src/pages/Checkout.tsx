@@ -25,7 +25,7 @@ export default function Checkout() {
   });
 
   const handlePlaceOrder = async () => {
-    if (!user) {
+    if (!user || user?.email === 'rd14190@gmail.com' || user?.email === 'admin@craftique.store' || user?.email === 'admin@craftifue.store') {
       navigate('/login', { state: { from: { pathname: '/checkout' } } });
       return;
     }
