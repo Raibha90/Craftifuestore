@@ -73,7 +73,7 @@ const PURITIES = ['14K', '18K', '22K', '24K', '925 Silver'];
 const COLLECTIONS = ['Heritage', 'Modern', 'Wedding', 'Temple', 'Minimalist'];
 
 export default function AdminWorkbook() {
-  const [activeTab, setActiveTab] = useState<'master' | 'lookbook' | 'calculator' | 'collections' | 'dashboard'>('master');
+  const [activeTab, setActiveTab] = useState<'master' | 'lookbook' | 'calculator' | 'collections' | 'dashboard' | 'settings'>('master');
   const [items, setItems] = useState<JewelleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<Partial<JewelleryItem> | null>(null);
@@ -82,6 +82,9 @@ export default function AdminWorkbook() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [imageReqs, setImageReqs] = useState({ width: '800', height: '800', format: 'PNG' });
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [newCat, setNewCat] = useState('');
+  const allCategories = Array.from(new Set([...CATEGORIES, ...customCategories]));
 
   // Formula logic
   const calculateDerived = (item: Partial<JewelleryItem>): Partial<JewelleryItem> => {
@@ -118,8 +121,35 @@ export default function AdminWorkbook() {
       setItems(fetched);
       setLoading(false);
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'jewellery_master'));
-    return () => unsub();
+
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'jewellery_categories'), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().categories) {
+        setCustomCategories(docSnap.data().categories);
+      }
+    });
+
+    return () => { unsub(); unsubSettings(); };
   }, []);
+
+  const handleAddCategory = async () => {
+    if (!newCat.trim()) return;
+    try {
+      const updated = Array.from(new Set([...customCategories, newCat.trim()]));
+      await setDoc(doc(db, 'settings', 'jewellery_categories'), { categories: updated }, { merge: true });
+      setNewCat('');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRemoveCategory = async (cat: string) => {
+    try {
+      const updated = customCategories.filter(c => c !== cat);
+      await setDoc(doc(db, 'settings', 'jewellery_categories'), { categories: updated }, { merge: true });
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleSaveItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,6 +255,7 @@ export default function AdminWorkbook() {
             { id: 'calculator', label: 'Pricing logic', icon: Calculator },
             { id: 'collections', label: 'Collections', icon: Layers },
             { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+            { id: 'settings', label: 'Settings', icon: Search },
           ].map(tab => (
             <button
               key={tab.id}
@@ -432,7 +463,7 @@ export default function AdminWorkbook() {
                   <div className="bg-white p-10 rounded-[3rem] border border-brand-olive/5 shadow-xl h-[400px]">
                     <h3 className="text-sm font-bold text-brand-olive uppercase tracking-[0.2em] mb-8">Value by Category</h3>
                     <ResponsiveContainer width="100%" height="80%">
-                       <BarChart data={CATEGORIES.map(cat => ({ 
+                       <BarChart data={allCategories.map(cat => ({ 
                          name: cat, 
                          value: Math.round(items.filter(i => i.category === cat).reduce((acc, curr) => acc + curr.stockValue, 0) / 1000)
                        }))}>
@@ -468,6 +499,73 @@ export default function AdminWorkbook() {
                        </PieChart>
                     </ResponsiveContainer>
                   </div>
+                  <div className="bg-white p-10 rounded-[3rem] border border-brand-olive/5 shadow-xl h-[400px] lg:col-span-2">
+                    <h3 className="text-sm font-bold text-brand-olive uppercase tracking-[0.2em] mb-8">SKUs by Category</h3>
+                    <ResponsiveContainer width="100%" height="80%">
+                       <PieChart>
+                         <Pie
+                           data={allCategories.map(cat => ({ 
+                             name: cat, 
+                             value: items.filter(i => i.category === cat).length 
+                           })).filter(v => v.value > 0)}
+                           cx="50%"
+                           cy="50%"
+                           innerRadius={60}
+                           outerRadius={100}
+                           paddingAngle={8}
+                           dataKey="value"
+                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                         >
+                           {allCategories.map((_, index) => (
+                             <Cell key={`cell-${index}`} fill={['#1A2F23', '#D4AF37', '#718355', '#B5A28C', '#E2E8F0', '#94A3B8', '#475569'][index % 7]} />
+                           ))}
+                         </Pie>
+                         <Tooltip contentStyle={{borderRadius: '16px', border: 'none'}} />
+                       </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+               </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="max-w-2xl mx-auto bg-white p-12 rounded-[3.5rem] border border-brand-olive/5 shadow-2xl space-y-10">
+               <div>
+                 <h2 className="text-2xl font-serif font-bold text-brand-olive">Workbook Settings</h2>
+                 <p className="text-brand-olive/50 text-sm mt-2">Manage your product categories, collections, and custom parameters.</p>
+               </div>
+               
+               <div className="space-y-4 pt-6 border-t border-brand-olive/5">
+                 <h3 className="font-bold text-brand-olive text-lg">Product Categories</h3>
+                 
+                 <div className="flex gap-4">
+                   <input
+                     type="text"
+                     placeholder="New Category Name"
+                     value={newCat}
+                     onChange={e => setNewCat(e.target.value)}
+                     className="flex-1 px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm font-medium"
+                     onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
+                   />
+                   <button 
+                     onClick={handleAddCategory}
+                     className="px-8 py-4 bg-brand-olive text-brand-cream rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-brand-gold transition-colors"
+                   >
+                     Add
+                   </button>
+                 </div>
+
+                 <div className="flex flex-wrap gap-2 mt-4">
+                   {allCategories.map(cat => (
+                     <div key={cat} className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full border border-gray-100">
+                       <span className="text-sm font-medium text-brand-olive">{cat}</span>
+                       <button onClick={() => handleRemoveCategory(cat)} className="text-gray-400 hover:text-red-500 transition-colors">
+                         <Trash2 className="w-4 h-4" />
+                       </button>
+                     </div>
+                   ))}
+                 </div>
+                 <p className="text-xs text-gray-400 mt-2">Note: Pre-defined categories cannot be deleted.</p>
                </div>
             </div>
           )}
@@ -557,7 +655,7 @@ export default function AdminWorkbook() {
                     value={editingItem.category || ''}
                     onChange={e => setEditingItem({...editingItem, category: e.target.value})}
                   >
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">

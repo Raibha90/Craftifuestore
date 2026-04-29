@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, ShieldCheck, Eye, EyeOff, Home, Facebook, Check } from 'lucide-react';
 
@@ -13,10 +13,28 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cmsContent, setCmsContent] = useState<any>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || "/dashboard";
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'cms', 'login'), (docSnap) => {
+      if (docSnap.exists()) {
+        setCmsContent(docSnap.data());
+      } else {
+        setCmsContent({
+          image: 'https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop',
+          heading: 'Find your artisan treasure',
+          subheading: 'Schedule visit in just a few clicks. visits in just a few clicks',
+          title: 'Welcome Back to Artisan Treasures!',
+          subtitle: 'Sign in your account',
+        });
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,11 +100,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-white">
+    <div className="flex w-full bg-white max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-160px)] items-center">
       {/* Left Image Side */}
-      <div className="hidden lg:flex w-1/2 relative">
+      <div className="hidden lg:flex w-1/2 relative rounded-[3rem] overflow-hidden shadow-sm h-full min-h-[600px]">
         <img 
-          src="https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop" 
+          src={cmsContent?.image || "https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop"} 
           alt="Artisan Treasures" 
           className="w-full h-full object-cover"
         />
@@ -97,13 +115,13 @@ export default function Login() {
           <div className="w-8 h-8 bg-brand-olive rounded-full flex items-center justify-center">
             <Home className="w-4 h-4 text-brand-cream" />
           </div>
-          <span className="font-sans font-bold text-lg text-[#1A1A3F]">Artisan Treasures</span>
+          <span className="font-sans font-bold text-lg text-[#1A1A3F]">Craftifue</span>
         </Link>
 
         {/* Text bottom left */}
         <div className="absolute bottom-16 left-16 text-white max-w-md">
-          <h1 className="text-[2.5rem] leading-tight font-sans font-bold mb-4">Find your artisan treasure</h1>
-          <p className="text-gray-300 text-base mb-8">Schedule visit in just a few clicks.<br/>visits in just a few clicks</p>
+          <h1 className="text-[2.5rem] leading-tight font-sans font-bold mb-4">{cmsContent?.heading || 'Find your artisan treasure'}</h1>
+          <p className="text-gray-300 text-base mb-8 whitespace-pre-line">{cmsContent?.subheading || 'Schedule visit in just a few clicks.\nvisits in just a few clicks'}</p>
           <div className="flex space-x-2 items-center">
             <div className="h-1.5 w-8 bg-white rounded-full"></div>
             <div className="h-1.5 w-2 bg-white/40 rounded-full"></div>
@@ -113,19 +131,11 @@ export default function Login() {
       </div>
 
       {/* Right Form Side */}
-      <div className="w-full lg:w-1/2 flex flex-col pt-8 lg:pt-0 justify-center relative bg-white">
-        
-        {/* Top right button */}
-        <div className="absolute top-8 right-8 z-10 hidden sm:flex items-center">
-            <Link to="/signup" className="bg-black text-white px-8 py-3 rounded-full text-sm font-semibold hover:bg-black/90 transition-all shadow-lg">
-              Sign Up
-            </Link>
-        </div>
-
-        <div className="w-full max-w-md mx-auto px-6 lg:px-0 relative z-0 mt-16 md:mt-0">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center relative bg-white pl-0 lg:pl-12">
+        <div className="w-full max-w-md mx-auto px-6 lg:px-0 relative z-0">
           <div className="mb-10 text-left">
-            <h2 className="text-4xl text-[#18183B] font-bold mb-3 tracking-tight">Welcome Back to Artisan Treasures!</h2>
-            <p className="text-gray-400 text-sm mb-2">Sign in your account</p>
+            <h2 className="text-4xl text-[#18183B] font-bold mb-3 tracking-tight">{cmsContent?.title || 'Welcome Back to Artisan Treasures!'}</h2>
+            <p className="text-gray-400 text-sm mb-2">{cmsContent?.subtitle || 'Sign in your account'}</p>
             <p className="text-xs text-red-500 font-medium">Fields marked with <span className="font-bold">(*)</span> are mandatory.</p>
           </div>
 
@@ -215,7 +225,7 @@ export default function Login() {
             <span className="relative bg-white px-4 text-xs text-gray-400">Instant Login</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-8 pb-12 lg:pb-0">
+          <div className="grid grid-cols-2 gap-4 mt-8">
             <button 
               type="button" 
               onClick={handleGoogleLogin}
@@ -241,7 +251,7 @@ export default function Login() {
             </button>
           </div>
 
-          <div className="text-center mt-6 text-sm text-gray-500 pb-12 lg:pb-0">
+          <div className="text-center mt-6 text-sm text-gray-500 pb-4">
             Don't have any account? <Link to="/signup" className="text-blue-600 font-medium hover:underline">Register</Link>
           </div>
         </div>
@@ -249,4 +259,5 @@ export default function Login() {
     </div>
   );
 }
+
 

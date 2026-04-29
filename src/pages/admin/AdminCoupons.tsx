@@ -2,21 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Coupon } from '../../types';
-import { Plus, Trash2, Tag, Check, X, Calendar, Ticket } from 'lucide-react';
+import { Plus, Trash2, Tag, Check, X, Calendar, Ticket, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
 
 export default function AdminCoupons() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newCoupon, setNewCoupon] = useState({
-    code: '',
-    discountType: 'percentage' as 'percentage' | 'fixed',
-    discountValue: 0,
-    minPurchase: 0,
-    expiryDate: '',
-    active: true
-  });
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   useEffect(() => {
     fetchCoupons();
@@ -34,20 +29,33 @@ export default function AdminCoupons() {
     }
   };
 
-  const handleAddCoupon = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGenerateAICoupons = async () => {
     try {
-      await addDoc(collection(db, 'coupons'), {
-        ...newCoupon,
-        code: newCoupon.code.toUpperCase(),
-        createdAt: serverTimestamp()
+      setGeneratingAI(true);
+      const result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: "As an expert E-commerce Marketer in India, analyze upcoming public events, holidays, or seasons within the next 3 months. Generate 3 unique discount coupons. Format as JSON array: [{code: 'DIWALI20', discountType: 'percentage', discountValue: 20, minPurchase: 1000, expiryDate: 'YYYY-MM-DD'}]. Omit markdown."
       });
-      setIsModalOpen(false);
-      setNewCoupon({ code: '', discountType: 'percentage', discountValue: 0, minPurchase: 0, expiryDate: '', active: true });
+
+      let text = result.text || '[]';
+      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const generatedCoupons = JSON.parse(text);
+
+      for (const coupon of generatedCoupons) {
+        await addDoc(collection(db, 'coupons'), {
+          ...coupon,
+          code: coupon.code.toUpperCase(),
+          active: true,
+          createdAt: serverTimestamp()
+        });
+      }
+
       fetchCoupons();
-    } catch (err) {
-      console.error(err);
-      alert('Error adding coupon');
+    } catch (e: any) {
+      console.error(e);
+      alert('AI Generation Failed: ' + e.message);
+    } finally {
+      setGeneratingAI(false);
     }
   };
 
@@ -78,17 +86,21 @@ export default function AdminCoupons() {
           <p className="text-gray-400 mt-2">Manage discounts and seasonal offers for your patrons.</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center space-x-3 bg-brand-olive text-brand-cream px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-brand-olive/20 transition-all group"
+          onClick={handleGenerateAICoupons}
+          disabled={generatingAI}
+          className="flex items-center space-x-3 bg-brand-gold text-brand-olive px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-xl transition-all group disabled:opacity-50"
         >
-          <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
-          <span>Create Coupon</span>
+          {generatingAI ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />}
+          <span>{generatingAI ? 'Generating AI Coupons...' : 'Generate Coupons AI'}</span>
         </button>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {loading ? (
-          <div className="col-span-full p-24 text-center text-gray-400 text-sm">Validating codes...</div>
+        {loading || generatingAI ? (
+          <div className="col-span-full py-32 flex flex-col items-center justify-center space-y-4">
+             <Loader2 className="w-10 h-10 text-brand-gold animate-spin" />
+             <p className="text-gray-400 font-serif italic text-lg">{generatingAI ? 'AI is analyzing web events & trends...' : 'Validating codes...'}</p>
+          </div>
         ) : coupons.length > 0 ? (
           coupons.map((coupon) => (
             <motion.div 
@@ -154,94 +166,6 @@ export default function AdminCoupons() {
           </div>
         )}
       </div>
-
-      {/* Coupon Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-brand-olive/20 backdrop-blur-sm"
-              onClick={() => setIsModalOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden"
-            >
-              <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                <h3 className="font-serif text-2xl font-bold text-brand-olive">New Privilege Code</h3>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-              </div>
-              <form onSubmit={handleAddCoupon} className="p-10 space-y-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Coupon Code</label>
-                    <input 
-                      type="text" 
-                      required 
-                      placeholder="e.g. WELCOME25"
-                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all font-bold tracking-widest placeholder:font-normal placeholder:tracking-normal" 
-                      value={newCoupon.code} 
-                      onChange={e => setNewCoupon({...newCoupon, code: e.target.value})} 
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Type</label>
-                      <select 
-                        className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
-                        value={newCoupon.discountType}
-                        onChange={e => setNewCoupon({...newCoupon, discountType: e.target.value as any})}
-                      >
-                        <option value="percentage">Percentage (%)</option>
-                        <option value="fixed">Fixed Amount (₹)</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Value</label>
-                      <input 
-                        type="number" 
-                        required 
-                        className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" 
-                        value={newCoupon.discountValue} 
-                        onChange={e => setNewCoupon({...newCoupon, discountValue: Number(e.target.value)})} 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Min. spend (₹)</label>
-                      <input 
-                        type="number" 
-                        className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" 
-                        value={newCoupon.minPurchase} 
-                        onChange={e => setNewCoupon({...newCoupon, minPurchase: Number(e.target.value)})} 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Expiry Date</label>
-                      <input 
-                        type="date" 
-                        className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" 
-                        value={newCoupon.expiryDate} 
-                        onChange={e => setNewCoupon({...newCoupon, expiryDate: e.target.value})} 
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button type="submit" className="w-full bg-brand-olive text-brand-cream py-5 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-brand-olive/20 transition-all">
-                  Activate Coupon
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

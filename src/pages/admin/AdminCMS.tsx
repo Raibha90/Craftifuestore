@@ -8,7 +8,7 @@ import { processImage } from '../../lib/imageUtils';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-type PageType = 'home' | 'about_story' | 'about_mission';
+type PageType = 'home' | 'about_story' | 'about_mission' | 'terms' | 'privacy' | 'return_policy' | 'refund_policy' | 'login';
 
 export default function AdminCMS() {
   const [currentPage, setCurrentPage] = useState<PageType>('home');
@@ -101,6 +101,29 @@ export default function AdminCMS() {
             visionHeading: 'Our Vision',
             visionText: 'We envision a world where traditional craftsmanship is celebrated and valued...',
             visionImage: 'https://images.unsplash.com/photo-1513519245088-0e12902e35ca?q=80&w=2070&auto=format&fit=crop'
+          },
+          terms: {
+            title: 'Terms and Conditions',
+            content: 'These terms and conditions outline the rules and regulations for the use of Craftifue website...',
+          },
+          privacy: {
+            title: 'Privacy Policy',
+            content: 'This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your information...',
+          },
+          return_policy: {
+            title: 'Return Policy',
+            content: 'We offer a 30-day return policy for most items. Items must be unused and in their original packaging...',
+          },
+          refund_policy: {
+            title: 'Refund Policy',
+            content: 'Once your return is received and inspected, we will send you an email to notify you that we have received your returned item...',
+          },
+          login: {
+            image: 'https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop',
+            heading: 'Find your artisan treasure',
+            subheading: 'Schedule visit in just a few clicks.\nvisits in just a few clicks',
+            title: 'Welcome Back to Artisan Treasures!',
+            subtitle: 'Sign in your account',
           }
         };
         setContent(defaults[currentPage]);
@@ -452,6 +475,118 @@ export default function AdminCMS() {
             </div>
           </div>
         );
+      case 'login':
+        return (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Form Title</label>
+                <input 
+                  type="text" 
+                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all font-serif"
+                  value={content.title}
+                  onChange={e => setContent({...content, title: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Form Subtitle</label>
+                <input 
+                  type="text" 
+                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
+                  value={content.subtitle}
+                  onChange={e => setContent({...content, subtitle: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="bg-brand-olive/5 p-10 rounded-[3rem] space-y-8 border border-brand-olive/5">
+              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-brand-olive mb-4">Left Side Visual</h4>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Image Heading</label>
+                <input 
+                  type="text" 
+                  className="w-full px-6 py-4 bg-white border border-transparent rounded-2xl focus:border-brand-gold outline-none transition-all font-serif"
+                  value={content.heading}
+                  onChange={e => setContent({...content, heading: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Image Subheading</label>
+                <textarea 
+                  rows={2}
+                  className="w-full px-6 py-4 bg-white border border-transparent rounded-2xl focus:border-brand-gold outline-none transition-all leading-relaxed"
+                  value={content.subheading}
+                  onChange={e => setContent({...content, subheading: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center px-1">
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Image Upload</label>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setTargetField('image');
+                      setAiPrompt(content.heading ? `A professional high-end photography for login screen: ${content.heading}, ${content.subheading?.substring(0, 50)}, luxury aesthetic, cinematic lighting.` : '');
+                      setIsAiModalOpen(true);
+                    }}
+                    className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Generate AI</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    id="login-image-upload"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 1200, format: 'image/jpeg' });
+                        setContent({...content, image: compressed});
+                      }
+                    }}
+                    className="hidden" 
+                  />
+                  <label htmlFor="login-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                     <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Background Image</span>
+                  </label>
+                  {content.image && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                      <img src={content.image} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="bg-white p-10 rounded-[3rem] space-y-8 border border-brand-olive/5 shadow-sm">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Page Title</label>
+                <input 
+                  type="text" 
+                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all font-serif text-xl"
+                  value={content.title}
+                  onChange={e => setContent({...content, title: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Page Content</label>
+                <textarea 
+                  rows={20}
+                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all leading-relaxed"
+                  value={content.content}
+                  onChange={e => setContent({...content, content: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -472,6 +607,11 @@ export default function AdminCMS() {
             <option value="home">Home Page</option>
             <option value="about_story">About: Our Story</option>
             <option value="about_mission">About: Mission & Vision</option>
+            <option value="terms">Terms & Conditions</option>
+            <option value="privacy">Privacy Policy</option>
+            <option value="return_policy">Return Policy</option>
+            <option value="refund_policy">Refund Policy</option>
+            <option value="login">Login Page</option>
           </select>
           <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
              <FileText className="w-4 h-4 text-brand-olive" />

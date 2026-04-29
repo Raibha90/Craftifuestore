@@ -12,13 +12,16 @@ import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import CustomerLogin from './pages/CustomerLogin';
 import CreateAccount from './pages/CreateAccount';
+import ContactUs from './pages/ContactUs';
 import AdminLogin from './pages/admin/AdminLogin';
 import ForgotPassword from './pages/admin/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminVendorDiscovery from './pages/admin/AdminVendorDiscovery';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminPayments from './pages/admin/AdminPayments';
 import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminBanners from './pages/admin/AdminBanners';
 import AdminSettings from './pages/admin/AdminSettings';
@@ -36,6 +39,7 @@ import MissionVision from './pages/about/MissionVision';
 import ReturnPolicy from './pages/ReturnPolicy';
 import TermsConditions from './pages/TermsConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import RefundPolicy from './pages/RefundPolicy';
 import StoreLocator from './pages/StoreLocator';
 import VendorRegistration from './pages/VendorRegistration';
 import Offers from './pages/Offers';
@@ -47,13 +51,17 @@ import AIPersonalizerModal from './components/AIPersonalizerModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Analytics } from "@vercel/analytics/react";
 
+import { CompareProvider } from './contexts/CompareContext';
+import Compare from './pages/Compare';
+import CompareBar from './components/CompareBar';
+
 import React, { useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from './lib/firebase';
 
 function DynamicHead() {
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
+    const unsub = onSnapshot(doc(db, 'settings', 'appearance'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.faviconUrl) {
@@ -80,13 +88,15 @@ function App() {
       <AuthProvider>
         <WishlistProvider>
           <CartProvider>
-            <Router>
-              <FloatingGiftBox />
-              <WhatsAppChatbot />
-              <AIPersonalizerModal />
-              <Routes>
-                {/* Admin Routes */}
-                <Route path="/admin">
+            <CompareProvider>
+              <Router>
+                <FloatingGiftBox />
+                <WhatsAppChatbot />
+                <AIPersonalizerModal />
+                <CompareBar />
+                <Routes>
+                  {/* Admin Routes */}
+                  <Route path="/admin">
                   <Route path="login" element={<AdminLogin />} />
                   <Route path="forgot-password" element={<ForgotPassword />} />
                   <Route element={
@@ -101,10 +111,12 @@ function App() {
                     <Route path="banners" element={<AdminBanners />} />
                     <Route path="reviews" element={<AdminReviews />} />
                     <Route path="vendors" element={<AdminVendors />} />
+                    <Route path="discovery" element={<AdminVendorDiscovery />} />
                     <Route path="cms" element={<AdminCMS />} />
                     <Route path="workbook" element={<AdminWorkbook />} />
                     <Route path="ai" element={<AdminAI />} />
                     <Route path="settings" element={<AdminSettings />} />
+                    <Route path="payments" element={<AdminPayments />} />
                   </Route>
                 </Route>
 
@@ -133,8 +145,11 @@ function App() {
                         <Route path="/about/craftifue" element={<AboutCraftifue />} />
                         <Route path="/returns" element={<ReturnPolicy />} />
                         <Route path="/terms" element={<TermsConditions />} />
+                        <Route path="/contact" element={<ContactUs />} />
                         <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/refund-policy" element={<RefundPolicy />} />
                         <Route path="/stores" element={<StoreLocator />} />
+                        <Route path="/compare" element={<Compare />} />
                         <Route path="/dashboard" element={
                           <PrivateRoute>
                             <Dashboard />
@@ -147,9 +162,10 @@ function App() {
                 } />
               </Routes>
             </Router>
-        </CartProvider>
-      </WishlistProvider>
-    </AuthProvider>
+            </CompareProvider>
+          </CartProvider>
+        </WishlistProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

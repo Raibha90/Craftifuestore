@@ -3,7 +3,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
-import { ShoppingCart, Heart, ShieldCheck, Truck, RefreshCw, Star, ArrowLeft, ImagePlus, X, MessageSquare } from 'lucide-react';
+import { useCompare } from '../contexts/CompareContext';
+import { ShoppingCart, Heart, ShieldCheck, Truck, RefreshCw, Star, ArrowLeft, ImagePlus, X, MessageSquare, GitCompare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -15,6 +16,7 @@ export default function ProductDetail() {
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
+  const { isInCompare, addToCompare, removeFromCompare } = useCompare();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -134,6 +136,16 @@ export default function ProductDetail() {
     }
   };
 
+  const isCompared = isInCompare(product.id || '');
+  
+  const handleCompareToggle = () => {
+    if (isCompared) {
+      removeFromCompare(product.id || '');
+    } else {
+      addToCompare(product);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -181,11 +193,22 @@ export default function ProductDetail() {
               </button>
             </div>
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-brand-olive mb-4">{product.name}</h1>
-            <div className="flex items-baseline space-x-4">
-              <p className="text-3xl font-medium text-brand-gold">₹{currentPrice.toLocaleString()}</p>
-              {selectedVariant?.price && selectedVariant.price !== product.price && (
-                <span className="text-sm text-gray-400 line-through">₹{product.price.toLocaleString()}</span>
-              )}
+            <p className="text-sm text-gray-500 uppercase tracking-widest font-bold mb-6">
+               SKU: {selectedVariant?.id || product.id}
+            </p>
+            <div className="space-y-1">
+              <div className="flex items-baseline space-x-4">
+                <p className="text-3xl font-medium text-brand-gold">₹{currentPrice.toLocaleString()}</p>
+                {selectedVariant?.price && selectedVariant.price !== product.price && (
+                  <span className="text-sm text-gray-400 line-through">₹{product.price.toLocaleString()}</span>
+                )}
+              </div>
+              <p className="text-xs text-brand-olive font-bold tracking-widest uppercase">
+                + 18% GST: ₹{Math.round(currentPrice * 0.18).toLocaleString()}
+              </p>
+              <p className="text-lg font-bold text-brand-olive pt-2 border-t border-brand-olive/10 mt-2 block w-48">
+                Total: ₹{Math.round(currentPrice * 1.18).toLocaleString()}
+              </p>
             </div>
           </div>
 
@@ -263,6 +286,13 @@ export default function ProductDetail() {
                 className={`p-5 rounded-full border transition-all ${isFavorited ? 'border-red-500 text-red-500 bg-red-50' : 'border-brand-olive/20 text-gray-400 hover:text-red-500 hover:border-red-500'}`}
               >
                 <Heart className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
+              </button>
+              <button 
+                onClick={handleCompareToggle}
+                className={`p-5 rounded-full border transition-all ${isCompared ? 'border-brand-olive text-brand-olive bg-brand-olive/5' : 'border-brand-olive/20 text-gray-400 hover:text-brand-olive hover:border-brand-olive'}`}
+                title={isCompared ? "Remove from Compare" : "Add to Compare"}
+              >
+                <GitCompare className={`w-5 h-5 ${isCompared ? 'text-brand-olive' : ''}`} />
               </button>
             </div>
 

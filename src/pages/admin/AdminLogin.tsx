@@ -23,7 +23,7 @@ export default function AdminLogin() {
 
     const fetchSettings = async () => {
       try {
-        const snap = await getDoc(doc(db, 'settings', 'general'));
+        const snap = await getDoc(doc(db, 'settings', 'appearance'));
         if (snap.exists() && snap.data().logoUrl) {
           setLogoUrl(snap.data().logoUrl);
         }
@@ -117,7 +117,7 @@ export default function AdminLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@craftifue.store"
+                placeholder="Enter the admin Email"
                 className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all font-medium"
               />
             </div>
@@ -130,7 +130,7 @@ export default function AdminLogin() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter the PasswordA"
                 className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all font-medium"
               />
             </div>

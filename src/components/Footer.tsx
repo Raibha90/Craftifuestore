@@ -107,41 +107,67 @@ export default function Footer({ id }: { id: string }) {
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-brand-cream/10 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-[10px] uppercase tracking-widest text-brand-cream/40">
-          <div className="flex flex-col md:flex-row items-center md:space-x-8 space-y-2 md:space-y-0">
-            <p>{appearance?.copyrightText || "© 2026 Craftifue Heritage. All rights reserved."}</p>
-            <div className="flex space-x-4">
-              <Link to="/privacy" className="hover:text-brand-gold transition-colors">Privacy Policy</Link>
-              <Link to="/terms" className="hover:text-brand-gold transition-colors">Terms & Conditions</Link>
+        <div className="mt-16 pt-8 border-t border-brand-cream/10 flex flex-col items-center justify-center space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-center w-full space-y-4 md:space-y-0 text-[10px] uppercase tracking-widest text-brand-cream/40">
+            <div className="flex flex-col md:flex-row items-center md:space-x-8 space-y-2 md:space-y-0">
+              <p>{appearance?.copyrightText || "© 2026 Craftifue Heritage. All rights reserved."}</p>
+              <div className="flex space-x-4">
+                <Link to="/privacy" className="hover:text-brand-gold transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="hover:text-brand-gold transition-colors">Terms & Conditions</Link>
+                <Link to="/refund-policy" className="hover:text-brand-gold transition-colors">Refund Policy</Link>
+              </div>
             </div>
+            {appearance?.showPaymentLogos !== false && (
+              <div className="flex items-center space-x-4 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">
+                <img 
+                  src="https://raw.githubusercontent.com/creative-fullstack/payment-logos/main/visa.png" 
+                  alt="Visa" 
+                  className="h-4" 
+                  referrerPolicy="no-referrer"
+                />
+                <img 
+                  src="https://raw.githubusercontent.com/creative-fullstack/payment-logos/main/mastercard.png" 
+                  alt="Mastercard" 
+                  className="h-6" 
+                  referrerPolicy="no-referrer"
+                />
+                <img 
+                  src="https://raw.githubusercontent.com/creative-fullstack/payment-logos/main/rupay.png" 
+                  alt="RuPay" 
+                  className="h-4" 
+                  referrerPolicy="no-referrer"
+                />
+                <img 
+                  src="https://raw.githubusercontent.com/creative-fullstack/payment-logos/main/upi.png" 
+                  alt="UPI" 
+                  className="h-6" 
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            )}
           </div>
-          {appearance?.showPaymentLogos !== false && (
-            <div className="flex items-center space-x-4 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">
-              <img 
-                src="https://raw.githubusercontent.com/creative-fullstack/payment-logos/main/visa.png" 
-                alt="Visa" 
-                className="h-4" 
-                referrerPolicy="no-referrer"
-              />
-              <img 
-                src="https://raw.githubusercontent.com/creative-fullstack/payment-logos/main/mastercard.png" 
-                alt="Mastercard" 
-                className="h-6" 
-                referrerPolicy="no-referrer"
-              />
-              <img 
-                src="https://raw.githubusercontent.com/creative-fullstack/payment-logos/main/rupay.png" 
-                alt="RuPay" 
-                className="h-4" 
-                referrerPolicy="no-referrer"
-              />
-              <img 
-                src="https://raw.githubusercontent.com/creative-fullstack/payment-logos/main/upi.png" 
-                alt="UPI" 
-                className="h-6" 
-                referrerPolicy="no-referrer"
-              />
-            </div>
+
+          {/* Developer Credits UI */}
+          {(appearance?.developerName || appearance?.developerImage) && (
+             <div className="pt-6 border-t border-brand-cream/5 w-full flex justify-center">
+                <div className="flex items-center space-x-4 bg-brand-olive-dark px-6 py-3 rounded-full border border-brand-olive-darker shadow-sm">
+                   {appearance?.developerImage && (
+                     <img 
+                       src={appearance.developerImage} 
+                       alt={appearance.developerName || "Developer"} 
+                       className="w-10 h-10 rounded-full object-cover border-2 border-brand-gold/30"
+                       referrerPolicy="no-referrer"
+                     />
+                   )}
+                   <div className="text-left">
+                     <p className="text-[10px] text-brand-cream/50 uppercase tracking-widest font-bold">Website Designed & Developed by</p>
+                     <p className="text-sm font-serif font-bold text-brand-gold mt-0.5">{appearance?.developerName}</p>
+                     {appearance?.developerTitle && (
+                        <p className="text-[9px] text-brand-cream/40 uppercase tracking-widest mt-0.5">{appearance.developerTitle}</p>
+                     )}
+                   </div>
+                </div>
+             </div>
           )}
         </div>
       </div>

@@ -189,9 +189,29 @@ export default function AdminOrders() {
                     </div>
                   </div>
 
-                  {/* Status Actions */}
-                  <div className="space-y-3">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Update Status</h4>
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Order Actions</h4>
+                    <button 
+                      onClick={async () => {
+                        const originalText = document.getElementById(`btn-${order.id}`)!.innerText;
+                        try {
+                          document.getElementById(`btn-${order.id}`)!.innerText = "Sending...";
+                          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/send-invoice-email`, {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json' },
+                             body: JSON.stringify({ order: { ...order, address: order.shippingAddress, totalAmount: order.totalAmount } })
+                          });
+                          if (res.ok) alert("Invoice Email Sent!");
+                          else alert("Failed to send");
+                        } finally {
+                          document.getElementById(`btn-${order.id}`)!.innerText = originalText;
+                        }
+                      }}
+                      id={`btn-${order.id}`}
+                      className="w-full text-[10px] uppercase font-bold tracking-widest px-4 py-3 bg-brand-olive text-brand-cream rounded-xl hover:bg-brand-olive/90 transition-colors shadow-sm text-center"
+                    >
+                      Send Invoice via Email
+                    </button>
                     <div className="flex gap-1 flex-wrap">
                       {[
                         { status: 'pending', icon: RefreshCcw },

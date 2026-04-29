@@ -16,6 +16,9 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
+  const deliveryCharge = totalPrice >= 10000 ? 0 : 250;
+  const finalTotal = totalPrice + deliveryCharge;
+
   const [address, setAddress] = useState({
     street: '',
     city: '',
@@ -42,7 +45,7 @@ export default function Checkout() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: totalPrice * 100, // Amount in paise
+          amount: finalTotal * 100, // Amount in paise
           currency: 'INR',
           receipt: `rcpt_${Math.random().toString(36).substring(7)}`,
         }),
@@ -82,7 +85,7 @@ export default function Checkout() {
               const orderRef = await addDoc(collection(db, 'orders'), {
                 userId: user.uid,
                 items,
-                totalAmount: totalPrice,
+                totalAmount: finalTotal,
                 status: 'pending', // Now it's paid
                 shippingAddress: address,
                 paymentId: response.razorpay_payment_id,
@@ -96,7 +99,12 @@ export default function Checkout() {
                   <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4b5563;">${item.name} <span style="color: #9ca3af; font-size: 12px;">x ${item.quantity}</span></td>
                   <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #4b5563; font-weight: bold;">₹${(item.price * item.quantity).toLocaleString()}</td>
                 </tr>
-              `).join('');
+              `).join('') + `
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4b5563;">Delivery Charge</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #4b5563; font-weight: bold;">₹${deliveryCharge.toLocaleString()}</td>
+                </tr>
+              `;
 
               await fetch('/api/orders/notify-status', {
                 method: 'POST',
@@ -107,14 +115,14 @@ export default function Checkout() {
                   email: user.email,
                   status: 'confirmed',
                   itemsHtml: orderItemsHtml,
-                  totalAmount: totalPrice.toLocaleString(),
+                  totalAmount: finalTotal.toLocaleString(),
                   order: {
                     id: orderRef.id,
                     createdAt: { seconds: Math.floor(Date.now() / 1000) },
                     status: 'confirmed',
                     address,
                     items,
-                    totalAmount: totalPrice
+                    totalAmount: finalTotal
                   }
                 })
               }).catch(err => console.error('Failed to send confirmation alerts', err));
@@ -390,7 +398,7 @@ export default function Checkout() {
                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     ) : (
                       <>
-                        <span>Place Order - ₹{totalPrice.toLocaleString()}</span>
+                        <span>Place Order - ₹{finalTotal.toLocaleString()}</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -414,10 +422,22 @@ export default function Checkout() {
                ))}
              </div>
              <div className="flex justify-between items-center mb-1">
-               <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Total Amount</span>
+               <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Subtotal</span>
                <span className="text-xl font-bold text-brand-olive">₹{totalPrice.toLocaleString()}</span>
              </div>
-             <p className="text-[10px] text-brand-gold font-bold uppercase tracking-[0.2em] mb-8">Free Home Delivery</p>
+             <div className="flex justify-between items-center mb-1">
+               <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Delivery</span>
+               <span className="text-xl font-bold text-brand-olive">
+                 {deliveryCharge === 0 ? 'Free' : `₹${deliveryCharge.toLocaleString()}`}
+               </span>
+             </div>
+             <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-50 mb-8">
+               <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Total Amount</span>
+               <span className="text-2xl font-bold text-brand-olive">₹{finalTotal.toLocaleString()}</span>
+             </div>
+             <p className="text-[10px] text-brand-gold font-bold uppercase tracking-[0.2em] mb-8">
+               {deliveryCharge === 0 ? 'Free Home Delivery Applied' : 'Standard Delivery Applies'}
+             </p>
              
              <div className="p-4 bg-brand-olive/5 rounded-2xl flex items-center space-x-3">
                <Truck className="w-4 h-4 text-brand-gold" />

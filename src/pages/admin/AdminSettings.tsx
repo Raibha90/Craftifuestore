@@ -20,6 +20,9 @@ export default function AdminSettings() {
     instagram: 'artisantreasures',
     facebook: 'artisantreasures.india',
     storeAddress: '14, Govind Marg, Jaipur, Rajasthan',
+    developerName: 'Mr. Rahul Dutta',
+    developerTitle: 'CEO & Founder, Lead Architect of the Development',
+    developerImage: '',
     showSocial: true,
     showNewsletter: true,
     showPaymentLogos: true,
@@ -198,6 +201,56 @@ export default function AdminSettings() {
                 value={settings.copyrightText}
                 onChange={e => setSettings({...settings, copyrightText: e.target.value})}
               />
+            </div>
+            
+            <div className="pt-8 border-t border-brand-olive/5 space-y-8">
+              <h4 className="text-sm font-bold text-brand-olive uppercase tracking-[0.2em]">Developer Credits</h4>
+              
+              <div className="space-y-2 relative">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Developer Image (Circle Profile)</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const compressed = await processImage(file, { maxWidth: 200, maxHeight: 200, format: 'image/jpeg' });
+                      setSettings({ ...settings, developerImage: compressed });
+                    }
+                  }}
+                  className="hidden"
+                  id="dev-image-upload"
+                />
+                <label htmlFor="dev-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                  <span className="text-xs font-bold text-brand-olive flex items-center"><Upload className="w-4 h-4 mr-2" /> Upload Photo</span>
+                </label>
+                {settings.developerImage && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-xl flex items-center justify-center">
+                    <img src={settings.developerImage} alt="Developer" className="w-16 h-16 rounded-full object-cover shadow-sm" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Developer Name</label>
+                   <input 
+                     type="text" 
+                     className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
+                     value={settings.developerName}
+                     onChange={e => setSettings({...settings, developerName: e.target.value})}
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Designation & Title</label>
+                   <input 
+                     type="text" 
+                     className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
+                     value={settings.developerTitle}
+                     onChange={e => setSettings({...settings, developerTitle: e.target.value})}
+                   />
+                 </div>
+              </div>
             </div>
           </div>
         </section>

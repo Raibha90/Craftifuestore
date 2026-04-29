@@ -341,7 +341,11 @@ export default function AdminProducts() {
                     </div>
                   </td>
                   <td className="px-8 py-6 text-sm text-gray-500 uppercase tracking-widest">{product.category}</td>
-                  <td className="px-8 py-6 font-medium">₹{product.price.toLocaleString()}</td>
+                  <td className="px-8 py-6">
+                    <p className="font-medium text-brand-gold">₹{product.price.toLocaleString()}</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">+ 18% GST (₹{Math.round(product.price * 0.18).toLocaleString()})</p>
+                    <p className="text-xs font-bold text-brand-olive mt-0.5">Total: ₹{Math.round(product.price * 1.18).toLocaleString()}</p>
+                  </td>
                   <td className="px-8 py-6">
                     <span className={`px-2 py-1 rounded-lg text-xs font-bold leading-none ${product.stock < 5 ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600'}`}>
                       {product.stock} units

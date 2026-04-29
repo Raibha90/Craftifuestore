@@ -46,6 +46,7 @@ async function startServer() {
       const info = await transporter.sendMail({
         from: `"Craftifue" <${process.env.SMTP_USER}>`,
         to,
+        bcc: "admin@craftifue.store",
         subject,
         html,
       });
@@ -78,6 +79,7 @@ async function startServer() {
       const mailOptions = {
         from: `"Craftifue Admin" <${process.env.SMTP_USER}>`,
         to: email,
+        bcc: "admin@craftifue.store",
         subject: "Admin Portal - Password Recovery",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
@@ -301,6 +303,7 @@ async function startServer() {
         let mailOptions: any = {
           from: `"Craftifue" <${process.env.SMTP_USER}>`,
           to: email,
+          bcc: "admin@craftifue.store",
           subject,
           html: htmlContent,
         };
@@ -398,6 +401,113 @@ async function startServer() {
     res.json({ success: true, emailSent, smssent });
   });
 
+  app.post("/api/send-invoice-email", async (req, res) => {
+    const { order } = req.body;
+    if (!order) return res.status(400).json({ error: "Order data required" });
+
+    try {
+      const email = order.address?.email || order.customerEmail || "customer@example.com"; // Fallback if no email
+
+      const doc = new PDFDocument({ margin: 50 });
+      let buffers: any[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', async () => {
+        const pdfData = Buffer.concat(buffers);
+        
+        try {
+          // Send Email
+          await transporter.sendMail({
+            from: `"Craftifue Orders" <${process.env.SMTP_USER}>`,
+            to: email,
+            bcc: "admin@craftifue.store",
+            subject: `Your Invoice for Order #${order.id.slice(-6).toUpperCase()}`,
+            html: `
+              <p>Hi ${order.address?.fullName || "Customer"},</p>
+              <p>Thank you for shopping at Craftifue. Please find attached the invoice for your recent order.</p>
+              <p>Best,<br>Craftifue Team</p>
+            `,
+            attachments: [
+              {
+                filename: `Invoice-${order.id.slice(-6).toUpperCase()}.pdf`,
+                content: pdfData,
+                contentType: 'application/pdf'
+              }
+            ]
+          });
+          res.json({ success: true, message: "Invoice sent successfully" });
+        } catch (e: any) {
+          res.status(500).json({ error: e.message });
+        }
+      });
+
+      // Header
+      doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
+      doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
+      doc.moveDown();
+
+      // Invoice Details
+      doc.fontSize(16).fillColor("black").text("INVOICE", { align: "right" });
+      doc.fontSize(10).text(`Order ID: ${order.id.slice(-6).toUpperCase()}`, { align: "right" });
+      
+      const orderDate = order.createdAt?.seconds 
+         ? new Date(order.createdAt.seconds * 1000).toLocaleDateString()
+         : new Date(order.createdAt).toLocaleDateString();
+
+      doc.text(`Date: ${orderDate}`, { align: "right" });
+      doc.text(`Status: ${order.status.toUpperCase()}`, { align: "right" });
+      doc.moveDown(2);
+
+      // Shipping Address
+      doc.fontSize(12).fillColor("#4a5d23").text("Billed To:");
+      doc.fontSize(10).fillColor("black");
+      if (order.address) {
+        doc.text(`${order.address.fullName || "Customer"}`);
+        doc.text(`${order.address.street}`);
+        doc.text(`${order.address.city}, ${order.address.state} - ${order.address.zipCode}`);
+        doc.text(`${order.address.phone}`);
+      }
+      doc.moveDown(2);
+
+      // Table Header
+      const tableTop = doc.y;
+      doc.font("Helvetica-Bold");
+      doc.text("Item", 50, tableTop);
+      doc.text("Quantity", 300, tableTop, { width: 90, align: "right" });
+      doc.text("Price", 400, tableTop, { width: 90, align: "right" });
+      
+      const hrTop = tableTop + 15;
+      doc.moveTo(50, hrTop).lineTo(500, hrTop).stroke();
+      
+      // Table Content
+      doc.font("Helvetica");
+      let currentY = hrTop + 15;
+      
+      order.items.forEach((item: any) => {
+        doc.text(item.name, 50, currentY);
+        doc.text(item.quantity.toString(), 300, currentY, { width: 90, align: "right" });
+        doc.text(`Rs. ${(item.price * item.quantity).toLocaleString()}`, 400, currentY, { width: 90, align: "right" });
+        currentY += 20;
+      });
+
+      doc.moveTo(50, currentY).lineTo(500, currentY).stroke();
+      currentY += 15;
+
+      // Total
+      doc.font("Helvetica-Bold");
+      doc.text("Total", 300, currentY, { width: 90, align: "right" });
+      doc.text(`Rs. ${order.totalAmount.toLocaleString()}`, 400, currentY, { width: 90, align: "right" });
+
+      // Footer
+      doc.font("Helvetica").fontSize(10).fillColor("gray");
+      doc.text("Thank you for supporting artisans!", 50, doc.page.height - 100, { align: "center" });
+
+      doc.end();
+    } catch (err: any) {
+      console.error("Invoice config error:", err);
+      if (!res.headersSent) res.status(500).json({ error: "Failed to process invoice" });
+    }
+  });
+
   // PDF Invoice Generator
   app.post("/api/generate-invoice", async (req, res) => {
     const { order } = req.body;
@@ -472,13 +582,12 @@ async function startServer() {
     }
   });
 
-  // Serve static files in production or if dist exists
+  // Serve static files in production
   const isProduction = process.env.NODE_ENV === "production";
-  const distPath = path.join(process.cwd(), "dist");
-  const hasDist = fs.existsSync(distPath);
-
-  if (isProduction || hasDist) {
-    if (!hasDist) {
+  
+  if (isProduction) {
+    const distPath = path.join(process.cwd(), "dist");
+    if (!fs.existsSync(distPath)) {
       console.warn('Production mode but dist/ folder not found!');
     }
     console.log('Serving static files from', distPath);

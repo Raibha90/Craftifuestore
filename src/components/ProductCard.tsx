@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
-import { ShoppingCart, Heart } from 'lucide-react';
+import { useCompare } from '../contexts/CompareContext';
+import { ShoppingCart, Heart, GitCompare } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface ProductCardProps {
@@ -15,9 +16,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
+  const { isInCompare, addToCompare, removeFromCompare } = useCompare();
   const navigate = useNavigate();
 
   const isFavorited = isInWishlist(product.id || '');
+  const isCompared = isInCompare(product.id || '');
 
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -30,6 +33,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       await removeFromWishlist(product.id || '');
     } else {
       await addToWishlist(product.id || '');
+    }
+  };
+
+  const handleCompareToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isCompared) {
+      removeFromCompare(product.id || '');
+    } else {
+      addToCompare(product);
     }
   };
 
@@ -49,7 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             referrerPolicy="no-referrer"
           />
         </Link>
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-4 right-4 z-10 flex flex-col space-y-2">
           <motion.button 
             whileTap={{ scale: 0.9 }}
             onClick={handleWishlistToggle}
@@ -58,6 +71,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <motion.div animate={isFavorited ? { scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.3 }}>
               <Heart className={`w-4 h-4 transition-colors ${isFavorited ? 'fill-current text-red-500' : ''}`} />
             </motion.div>
+          </motion.button>
+          
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={handleCompareToggle}
+            className={`bg-white/90 backdrop-blur-sm p-2.5 rounded-full transition-all duration-300 shadow-md flex items-center justify-center ${isCompared ? 'text-brand-olive' : 'text-gray-400 hover:text-brand-olive hover:shadow-lg'}`}
+            title={isCompared ? "Remove from Compare" : "Add to Compare"}
+          >
+             <GitCompare className={`w-4 h-4 transition-colors ${isCompared ? 'text-brand-olive' : ''}`} />
           </motion.button>
         </div>
         <div className="absolute bottom-4 left-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out z-10">
@@ -85,6 +107,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <p className="mt-2 text-sm font-medium text-brand-gold">
             ₹{product.price.toLocaleString()}
           </p>
+          <div className="mt-1">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">+ 18% GST: ₹{Math.round(product.price * 0.18).toLocaleString()}</p>
+            <p className="text-sm font-bold text-brand-olive mt-0.5">Total: ₹{Math.round(product.price * 1.18).toLocaleString()}</p>
+          </div>
         </Link>
       </div>
     </motion.div>
