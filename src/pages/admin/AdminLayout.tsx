@@ -20,10 +20,10 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-brand-olive text-brand-cream hidden lg:flex flex-col sticky top-0 h-screen shadow-2xl">
         <div className="p-8 border-b border-brand-cream/10">
-          <Link to="/" className="flex flex-col items-center">
+          <div className="flex flex-col items-center">
             <span className="font-serif text-xl font-bold tracking-tight">HANDCRAFTED</span>
             <span className="text-[10px] uppercase tracking-[0.2em] text-brand-gold -mt-1">Admin Central</span>
-          </Link>
+          </div>
         </div>
         
         <nav className="flex-grow p-6 space-y-2">
@@ -42,13 +42,6 @@ export default function AdminLayout() {
             </Link>
           ))}
         </nav>
-
-        <div className="p-8 border-t border-brand-cream/10">
-          <Link to="/" className="flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-brand-gold hover:text-brand-cream transition-colors">
-            <Home className="w-4 h-4" />
-            <span>Go to Store</span>
-          </Link>
-        </div>
       </aside>
 
       {/* Main Content */}

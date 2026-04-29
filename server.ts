@@ -8,6 +8,7 @@ import { AfterShip } from "aftership";
 import twilio from "twilio";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import { GoogleGenAI } from "@google/genai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +21,25 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
+
+  // 0. Gemini AI Proxy
+  app.post("/api/gemini", async (req, res) => {
+    const { contents, model = "gemini-1.5-flash" } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "Gemini API key not configured" });
+    }
+
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const modelInstance = ai.getGenerativeModel({ model });
+      const result = await modelInstance.generateContent({ contents });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // 1. AfterShip Tracking
   app.get("/api/tracking/:trackingNumber", async (req, res) => {

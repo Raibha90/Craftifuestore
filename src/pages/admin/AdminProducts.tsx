@@ -4,9 +4,6 @@ import { db } from '../../lib/firebase';
 import { Product } from '../../types';
 import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -41,34 +38,45 @@ export default function AdminProducts() {
     try {
       const prompt = aiPrompt || `A high-quality, professional product photograph of ${newProduct.name} - ${newProduct.description}. Elegant, luxury jewellery aesthetic, soft lighting, clean background.`;
       
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: [{ text: prompt }],
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          model: 'gemini-1.5-flash',
+          contents: [{ text: prompt }] 
+        })
       });
+      if (!response.ok) throw new Error('AI request failed');
+      const result = await response.json();
 
       let foundImage = false;
-      for (const candidate of result.candidates) {
-        for (const part of candidate.content.parts) {
-          if (part.inlineData) {
-            const base64 = part.inlineData.data;
-            const imageUrl = `data:image/png;base64,${base64}`;
-            const newImages = [...newProduct.images];
-            newImages[idx] = imageUrl;
-            setNewProduct({ ...newProduct, images: newImages });
+      // result here is the serialized object. Need to adjust check if it's the right property
+      if (result.candidates) {
+        for (const candidate of result.candidates) {
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData) {
+                const base64 = part.inlineData.data;
+                const imageUrl = `data:image/png;base64,${base64}`;
+                const newImages = [...newProduct.images];
+                newImages[idx] = imageUrl;
+                setNewProduct({ ...newProduct, images: newImages });
 
-            // Automatically save to DB if editing an existing product
-            if (editingId) {
-              await updateDoc(doc(db, 'products', editingId), {
-                images: newImages,
-                updatedAt: serverTimestamp()
-              });
+                // Automatically save to DB if editing an existing product
+                if (editingId) {
+                  await updateDoc(doc(db, 'products', editingId), {
+                    images: newImages,
+                    updatedAt: serverTimestamp()
+                  });
+                }
+
+                foundImage = true;
+                break;
+              }
             }
-
-            foundImage = true;
-            break;
           }
+          if (foundImage) break;
         }
-        if (foundImage) break;
       }
 
       if (!foundImage) {

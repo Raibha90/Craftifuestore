@@ -3,9 +3,6 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Save, Loader2, Layout, FileText, Image as ImageIcon, Sparkles, Target, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 type PageType = 'home' | 'about_story' | 'about_mission';
 
@@ -24,20 +21,30 @@ export default function AdminCMS() {
 
     setGeneratingAI(true);
     try {
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: [{ text: aiPrompt }],
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          model: 'gemini-1.5-flash',
+          contents: [{ text: aiPrompt }] 
+        })
       });
+      if (!response.ok) throw new Error('AI request failed');
+      const result = await response.json();
 
       let imageUrl = '';
-      for (const candidate of result.candidates) {
-        for (const part of candidate.content.parts) {
-          if (part.inlineData) {
-            imageUrl = `data:image/png;base64,${part.inlineData.data}`;
-            break;
+      if (result.candidates) {
+        for (const candidate of result.candidates) {
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData) {
+                imageUrl = `data:image/png;base64,${part.inlineData.data}`;
+                break;
+              }
+            }
           }
+          if (imageUrl) break;
         }
-        if (imageUrl) break;
       }
 
       if (!imageUrl) throw new Error('No image generated');

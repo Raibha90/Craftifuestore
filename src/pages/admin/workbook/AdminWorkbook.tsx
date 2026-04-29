@@ -33,9 +33,6 @@ import {
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../../lib/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // --- Types ---
 interface JewelleryItem {
@@ -160,32 +157,42 @@ export default function AdminWorkbook() {
     try {
       const prompt = aiPrompt || `A professional high-end jewellery photograph of ${editingItem?.productName}, ${editingItem?.metal} ${editingItem?.purity}, ${editingItem?.category}. Studio lighting, elegant display, photorealistic.`;
       
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: [{ text: prompt }],
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          model: 'gemini-1.5-flash',
+          contents: [{ text: prompt }] 
+        })
       });
+      if (!response.ok) throw new Error('AI request failed');
+      const result = await response.json();
 
       let foundImage = false;
-      for (const candidate of result.candidates) {
-        for (const part of candidate.content.parts) {
-          if (part.inlineData) {
-            const base64 = part.inlineData.data;
-            const imageUrl = `data:image/png;base64,${base64}`;
-            setEditingItem({ ...editingItem, imageUrl });
-            
-            // Automatically save to DB if SKU exists
-            if (editingItem?.sku) {
-              await setDoc(doc(db, 'jewellery_master', editingItem.sku), {
-                imageUrl,
-                updatedAt: new Date().toISOString()
-              }, { merge: true });
+      if (result.candidates) {
+        for (const candidate of result.candidates) {
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData) {
+                const base64 = part.inlineData.data;
+                const imageUrl = `data:image/png;base64,${base64}`;
+                setEditingItem({ ...editingItem, imageUrl });
+                
+                // Automatically save to DB if SKU exists
+                if (editingItem?.sku) {
+                  await setDoc(doc(db, 'jewellery_master', editingItem.sku), {
+                    imageUrl,
+                    updatedAt: new Date().toISOString()
+                  }, { merge: true });
+                }
+                
+                foundImage = true;
+                break;
+              }
             }
-            
-            foundImage = true;
-            break;
           }
+          if (foundImage) break;
         }
-        if (foundImage) break;
       }
 
       if (!foundImage) {

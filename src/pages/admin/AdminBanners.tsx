@@ -4,9 +4,6 @@ import { db } from '../../lib/firebase';
 import { Banner } from '../../types';
 import { Plus, Trash2, LayoutPanelLeft, Link as LinkIcon, Eye, Save, X, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export default function AdminBanners() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -75,36 +72,46 @@ export default function AdminBanners() {
     try {
       const prompt = aiPrompt || `A cinematic, ultra-wide luxury photography of ${newBanner.title} - ${newBanner.subtitle}. High-end jewellery brand aesthetic, minimal background, soft ambient lighting, photorealistic.`;
       
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: [{ text: prompt }],
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          model: 'gemini-1.5-flash',
+          contents: [{ text: prompt }] 
+        })
       });
+      if (!response.ok) throw new Error('AI request failed');
+      const result = await response.json();
 
       let foundImage = false;
-      for (const candidate of result.candidates) {
-        for (const part of candidate.content.parts) {
-          if (part.inlineData) {
-            const base64 = part.inlineData.data;
-            const imageUrl = `data:image/png;base64,${base64}`;
-            
-            // Update local state
-            const updatedBanner = { ...newBanner, imageUrl };
-            setNewBanner(updatedBanner);
+      if (result.candidates) {
+        for (const candidate of result.candidates) {
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData) {
+                const base64 = part.inlineData.data;
+                const imageUrl = `data:image/png;base64,${base64}`;
+                
+                // Update local state
+                const updatedBanner = { ...newBanner, imageUrl };
+                setNewBanner(updatedBanner);
 
-            // Automatically save to DB if we are editing an existing banner
-            if (editingId) {
-              await updateDoc(doc(db, 'banners', editingId), {
-                imageUrl,
-                updatedAt: serverTimestamp()
-              });
-              fetchBanners();
+                // Automatically save to DB if we are editing an existing banner
+                if (editingId) {
+                  await updateDoc(doc(db, 'banners', editingId), {
+                    imageUrl,
+                    updatedAt: serverTimestamp()
+                  });
+                  fetchBanners();
+                }
+                
+                foundImage = true;
+                break;
+              }
             }
-
-            foundImage = true;
-            break;
           }
+          if (foundImage) break;
         }
-        if (foundImage) break;
       }
 
       if (!foundImage) {
