@@ -10,6 +10,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
 import nodemailer from "nodemailer";
+import PDFDocument from "pdfkit";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -384,6 +385,228 @@ async function startServer() {
     } catch (err: any) {
       console.error("Webhook error:", err);
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Order Status Notification (Email & WhatsApp)
+  app.post("/api/orders/notify-status", async (req, res) => {
+    const { orderId, phone, email, status, itemsHtml, totalAmount, order } = req.body;
+    
+    if (!orderId || !status) return res.status(400).json({ error: "orderId and status required" });
+
+    let emailSent = false;
+    let smssent = false;
+
+    // 1. Send Email Notification
+    if (email && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        let subject = `Craftifue Order Update: ${status.toUpperCase()}`;
+        let htmlContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; border: 1px solid #f0eee5;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h2 style="color: #4a5d23; font-size: 24px;">Order Status Update</h2>
+              <p style="color: #d4af37; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; font-size: 12px;">Your order #${orderId.slice(-6).toUpperCase()}</p>
+            </div>
+            <p style="color: #4b5563; line-height: 1.6;">Hello,</p>
+            <p style="color: #4b5563; line-height: 1.6;">The status of your order has been updated to: <strong style="color: #4a5d23; font-size: 16px;">${status.toUpperCase()}</strong></p>
+            ${itemsHtml ? `
+            <div style="background: #fff; padding: 20px; border-radius: 8px; margin-top: 30px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                ${itemsHtml}
+                <tr>
+                  <td style="padding: 15px 12px 0 12px; font-weight: bold; text-align: right; color: #4a5d23; text-transform: uppercase; font-size: 12px;">Total Amount:</td>
+                  <td style="padding: 15px 12px 0 12px; font-weight: bold; text-align: right; color: #4a5d23; font-size: 18px;">₹${totalAmount}</td>
+                </tr>
+              </table>
+            </div>` : ""}
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 40px;">Thank you for shopping with Craftifue.</p>
+          </div>
+        `;
+
+        let mailOptions: any = {
+          from: `"Craftifue" <${process.env.SMTP_USER}>`,
+          to: email,
+          subject,
+          html: htmlContent,
+        };
+
+        // Attach Invoice PDF if order object is provided
+        if (order && (status === 'confirmed' || status === 'delivered' || status === 'processed' || status === 'shipped')) {
+          const doc = new PDFDocument({ margin: 50 });
+          let buffers: any[] = [];
+          
+          const pdfPromise = new Promise((resolve) => {
+             doc.on('data', buffers.push.bind(buffers));
+             doc.on('end', () => {
+               const pdfData = Buffer.concat(buffers);
+               resolve(pdfData);
+             });
+          });
+
+          // Header
+          doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
+          doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
+          doc.moveDown();
+
+          // Invoice Details
+          doc.fontSize(16).fillColor("black").text("INVOICE", { align: "right" });
+          doc.fontSize(10).text(`Order ID: ${order.id.slice(-6).toUpperCase()}`, { align: "right" });
+          doc.text(`Date: ${new Date(order.createdAt?.seconds * 1000).toLocaleDateString()}`, { align: "right" });
+          doc.text(`Status: ${order.status.toUpperCase()}`, { align: "right" });
+          doc.moveDown(2);
+
+          // Shipping Address
+          doc.fontSize(12).fillColor("#4a5d23").text("Billed To:");
+          doc.fontSize(10).fillColor("black");
+          if (order.address) {
+            doc.text(`${order.address.fullName || "Customer"}`);
+            doc.text(`${order.address.street}`);
+            doc.text(`${order.address.city}, ${order.address.state} - ${order.address.zipCode}`);
+            doc.text(`${order.address.phone}`);
+          }
+          doc.moveDown(2);
+
+          // Table Header
+          const tableTop = doc.y;
+          doc.font("Helvetica-Bold");
+          doc.text("Item", 50, tableTop);
+          doc.text("Quantity", 300, tableTop, { width: 90, align: "right" });
+          doc.text("Price", 400, tableTop, { width: 90, align: "right" });
+          
+          const hrTop = tableTop + 15;
+          doc.moveTo(50, hrTop).lineTo(500, hrTop).stroke();
+          
+          // Table Content
+          doc.font("Helvetica");
+          let currentY = hrTop + 15;
+          
+          order.items.forEach((item: any) => {
+            doc.text(item.name, 50, currentY);
+            doc.text(item.quantity.toString(), 300, currentY, { width: 90, align: "right" });
+            doc.text(`Rs. ${(item.price * item.quantity).toLocaleString()}`, 400, currentY, { width: 90, align: "right" });
+            currentY += 20;
+          });
+
+          doc.moveTo(50, currentY).lineTo(500, currentY).stroke();
+          currentY += 15;
+
+          // Total
+          doc.font("Helvetica-Bold");
+          doc.text("Total", 300, currentY, { width: 90, align: "right" });
+          doc.text(`Rs. ${order.totalAmount.toLocaleString()}`, 400, currentY, { width: 90, align: "right" });
+
+          // Footer
+          doc.font("Helvetica").fontSize(10).fillColor("gray");
+          doc.text("Thank you for supporting artisans!", 50, doc.page.height - 100, { align: "center" });
+
+          doc.end();
+
+          const pdfBuffer = await pdfPromise;
+          mailOptions.attachments = [
+            {
+              filename: `Invoice-${orderId.slice(-6).toUpperCase()}.pdf`,
+              content: pdfBuffer,
+              contentType: 'application/pdf'
+            }
+          ];
+        }
+
+        await transporter.sendMail(mailOptions);
+        emailSent = true;
+      } catch (err) {
+        console.error("Email notification error:", err);
+      }
+    }
+
+    // 2. Send SMS/WhatsApp Notification via Twilio
+    if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+      try {
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        await client.messages.create({
+          body: `Craftifue Update: Your order #${orderId.slice(-6).toUpperCase()} is now ${status.toUpperCase()}. Thank you!`,
+          to: phone,
+          from: process.env.TWILIO_PHONE_NUMBER
+        });
+        smssent = true;
+      } catch (err) {
+        console.error("SMS notification error:", err);
+      }
+    }
+
+    res.json({ success: true, emailSent, smssent });
+  });
+
+  // PDF Invoice Generator
+  app.post("/api/generate-invoice", async (req, res) => {
+    const { order } = req.body;
+    if (!order) return res.status(400).json({ error: "Order data required" });
+
+    try {
+      const doc = new PDFDocument({ margin: 50 });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="Invoice-${order.id.slice(-6).toUpperCase()}.pdf"`);
+      doc.pipe(res);
+
+      // Header
+      doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
+      doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
+      doc.moveDown();
+
+      // Invoice Details
+      doc.fontSize(16).fillColor("black").text("INVOICE", { align: "right" });
+      doc.fontSize(10).text(`Order ID: ${order.id.slice(-6).toUpperCase()}`, { align: "right" });
+      doc.text(`Date: ${new Date(order.createdAt?.seconds * 1000).toLocaleDateString()}`, { align: "right" });
+      doc.text(`Status: ${order.status.toUpperCase()}`, { align: "right" });
+      doc.moveDown(2);
+
+      // Shipping Address
+      doc.fontSize(12).fillColor("#4a5d23").text("Billed To:");
+      doc.fontSize(10).fillColor("black");
+      if (order.address) {
+        doc.text(`${order.address.fullName || "Customer"}`);
+        doc.text(`${order.address.street}`);
+        doc.text(`${order.address.city}, ${order.address.state} - ${order.address.zipCode}`);
+        doc.text(`${order.address.phone}`);
+      }
+      doc.moveDown(2);
+
+      // Table Header
+      const tableTop = doc.y;
+      doc.font("Helvetica-Bold");
+      doc.text("Item", 50, tableTop);
+      doc.text("Quantity", 300, tableTop, { width: 90, align: "right" });
+      doc.text("Price", 400, tableTop, { width: 90, align: "right" });
+      
+      const hrTop = tableTop + 15;
+      doc.moveTo(50, hrTop).lineTo(500, hrTop).stroke();
+      
+      // Table Content
+      doc.font("Helvetica");
+      let currentY = hrTop + 15;
+      
+      order.items.forEach((item: any) => {
+        doc.text(item.name, 50, currentY);
+        doc.text(item.quantity.toString(), 300, currentY, { width: 90, align: "right" });
+        doc.text(`Rs. ${(item.price * item.quantity).toLocaleString()}`, 400, currentY, { width: 90, align: "right" });
+        currentY += 20;
+      });
+
+      doc.moveTo(50, currentY).lineTo(500, currentY).stroke();
+      currentY += 15;
+
+      // Total
+      doc.font("Helvetica-Bold");
+      doc.text("Total", 300, currentY, { width: 90, align: "right" });
+      doc.text(`Rs. ${order.totalAmount.toLocaleString()}`, 400, currentY, { width: 90, align: "right" });
+
+      // Footer
+      doc.font("Helvetica").fontSize(10).fillColor("gray");
+      doc.text("Thank you for supporting artisans!", 50, doc.page.height - 100, { align: "center" });
+
+      doc.end();
+    } catch (err: any) {
+      console.error("Invoice error:", err);
+      if (!res.headersSent) res.status(500).json({ error: "Failed to generate invoice" });
     }
   });
 

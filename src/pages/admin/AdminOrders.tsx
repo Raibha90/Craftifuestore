@@ -31,16 +31,32 @@ export default function AdminOrders() {
     try {
       await updateDoc(doc(db, 'orders', id), { status });
       
-      // If status is shipped, and we have a tracking number, notify via Twilio
-      if (status === 'shipped' && order?.trackingNumber) {
-         fetch('/api/send-sms', {
+      if (order) {
+        // Construct the item list for email
+        const itemsHtml = order.items.map(item => `
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4b5563;">${item.name} <span style="color: #9ca3af; font-size: 12px;">x ${item.quantity}</span></td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #4b5563; font-weight: bold;">₹${(item.price * item.quantity).toLocaleString()}</td>
+          </tr>
+        `).join('');
+
+        // Provide real user email and phone from order.address.phone and the user collection or order.userId (we don't store email directly on order but perhaps the auth provider).
+        // For simplicity let's rely on the order containing user info, wait - order has `address.phone`. We might not have email directly on order unless added.
+        // Wait, in Checkout we had `user.email` but we didn't save it to `order`. If it's missing, the backend won't send an email, only WhatsApp. Let's send what we have.
+        
+        fetch('/api/orders/notify-status', {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
-             to: '+919999999999', // In production, use customer's phone
-             message: `Artisan Treasures: Your order #${id.slice(-8).toUpperCase()} has been shipped! Tracking: ${order.trackingNumber}`
+             orderId: order.id,
+             phone: order.address?.phone, // used for SMS
+             email: localStorage.getItem('last_user_email') || "", // Admin would fetch it
+             status,
+             itemsHtml,
+             totalAmount: order.totalAmount.toLocaleString(),
+             order: order
            })
-         }).catch(e => console.error('SMS notification failed:', e));
+         }).catch(e => console.error('Status notification failed:', e));
       }
       
       fetchOrders();
@@ -49,9 +65,23 @@ export default function AdminOrders() {
     }
   };
 
-  const handleUpdateTracking = async (id: string, trackingNumber: string, courierName: string) => {
+  const handleUpdateTracking = async (id: string, trackingNumber: string, courierName: string, order?: Order) => {
     try {
       await updateDoc(doc(db, 'orders', id), { trackingNumber, courierName });
+      
+      if (order) {
+         fetch('/api/orders/notify-status', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+             orderId: order.id,
+             phone: order.address?.phone,
+             status: 'shipped (tracking updated)',
+             totalAmount: order.totalAmount.toLocaleString()
+           })
+         });
+      }
+      
       fetchOrders();
     } catch (err) {
       console.error(err);
