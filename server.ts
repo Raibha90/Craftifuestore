@@ -134,13 +134,17 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
+    console.log('Production mode: Serving static files from', distPath);
+    console.log('Checking index.html existence:', path.join(distPath, "index.html"));
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
+      console.log('Serving SPA fallback for:', req.url);
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server environment: ${process.env.NODE_ENV}`);
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
