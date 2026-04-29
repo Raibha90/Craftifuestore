@@ -124,6 +124,106 @@ async function startServer() {
     }
   });
 
+  // OTP Infrastructure (In-Memory for demonstration; use Redis/Firestore for Prod)
+  interface OtpRecord {
+    phone: string;
+    otp: string;
+    created_at: number;
+    expires_at: number;
+    attempt_count: number;
+    resend_count: number;
+  }
+  const otpStore = new Map<string, OtpRecord>();
+
+  // Use an in-memory array to simulate an Audit Table for OTP actions
+  const otpAuditLogs: Array<{ timestamp: string, phone: string, action: string, status: string, details?: string }> = [];
+
+  const logAudit = (phone: string, action: string, status: string, details?: string) => {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      phone,
+      action,
+      status,
+      details
+    };
+    otpAuditLogs.push(entry);
+    console.log(`[AUDIT] OTP | ${phone} | ${action} | ${status} | ${details || ''}`);
+  };
+
+  app.post("/api/auth/send-otp", async (req, res) => {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: "Phone number is required" });
+
+    const existing = otpStore.get(phone);
+    if (existing) {
+       if (existing.resend_count >= 3 && (Date.now() - existing.created_at) < 30 * 60 * 1000) {
+          logAudit(phone, "RESEND_REQUEST", "BLOCKED", "Too many attempts within 30 minutes");
+          return res.status(429).json({ error: "Too many attempts, please try again later." });
+       }
+    }
+
+    const sid = process.env.TWILIO_ACCOUNT_SID;
+    const token = process.env.TWILIO_AUTH_TOKEN;
+    const from = process.env.TWILIO_PHONE_NUMBER;
+
+    const otp = (sid && token) ? Math.floor(100000 + Math.random() * 900000).toString() : "123456";
+    const created_at = Date.now();
+    const expires_at = created_at + 5 * 60 * 1000;
+    const resend_count = existing ? existing.resend_count + 1 : 0;
+
+    otpStore.set(phone, { phone, otp, created_at, expires_at, attempt_count: 0, resend_count });
+    
+    logAudit(phone, resend_count === 0 ? "INITIAL_REQUEST" : "RESEND_REQUEST", "SUCCESS", `Resend count: ${resend_count}`);
+
+    if (sid && token && from) {
+       try {
+         const client = twilio(sid, token);
+         await client.messages.create({
+           body: `Your Craftifue verification code is ${otp}. It is valid for 5 minutes.`,
+           to: phone,
+           from: from
+         });
+         return res.json({ success: true, message: "OTP sent via SMS" });
+       } catch (err: any) {
+         logAudit(phone, "SMS_DISPATCH", "FAILED", err.message);
+         return res.status(500).json({ error: "Failed to send SMS gateway." });
+       }
+    } else {
+       logAudit(phone, "SMS_DISPATCH", "MOCKED", `OTP is ${otp}`);
+       return res.json({ success: true, mock: true, message: "Mock OTP sent (check console)", mockOTP: otp });
+    }
+  });
+
+  app.post("/api/auth/verify-otp", async (req, res) => {
+    const { phone, otp } = req.body;
+    const record = otpStore.get(phone);
+
+    if (!record) {
+       logAudit(phone, "VERIFY_ATTEMPT", "FAILED", "No record found");
+       return res.status(400).json({ error: "No OTP request found for this number." });
+    }
+    
+    if (Date.now() > record.expires_at) {
+       logAudit(phone, "VERIFY_ATTEMPT", "FAILED", "OTP expired");
+       return res.status(400).json({ error: "OTP expired. Please click Resend OTP to receive a new code." });
+    }
+    
+    if (record.attempt_count >= 5) {
+       logAudit(phone, "VERIFY_ATTEMPT", "BLOCKED", "Max attempts exceeded");
+       return res.status(429).json({ error: "Too many invalid attempts. Please request a new OTP." });
+    }
+    
+    if (record.otp !== otp) {
+       record.attempt_count += 1;
+       logAudit(phone, "VERIFY_ATTEMPT", "FAILED", `Invalid OTP try ${record.attempt_count}/5`);
+       return res.status(400).json({ error: "Invalid OTP, please try again." });
+    }
+    
+    logAudit(phone, "VERIFY_ATTEMPT", "SUCCESS", "OTP matched correctly");
+    otpStore.delete(phone);
+    res.json({ success: true, message: "Verified successfully" });
+  });
+
   // 1. AfterShip Tracking
   app.get("/api/tracking/:trackingNumber", async (req, res) => {
     const { trackingNumber } = req.params;
@@ -226,6 +326,64 @@ async function startServer() {
       res.json({ success: true });
     } else {
       res.status(400).json({ success: false, error: "Invalid signature" });
+    }
+  });
+
+  app.post("/api/webhooks/razorpay", async (req, res) => {
+    // Requires express.json() which is already configured globally
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      return res.status(500).json({ error: "Razorpay Webhook Secret not configured" });
+    }
+
+    const signature = req.headers["x-razorpay-signature"];
+    if (!signature) {
+      return res.status(400).json({ error: "Missing signature" });
+    }
+
+    try {
+      const expectedSignature = crypto
+        .createHmac("sha256", webhookSecret)
+        .update(JSON.stringify(req.body))
+        .digest("hex");
+
+      if (expectedSignature === signature) {
+        console.log("Razorpay event verified:", req.body.event);
+        
+        switch (req.body.event) {
+          case "payment.captured":
+          case "order.paid":
+            const paymentEntity = req.body.payload.payment.entity;
+            const email = paymentEntity.email;
+            const amount = paymentEntity.amount / 100; // back to INR
+            const orderId = paymentEntity.order_id;
+            
+            // We can add logic to update Firebase Admin here using a Firebase Admin SDK
+            // Since we use the frontend to create the order initially, this webhook
+            // serves to capture unexpected payment state changes (e.g., late captures).
+            
+            // Optionally, fallback send an email if not sent by frontend
+            /*
+            if (email && process.env.SMTP_USER && process.env.SMTP_PASS) {
+              await transporter.sendMail({
+                 from: \`"Craftifue" <\${process.env.SMTP_USER}>\`,
+                 to: email,
+                 subject: "Payment Confirmed via Razorpay",
+                 text: \`Your payment of ₹\${amount} for order \${orderId} was successful.\`
+              });
+            }
+            */
+            break;
+        }
+
+        res.json({ status: "ok" });
+      } else {
+        res.status(400).json({ error: "Invalid Webhook Signature" });
+      }
+    } catch (err: any) {
+      console.error("Webhook error:", err);
+      res.status(500).json({ error: err.message });
     }
   });
 

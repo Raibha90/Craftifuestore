@@ -90,6 +90,48 @@ export default function Checkout() {
                 createdAt: serverTimestamp(),
               });
 
+              // 5. Send order confirmation email via our backend route
+              const orderItemsHtml = items.map(item => `
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4b5563;">${item.name} <span style="color: #9ca3af; font-size: 12px;">x ${item.quantity}</span></td>
+                  <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #4b5563; font-weight: bold;">₹${(item.price * item.quantity).toLocaleString()}</td>
+                </tr>
+              `).join('');
+
+              await fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  to: user.email,
+                  subject: 'Craftifue - Order Confirmation Details',
+                  html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; border: 1px solid #f0eee5;">
+                      <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="color: #4a5d23; font-size: 24px;">Order Confirmed!</h2>
+                        <p style="color: #d4af37; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; font-size: 12px;">Thank you for shopping with Craftifue</p>
+                      </div>
+                      <p style="color: #4b5563; line-height: 1.6;">Hello <strong>${user.displayName || 'Artisan Lover'}</strong>,</p>
+                      <p style="color: #4b5563; line-height: 1.6;">We have received your order and our artisans are preparing it for shipment. We will notify you once it dispatches.</p>
+                      
+                      <div style="background: #fff; padding: 20px; border-radius: 8px; margin-top: 30px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                          ${orderItemsHtml}
+                          <tr>
+                            <td style="padding: 15px 12px 0 12px; font-weight: bold; text-align: right; color: #4a5d23; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Total Amount:</td>
+                            <td style="padding: 15px 12px 0 12px; font-weight: bold; text-align: right; color: #4a5d23; font-size: 18px;">₹${totalPrice.toLocaleString()}</td>
+                          </tr>
+                        </table>
+                      </div>
+
+                      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <p style="color: #4b5563; font-size: 12px; margin-bottom: 5px;"><strong>Shipping Address:</strong><br/>${address.street}, ${address.city} - ${address.zipCode}</p>
+                        <p style="color: #9ca3af; font-size: 11px; margin-top: 15px;">Order ID: ${response.razorpay_order_id}</p>
+                      </div>
+                    </div>
+                  `
+                })
+              }).catch(err => console.error('Failed to send confirmation email', err));
+
               clearCart();
               setCurrentStep(4);
             } else {
