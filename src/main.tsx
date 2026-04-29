@@ -4,6 +4,10 @@ import App from './App.tsx';
 import './index.css';
 import { doc, getDocFromServer } from 'firebase/firestore';
 import { db } from './lib/firebase';
+import { injectSpeedInsights } from '@vercel/speed-insights';
+
+// Initialize Vercel Speed Insights
+injectSpeedInsights();
 
 console.log('main.tsx: Starting initialization');
 try {
