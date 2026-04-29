@@ -179,18 +179,22 @@ async function startServer() {
     if (sid && token && from) {
        try {
          const client = twilio(sid, token);
+         
+         const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+         const formattedFrom = from.startsWith('+') ? from : `+${from}`;
+         
          await client.messages.create({
            body: `Your Craftifue verification code is ${otp}. It is valid for 5 minutes.`,
-           to: phone,
-           from: from
+           to: `whatsapp:${formattedPhone}`,
+           from: `whatsapp:${formattedFrom}`
          });
-         return res.json({ success: true, message: "OTP sent via SMS" });
+         return res.json({ success: true, message: "OTP sent via WhatsApp" });
        } catch (err: any) {
-         logAudit(phone, "SMS_DISPATCH", "FAILED", err.message);
-         return res.status(500).json({ error: "Failed to send SMS gateway." });
+         logAudit(phone, "WHATSAPP_DISPATCH", "FAILED", err.message);
+         return res.status(500).json({ error: "Failed to send WhatsApp gateway." });
        }
     } else {
-       logAudit(phone, "SMS_DISPATCH", "MOCKED", `OTP is ${otp}`);
+       logAudit(phone, "WHATSAPP_DISPATCH", "MOCKED", `OTP is ${otp}`);
        return res.json({ success: true, mock: true, message: "Mock OTP sent (check console)", mockOTP: otp });
     }
   });
@@ -522,14 +526,18 @@ async function startServer() {
     if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
       try {
         const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        
+        const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+        const formattedFrom = process.env.TWILIO_PHONE_NUMBER.startsWith('+') ? process.env.TWILIO_PHONE_NUMBER : `+${process.env.TWILIO_PHONE_NUMBER}`;
+        
         await client.messages.create({
           body: `Craftifue Update: Your order #${orderId.slice(-6).toUpperCase()} is now ${status.toUpperCase()}. Thank you!`,
-          to: phone,
-          from: process.env.TWILIO_PHONE_NUMBER
+          to: `whatsapp:${formattedPhone}`,
+          from: `whatsapp:${formattedFrom}`
         });
         smssent = true;
       } catch (err) {
-        console.error("SMS notification error:", err);
+        console.error("WhatsApp notification error:", err);
       }
     }
 
