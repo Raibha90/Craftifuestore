@@ -50,11 +50,11 @@ export default function AdminLogin() {
         className="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl relative z-10"
       >
         <div className="text-center mb-10">
-          <div className="inline-flex p-4 bg-brand-gold/10 rounded-3xl mb-6">
-            <Lock className="w-8 h-8 text-brand-gold" />
+          <div className="mb-6">
+            {/* Placeholder for Logo - User should replace with their image */}
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-500 font-bold text-xs uppercase tracking-widest">Logo</div>
           </div>
           <h1 className="text-2xl font-serif font-bold text-brand-olive mb-2">Admin Portal</h1>
-          <p className="text-xs text-gray-400 uppercase tracking-[0.2em] font-medium">Secure Access Only</p>
         </div>
 
         {error && (
@@ -84,18 +84,22 @@ export default function AdminLogin() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-widest font-bold text-brand-olive px-4">Secret Password</label>
-            <div className="relative">
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                required
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all font-medium"
-              />
+          <div className="space-y-6">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all font-medium"
+            />
+            <div className="text-right">
+              <button 
+                type="button"
+                onClick={() => navigate('/admin/forgot-password')}
+                className="text-[10px] text-gray-500 hover:text-brand-gold uppercase tracking-widest font-bold"
+              >
+                Forgot Password?
+              </button>
             </div>
           </div>
 
@@ -109,12 +113,7 @@ export default function AdminLogin() {
         </form>
 
         <div className="mt-10 pt-8 border-t border-gray-50 text-center">
-          <button 
-            onClick={() => navigate('/')}
-            className="text-[10px] uppercase tracking-widest font-bold text-gray-400 hover:text-brand-gold transition-colors"
-          >
-            ← Return to Storefront
-          </button>
+          <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Craftique Admin</p>
         </div>
       </motion.div>
     </div>

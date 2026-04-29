@@ -8,6 +8,16 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      console.log('index.html: Body scripts starting');
+      window.addEventListener('error', function(e) {
+        console.error('GLOBAL ERROR:', e.message, 'at', e.filename, ':', e.lineno);
+        const root = document.getElementById('root');
+        if (root && root.innerHTML === '') {
+          root.innerHTML = '<div style="padding: 20px; color: red; font-family: sans-serif;"><h1>Bootstrap Error</h1><pre>' + e.message + '</pre></div>';
+        }
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

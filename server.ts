@@ -1,6 +1,7 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import cors from "cors";
 import { AfterShip } from "aftership";
@@ -125,22 +126,27 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  // Serve static files in production or if dist exists
+  const isProduction = process.env.NODE_ENV === "production";
+  const distPath = path.join(process.cwd(), "dist");
+  const hasDist = fs.existsSync(distPath);
+
+  if (isProduction || hasDist) {
+    if (!hasDist) {
+      console.warn('Production mode but dist/ folder not found!');
+    }
+    console.log('Serving static files from', distPath);
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  } else {
+    console.log('Development mode: Using Vite middleware');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    console.log('Production mode: Serving static files from', distPath);
-    console.log('Checking index.html existence:', path.join(distPath, "index.html"));
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      console.log('Serving SPA fallback for:', req.url);
-      res.sendFile(path.join(distPath, "index.html"));
-    });
   }
 
   app.listen(PORT, "0.0.0.0", () => {

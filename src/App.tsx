@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import CustomerLogin from './pages/CustomerLogin';
 import CreateAccount from './pages/CreateAccount';
 import AdminLogin from './pages/admin/AdminLogin';
+import ForgotPassword from './pages/admin/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -43,39 +44,12 @@ function App() {
         <WishlistProvider>
           <CartProvider>
             <Router>
-            <div className="flex flex-col min-h-screen">
-              <Header id="main-header" />
-              <main className="flex-grow pt-20">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/category/:category" element={<CategoryProducts />} />
-                  <Route path="/product/:id" element={<ProductDetail />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/wishlist" element={
-                    <PrivateRoute>
-                      <Wishlist />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<CreateAccount />} />
-                  <Route path="/customer-login" element={<CustomerLogin />} />
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/about/mission-vision" element={<MissionVision />} />
-                  <Route path="/about/craftifue" element={<AboutCraftifue />} />
-                  <Route path="/returns" element={<ReturnPolicy />} />
-                  <Route path="/terms" element={<TermsConditions />} />
-                  <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/stores" element={<StoreLocator />} />
-                  
-                  <Route path="/dashboard" element={
-                    <PrivateRoute>
-                      <Dashboard />
-                    </PrivateRoute>
-                  } />
-  
-                  {/* Admin Routes */}
-                  <Route path="/admin" element={
+              <Routes>
+                {/* Admin Routes */}
+                <Route path="/admin">
+                  <Route path="login" element={<AdminLogin />} />
+                  <Route path="forgot-password" element={<ForgotPassword />} />
+                  <Route element={
                     <AdminRoute>
                       <AdminLayout />
                     </AdminRoute>
@@ -89,11 +63,45 @@ function App() {
                     <Route path="workbook" element={<AdminWorkbook />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
-                </Routes>
-              </main>
-              <Footer id="main-footer" />
-            </div>
-          </Router>
+                </Route>
+
+                {/* Client Routes */}
+                <Route path="/*" element={
+                  <div className="flex flex-col min-h-screen">
+                    <Header id="main-header" />
+                    <main className="flex-grow pt-20">
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/category/:category" element={<CategoryProducts />} />
+                        <Route path="/product/:id" element={<ProductDetail />} />
+                        <Route path="/cart" element={<Cart />} />
+                        <Route path="/checkout" element={<Checkout />} />
+                        <Route path="/wishlist" element={
+                          <PrivateRoute>
+                            <Wishlist />
+                          </PrivateRoute>
+                        } />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/signup" element={<CreateAccount />} />
+                        <Route path="/customer-login" element={<CustomerLogin />} />
+                        <Route path="/about/mission-vision" element={<MissionVision />} />
+                        <Route path="/about/craftifue" element={<AboutCraftifue />} />
+                        <Route path="/returns" element={<ReturnPolicy />} />
+                        <Route path="/terms" element={<TermsConditions />} />
+                        <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/stores" element={<StoreLocator />} />
+                        <Route path="/dashboard" element={
+                          <PrivateRoute>
+                            <Dashboard />
+                          </PrivateRoute>
+                        } />
+                      </Routes>
+                    </main>
+                    <Footer id="main-footer" />
+                  </div>
+                } />
+              </Routes>
+            </Router>
         </CartProvider>
       </WishlistProvider>
     </AuthProvider>
