@@ -37,6 +37,9 @@ import TermsConditions from './pages/TermsConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import StoreLocator from './pages/StoreLocator';
 import VendorRegistration from './pages/VendorRegistration';
+import Offers from './pages/Offers';
+import FloatingGiftBox from './components/FloatingGiftBox';
+import WhatsAppChatbot from './components/WhatsAppChatbot';
 
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -47,6 +50,8 @@ function App() {
         <WishlistProvider>
           <CartProvider>
             <Router>
+              <FloatingGiftBox />
+              <WhatsAppChatbot />
               <Routes>
                 {/* Admin Routes */}
                 <Route path="/admin">
@@ -90,6 +95,7 @@ function App() {
                         <Route path="/signup" element={<CreateAccount />} />
                         <Route path="/vendor-signup" element={<VendorRegistration />} />
                         <Route path="/customer-login" element={<CustomerLogin />} />
+                        <Route path="/offers" element={<Offers />} />
                         <Route path="/about/mission-vision" element={<MissionVision />} />
                         <Route path="/about/craftifue" element={<AboutCraftifue />} />
                         <Route path="/returns" element={<ReturnPolicy />} />

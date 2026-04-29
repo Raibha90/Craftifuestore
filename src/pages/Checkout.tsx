@@ -216,13 +216,14 @@ export default function Checkout() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="flex items-center space-x-3 mb-8">
+                <div className="flex items-center space-x-3 mb-4">
                   <MapPin className="w-6 h-6 text-brand-gold" />
                   <h2 className="text-2xl font-serif font-bold text-brand-olive">Shipping Address</h2>
                 </div>
+                <p className="text-xs text-red-500 font-medium mb-8">Fields marked with <span className="font-bold">(*)</span> are mandatory.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="sm:col-span-2 space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Street Address</label>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Street Address <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <input 
                       type="text" 
                       placeholder="e.g. 42 Artisan Ln, Civil Lines"
@@ -233,7 +234,7 @@ export default function Checkout() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">City</label>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">City <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <input 
                       type="text" 
                       placeholder="Jaipur"
@@ -244,7 +245,7 @@ export default function Checkout() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Pincode</label>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Pincode <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <input 
                       type="text" 
                       placeholder="302001"

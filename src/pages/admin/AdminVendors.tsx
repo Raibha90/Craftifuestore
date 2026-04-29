@@ -295,7 +295,8 @@ export default function AdminVendors() {
                   <h2 className="text-2xl font-serif font-bold text-brand-olive">
                     {editingVendor ? 'Edit Vendor' : 'Add Manual Vendor'}
                   </h2>
-                  <p className="text-xs uppercase tracking-widest text-gray-400 mt-1">Vendor Master Integration</p>
+                  <p className="text-xs uppercase tracking-widest text-gray-400 mt-1 mb-2">Vendor Master Integration</p>
+                  <p className="text-xs text-red-500 font-medium tracking-normal">Fields marked with <span className="font-bold">(*)</span> are mandatory.</p>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                   <ExternalLink className="w-6 h-6" />
@@ -304,7 +305,7 @@ export default function AdminVendors() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Business Name *</label>
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Business Name <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                   <input type="text" 
                     className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none" 
                     value={newVendor.name}
@@ -312,7 +313,7 @@ export default function AdminVendors() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Category *</label>
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Category <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                   <select 
                     className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none" 
                     value={newVendor.category}

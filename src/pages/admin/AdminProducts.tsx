@@ -309,9 +309,12 @@ export default function AdminProducts() {
               className="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden"
             >
               <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                <h3 className="font-serif text-2xl font-bold text-brand-olive">
-                  {editingId ? 'Edit Treasure' : 'Add New Masterpiece'}
-                </h3>
+                <div>
+                  <h3 className="font-serif text-2xl font-bold text-brand-olive">
+                    {editingId ? 'Edit Treasure' : 'Add New Masterpiece'}
+                  </h3>
+                  <p className="text-xs text-red-500 font-medium mt-2">Fields marked with <span className="font-bold">(*)</span> are mandatory.</p>
+                </div>
                 <button 
                   onClick={() => {
                     setIsModalOpen(false);
@@ -326,15 +329,15 @@ export default function AdminProducts() {
               <form onSubmit={handleSaveProduct} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2 col-span-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Product Name</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Product Name <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <input type="text" required className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Description</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Description <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <textarea rows={3} required className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Price (₹)</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Price (₹) <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <input type="number" required className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} />
                   </div>
                   <div className="space-y-2">
@@ -344,7 +347,7 @@ export default function AdminProducts() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Stock</label>
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Stock <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <input type="number" required className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: Number(e.target.value)})} />
                   </div>
                   <div className="space-y-2">
@@ -355,7 +358,7 @@ export default function AdminProducts() {
                   {/* Images Section */}
                   <div className="space-y-4 col-span-2">
                     <div className="flex justify-between items-center">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Product Images</label>
+                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Product Images <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                       <button 
                         type="button" 
                         onClick={() => setNewProduct({...newProduct, images: [...newProduct.images, '']})}
@@ -445,7 +448,7 @@ export default function AdminProducts() {
                           </button>
                           
                           <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Type</label>
+                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Type <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                             <select 
                               className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl focus:border-brand-gold outline-none transition-all"
                               value={v.type}
@@ -459,7 +462,7 @@ export default function AdminProducts() {
                           </div>
 
                           <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Name</label>
+                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Name <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                             <input 
                               type="text" 
                               required
@@ -482,7 +485,7 @@ export default function AdminProducts() {
                           </div>
 
                           <div className="space-y-2">
-                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Stock</label>
+                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Stock <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                             <input 
                               type="number" 
                               required

@@ -152,53 +152,7 @@ export default function Header({ id }: { id: string }) {
             />
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex space-x-6 items-center">
-            {navItems.map((item) => (
-              <div 
-                key={item.name} 
-                className="relative group"
-                onMouseEnter={() => setActiveDropdown(item.name)}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                {item.path ? (
-                  <Link 
-                    to={item.path} 
-                    className="text-[11px] font-bold uppercase tracking-widest text-gray-600 hover:text-brand-olive transition-all py-4"
-                  >
-                    {item.name}
-                  </Link>
-                ) : (
-                  <button className="flex items-center space-x-1 text-[11px] font-bold uppercase tracking-widest text-gray-600 hover:text-brand-olive transition-all py-4">
-                    <span>{item.name}</span>
-                    <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${activeDropdown === item.name ? 'rotate-180' : ''}`} />
-                  </button>
-                )}
-
-                {/* Dropdown Menu */}
-                <AnimatePresence>
-                  {item.items && activeDropdown === item.name && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute left-0 mt-0 w-64 bg-white border border-brand-olive/5 shadow-2xl rounded-2xl overflow-hidden py-4 z-[60]"
-                    >
-                      {item.items.map((sub) => (
-                        <Link
-                          key={sub.label}
-                          to={sub.path}
-                          className="block px-8 py-3 text-[11px] uppercase tracking-widest font-bold text-gray-500 hover:text-brand-gold hover:bg-gray-50 transition-all border-l-2 border-transparent hover:border-brand-gold"
-                        >
-                          {sub.label}
-                        </Link>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </nav>
+          {/* Desktop Navigation removed. Moved to full screen menu */}
 
           {/* User Icons */}
           <div className="flex items-center space-x-4">
@@ -278,7 +232,7 @@ export default function Header({ id }: { id: string }) {
                 </Link>
               )}
             </div>
-            <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <button className="p-2 text-gray-600 hover:bg-brand-olive/5 rounded-full transition-colors relative z-[60]" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               <Menu className="w-6 h-6" />
             </button>
           </div>
@@ -386,55 +340,57 @@ export default function Header({ id }: { id: string }) {
         )}
       </AnimatePresence>
       
-      {/* Mobile Menu */}
+      {/* Full Screen Menu */}
       <AnimatePresence>
         {isMenuOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-brand-olive/20 backdrop-blur-sm lg:hidden"
-              onClick={() => setIsMenuOpen(false)}
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 w-[80%] max-w-sm bg-brand-cream z-[70] shadow-2xl flex flex-col"
-            >
-              <div className="p-8 flex justify-between items-center border-b border-brand-olive/5">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-gray-900/90 backdrop-blur-lg z-[80] flex flex-col"
+          >
+            <div className="flex justify-between items-center p-6 md:p-10 border-b border-white/10">
+              <Link to="/" onClick={() => setIsMenuOpen(false)}>
                 <img 
                   src={logoUrl || "/regenerated_image_1777410191797.png"} 
                   alt="Logo" 
-                  className="h-10" 
+                  className="h-10 md:h-12 brightness-0 invert" 
                   referrerPolicy="no-referrer"
                 />
-                <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full hover:bg-brand-olive/5">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="flex-grow overflow-y-auto p-8 space-y-6">
-                {navItems.map((item) => (
-                  <div key={item.name} className="space-y-4">
+              </Link>
+              <button onClick={() => setIsMenuOpen(false)} className="p-3 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors">
+                <X className="w-8 h-8" />
+              </button>
+            </div>
+            
+            <div className="flex-grow overflow-y-auto w-full flex items-center justify-center p-6 md:p-10">
+              <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-16 items-start">
+                {navItems.map((item, index) => (
+                  <motion.div 
+                    key={item.name} 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.4 }}
+                    className="space-y-6"
+                  >
                     {item.path ? (
                       <Link 
                         to={item.path} 
-                        className="block text-sm font-bold uppercase tracking-widest text-brand-olive"
+                        className="text-2xl md:text-3xl font-serif font-bold text-white hover:text-brand-gold transition-colors block"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {item.name}
                       </Link>
                     ) : (
                       <>
-                        <p className="text-[10px] uppercase font-bold text-brand-gold tracking-[0.3em]">{item.name}</p>
-                        <div className="pl-4 border-l border-brand-olive/10 space-y-4">
+                        <p className="text-sm md:text-base uppercase tracking-[0.3em] font-medium text-brand-gold border-b border-white/20 pb-4">{item.name}</p>
+                        <div className="space-y-4">
                           {item.items?.map((sub) => (
                             <Link
                               key={sub.label}
                               to={sub.path}
-                              className="block text-sm font-medium text-gray-600 hover:text-brand-olive transition-colors"
+                              className="block text-xl md:text-2xl font-serif text-white/80 hover:text-white transition-colors"
                               onClick={() => setIsMenuOpen(false)}
                             >
                               {sub.label}
@@ -443,11 +399,11 @@ export default function Header({ id }: { id: string }) {
                         </div>
                       </>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </header>

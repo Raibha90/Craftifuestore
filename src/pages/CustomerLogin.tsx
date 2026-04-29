@@ -55,7 +55,8 @@ export default function CustomerLogin() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/5 rounded-full -mr-16 -mt-16 blur-2xl" />
           
           <h2 className="text-3xl font-serif font-bold text-brand-olive mb-2">Welcome Back</h2>
-          <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-10">Access your artisan profile</p>
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-6">Access your artisan profile</p>
+          <p className="text-xs text-red-500 font-medium mb-6">Fields marked with <span className="font-bold">(*)</span> are mandatory.</p>
           
           {error && (
             <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl text-xs font-bold text-red-600 text-center flex items-center justify-center space-x-2">
@@ -66,7 +67,7 @@ export default function CustomerLogin() {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Email Address</label>
+              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Email Address <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
               <div className="relative">
                 <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -81,7 +82,7 @@ export default function CustomerLogin() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Password</label>
+              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Password <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
               <div className="relative">
                 <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input

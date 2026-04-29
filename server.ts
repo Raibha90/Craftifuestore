@@ -5,7 +5,6 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import cors from "cors";
 import { AfterShip } from "aftership";
-import twilio from "twilio";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
@@ -125,110 +124,6 @@ async function startServer() {
     }
   });
 
-  // OTP Infrastructure (In-Memory for demonstration; use Redis/Firestore for Prod)
-  interface OtpRecord {
-    phone: string;
-    otp: string;
-    created_at: number;
-    expires_at: number;
-    attempt_count: number;
-    resend_count: number;
-  }
-  const otpStore = new Map<string, OtpRecord>();
-
-  // Use an in-memory array to simulate an Audit Table for OTP actions
-  const otpAuditLogs: Array<{ timestamp: string, phone: string, action: string, status: string, details?: string }> = [];
-
-  const logAudit = (phone: string, action: string, status: string, details?: string) => {
-    const entry = {
-      timestamp: new Date().toISOString(),
-      phone,
-      action,
-      status,
-      details
-    };
-    otpAuditLogs.push(entry);
-    console.log(`[AUDIT] OTP | ${phone} | ${action} | ${status} | ${details || ''}`);
-  };
-
-  app.post("/api/auth/send-otp", async (req, res) => {
-    const { phone } = req.body;
-    if (!phone) return res.status(400).json({ error: "Phone number is required" });
-
-    const existing = otpStore.get(phone);
-    if (existing) {
-       if (existing.resend_count >= 3 && (Date.now() - existing.created_at) < 30 * 60 * 1000) {
-          logAudit(phone, "RESEND_REQUEST", "BLOCKED", "Too many attempts within 30 minutes");
-          return res.status(429).json({ error: "Too many attempts, please try again later." });
-       }
-    }
-
-    const sid = process.env.TWILIO_ACCOUNT_SID;
-    const token = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_PHONE_NUMBER;
-
-    const otp = (sid && token) ? Math.floor(100000 + Math.random() * 900000).toString() : "123456";
-    const created_at = Date.now();
-    const expires_at = created_at + 5 * 60 * 1000;
-    const resend_count = existing ? existing.resend_count + 1 : 0;
-
-    otpStore.set(phone, { phone, otp, created_at, expires_at, attempt_count: 0, resend_count });
-    
-    logAudit(phone, resend_count === 0 ? "INITIAL_REQUEST" : "RESEND_REQUEST", "SUCCESS", `Resend count: ${resend_count}`);
-
-    if (sid && token && from) {
-       try {
-         const client = twilio(sid, token);
-         
-         const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-         const formattedFrom = from.startsWith('+') ? from : `+${from}`;
-         
-         await client.messages.create({
-           body: `Your Craftifue verification code is ${otp}. It is valid for 5 minutes.`,
-           to: formattedPhone,
-           from: formattedFrom
-         });
-         return res.json({ success: true, message: "OTP sent via SMS" });
-       } catch (err: any) {
-         logAudit(phone, "SMS_DISPATCH", "FAILED", err.message);
-         return res.status(500).json({ error: "Failed to send SMS gateway." });
-       }
-    } else {
-       logAudit(phone, "SMS_DISPATCH", "MOCKED", `OTP is ${otp}`);
-       return res.json({ success: true, mock: true, message: "Mock OTP sent (check console)", mockOTP: otp });
-    }
-  });
-
-  app.post("/api/auth/verify-otp", async (req, res) => {
-    const { phone, otp } = req.body;
-    const record = otpStore.get(phone);
-
-    if (!record) {
-       logAudit(phone, "VERIFY_ATTEMPT", "FAILED", "No record found");
-       return res.status(400).json({ error: "No OTP request found for this number." });
-    }
-    
-    if (Date.now() > record.expires_at) {
-       logAudit(phone, "VERIFY_ATTEMPT", "FAILED", "OTP expired");
-       return res.status(400).json({ error: "OTP expired. Please click Resend OTP to receive a new code." });
-    }
-    
-    if (record.attempt_count >= 5) {
-       logAudit(phone, "VERIFY_ATTEMPT", "BLOCKED", "Max attempts exceeded");
-       return res.status(429).json({ error: "Too many invalid attempts. Please request a new OTP." });
-    }
-    
-    if (record.otp !== otp) {
-       record.attempt_count += 1;
-       logAudit(phone, "VERIFY_ATTEMPT", "FAILED", `Invalid OTP try ${record.attempt_count}/5`);
-       return res.status(400).json({ error: "Invalid OTP, please try again." });
-    }
-    
-    logAudit(phone, "VERIFY_ATTEMPT", "SUCCESS", "OTP matched correctly");
-    otpStore.delete(phone);
-    res.json({ success: true, message: "Verified successfully" });
-  });
-
   // 1. AfterShip Tracking
   app.get("/api/tracking/:trackingNumber", async (req, res) => {
     const { trackingNumber } = req.params;
@@ -249,31 +144,7 @@ async function startServer() {
     }
   });
 
-  // 2. Twilio SMS
-  app.post("/api/send-sms", async (req, res) => {
-    const { to, message } = req.body;
-    const sid = process.env.TWILIO_ACCOUNT_SID;
-    const token = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_PHONE_NUMBER;
-
-    if (!sid || !token || !from) {
-      return res.status(500).json({ error: "Twilio credentials not configured" });
-    }
-
-    try {
-      const client = twilio(sid, token);
-      const result = await client.messages.create({
-        body: message,
-        to: to,
-        from: from
-      });
-      res.json({ success: true, sid: result.sid });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // 3. Placeholder for Zevu API
+  // 2. Placeholder for Zevu API
   app.post("/api/zevu", async (req, res) => {
     res.json({ message: "Zevu integration endpoint ready. Please provide specific API documentation or requirements for Zevu." });
   });
@@ -522,25 +393,8 @@ async function startServer() {
       }
     }
 
-    // 2. Send SMS Notification via Twilio
-    if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-      try {
-        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        
-        const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-        const formattedFrom = process.env.TWILIO_PHONE_NUMBER.startsWith('+') ? process.env.TWILIO_PHONE_NUMBER : `+${process.env.TWILIO_PHONE_NUMBER}`;
-        
-        await client.messages.create({
-          body: `Craftifue Update: Your order #${orderId.slice(-6).toUpperCase()} is now ${status.toUpperCase()}. Thank you!`,
-          to: formattedPhone,
-          from: formattedFrom
-        });
-        smssent = true;
-      } catch (err) {
-        console.error("SMS notification error:", err);
-      }
-    }
-
+    // 2. We could send other notifications here
+    // e.g. web push, or other gateway that doesn't use twilio
     res.json({ success: true, emailSent, smssent });
   });
 

@@ -30,6 +30,17 @@ export default function ProductDetail() {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
+    // Determine the current stock based on the variant selected
+    if (selectedVariant !== null && typeof selectedVariant.stock !== 'undefined') {
+       // if we changed variant and quantity exceeds the new variant stock, adjust it
+       setQuantity(q => {
+          if (selectedVariant.stock <= 0) return 1; // will be disabled anyway, but reset
+          return Math.min(q, selectedVariant.stock);
+       });
+    }
+  }, [selectedVariant]);
+
+  useEffect(() => {
     const fetchProductAndReviews = async () => {
       if (!id) return;
       setLoading(true);
@@ -245,15 +256,17 @@ export default function ProductDetail() {
 
           <div className="space-y-6">
             <div className="flex items-center space-x-6">
-              <div className="flex items-center border border-brand-olive/20 rounded-full px-4 py-2">
+              <div className={`flex items-center border ${currentStock === 0 ? 'border-gray-200' : 'border-brand-olive/20'} rounded-full px-4 py-2`}>
                 <button 
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 text-xl text-gray-400 hover:text-brand-olive transition-colors"
+                  disabled={quantity <= 1 || currentStock === 0}
+                  className="w-10 h-10 text-xl text-gray-400 hover:text-brand-olive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >-</button>
-                <span className="w-12 text-center font-bold">{quantity}</span>
+                <span className="w-12 text-center font-bold">{currentStock === 0 ? 0 : quantity}</span>
                 <button 
                   onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
-                  className="w-10 h-10 text-xl text-gray-400 hover:text-brand-olive transition-colors"
+                  disabled={quantity >= currentStock || currentStock === 0}
+                  className="w-10 h-10 text-xl text-gray-400 hover:text-brand-olive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >+</button>
               </div>
               <button 

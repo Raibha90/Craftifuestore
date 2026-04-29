@@ -23,8 +23,11 @@ export default function VendorRegistration() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    
+    // 8 characters password with one Upper, Lower, Special Charatcers, and Number combinations
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
       return;
     }
     
@@ -83,7 +86,8 @@ export default function VendorRegistration() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/5 rounded-full -mr-16 -mt-16 blur-2xl" />
           
           <h2 className="text-3xl font-serif font-bold text-brand-olive mb-2">Vendor Registration</h2>
-          <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-10">Join our artisan network and start selling</p>
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-6">Join our artisan network and start selling</p>
+          <p className="text-xs text-red-500 font-medium mb-6">Fields marked with <span className="font-bold">(*)</span> are mandatory.</p>
 
           {error && (
             <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl text-xs font-bold text-red-600 flex items-center space-x-2">
@@ -95,7 +99,7 @@ export default function VendorRegistration() {
           <form onSubmit={handleRegister} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Business Name</label>
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Business Name <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                 <div className="relative">
                   <Store className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
@@ -110,7 +114,7 @@ export default function VendorRegistration() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Email Address</label>
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Email Address <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                 <div className="relative">
                   <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
@@ -125,7 +129,7 @@ export default function VendorRegistration() {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Password</label>
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Password <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                 <div className="relative">
                   <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
@@ -140,7 +144,7 @@ export default function VendorRegistration() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Phone Number</label>
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Phone Number <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                 <div className="relative">
                   <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
@@ -155,7 +159,7 @@ export default function VendorRegistration() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">City / Region</label>
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">City / Region <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                 <div className="relative">
                   <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
