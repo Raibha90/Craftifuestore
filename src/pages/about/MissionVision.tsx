@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { Target, Eye, Heart, Loader2 } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
+import PageBanner from '../../components/PageBanner';
+import ShuffledSections from '../../components/ShuffledSections';
 
 export default function MissionVision() {
   const [content, setContent] = useState<any>(null);
@@ -40,8 +42,14 @@ export default function MissionVision() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-24">
-      <div className="text-center space-y-4">
+    <div>
+      <PageBanner 
+        title="Mission & Vision" 
+        subtitle="Empowering artisans, preserving crafts." 
+        image="https://images.unsplash.com/photo-1541944743827-e04bb645d943?q=80&w=2000&auto=format&fit=crop" 
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-24">
+        <div className="text-center space-y-4">
         <h5 className="text-xs font-bold uppercase tracking-[0.4em] text-brand-gold">The Foundation</h5>
         <h1 className="text-3xl md:text-5xl font-serif font-bold text-brand-olive">{data.title}</h1>
         <div className="w-24 h-1 bg-brand-gold mx-auto" />
@@ -106,6 +114,9 @@ export default function MissionVision() {
           </p>
         </motion.div>
       </div>
+      </div>
+
+      <ShuffledSections />
     </div>
   );
 }

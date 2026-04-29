@@ -1,21 +1,19 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Lock, Eye, Database, Share2 } from 'lucide-react';
+import PageBanner from '../components/PageBanner';
+import ShuffledSections from '../components/ShuffledSections';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-20">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-16"
-      >
-        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-brand-gold mb-4 block">Your Privacy Matters</span>
-        <h1 className="text-5xl font-serif font-bold text-brand-olive mb-6">Privacy Policy</h1>
-        <div className="w-24 h-1 bg-brand-gold mx-auto mb-8" />
-      </motion.div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+    <div>
+      <PageBanner 
+        title="Privacy Policy" 
+        subtitle="How we protect your artisan experience." 
+        image="https://images.unsplash.com/photo-1596752002341-2a6c1e549da7?q=80&w=2070&auto=format&fit=crop" 
+      />
+      <div className="max-w-4xl mx-auto px-4 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
         {[
           { icon: Eye, label: "Transparent Use" },
           { icon: Lock, label: "Secure Data" },
@@ -58,6 +56,9 @@ export default function PrivacyPolicy() {
           </button>
         </section>
       </div>
+      </div>
+
+      <ShuffledSections />
     </div>
   );
 }

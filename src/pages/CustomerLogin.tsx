@@ -4,6 +4,8 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { motion } from 'motion/react';
 import { Mail, Lock, Loader2, ShieldCheck, ArrowLeft } from 'lucide-react';
+import PageBanner from '../components/PageBanner';
+import ShuffledSections from '../components/ShuffledSections';
 
 export default function CustomerLogin() {
   const [email, setEmail] = useState('');
@@ -30,8 +32,14 @@ export default function CustomerLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-cream/30 py-24 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="max-w-md w-full">
+    <div>
+      <PageBanner 
+        title="Welcome Back" 
+        subtitle="Access your artisan profile." 
+        image="https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop" 
+      />
+      <div className="min-h-screen bg-brand-cream/30 py-24 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="max-w-md w-full">
         <div className="mb-12">
           <Link to="/login" className="inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-brand-olive hover:text-brand-gold transition-colors">
             <ArrowLeft className="w-3 h-3 mr-2" />
@@ -103,6 +111,8 @@ export default function CustomerLogin() {
           </form>
         </motion.div>
       </div>
+      </div>
+      <ShuffledSections />
     </div>
   );
 }

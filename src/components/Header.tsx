@@ -275,7 +275,6 @@ export default function Header({ id }: { id: string }) {
                   className="p-2 text-gray-600 hover:bg-brand-olive/5 rounded-full transition-colors flex items-center space-x-1"
                 >
                   <User className="w-5 h-5" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest px-1 hidden lg:block">Sign In</span>
                 </Link>
               )}
             </div>

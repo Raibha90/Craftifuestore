@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { Sparkles, Users, Globe, Loader2 } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
+import PageBanner from '../../components/PageBanner';
+import ShuffledSections from '../../components/ShuffledSections';
 
 export default function AboutCraftifue() {
   const [content, setContent] = useState<any>(null);
@@ -39,8 +41,14 @@ export default function AboutCraftifue() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-32">
-      {/* Intro */}
+    <div>
+      <PageBanner 
+        title="Our Story" 
+        subtitle="Where Tradition Meets Transformation" 
+        image="https://images.unsplash.com/photo-1596752002341-2a6c1e549da7?q=80&w=2070&auto=format&fit=crop" 
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-32">
+        {/* Intro */}
       <section className="text-center max-w-4xl mx-auto space-y-8">
         <h1 className="text-4xl md:text-6xl font-serif font-bold text-brand-olive leading-tight">
           {data.title.split(' ').slice(0, -1).join(' ')} <span className="italic font-light">{data.title.split(' ').slice(-1)}</span>
@@ -117,6 +125,9 @@ export default function AboutCraftifue() {
         </div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-[100px]" />
       </section>
+      </div>
+
+      <ShuffledSections />
     </div>
   );
 }

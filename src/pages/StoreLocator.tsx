@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
+import PageBanner from '../components/PageBanner';
+import ShuffledSections from '../components/ShuffledSections';
 
 export default function StoreLocator() {
   const stores = [
@@ -34,21 +36,14 @@ export default function StoreLocator() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-20">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-16"
-      >
-        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-brand-gold mb-4 block">Physical Experience</span>
-        <h1 className="text-5xl font-serif font-bold text-brand-olive mb-6">Discover Our Stores</h1>
-        <div className="w-24 h-1 bg-brand-gold mx-auto mb-8" />
-        <p className="text-gray-500 italic max-w-2xl mx-auto">
-          Experience the textures, weights, and intricate details of our handcrafted treasures in person.
-        </p>
-      </motion.div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+    <div>
+      <PageBanner 
+        title="Store Locator" 
+        subtitle="Discover Our Physical Stores" 
+        image="https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?q=80&w=1964&auto=format&fit=crop" 
+      />
+      <div className="max-w-7xl mx-auto px-4 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
         {stores.map((store, i) => (
           <motion.div
             key={store.city}
@@ -122,6 +117,9 @@ export default function StoreLocator() {
           </div>
         </div>
       </section>
+      </div>
+
+      <ShuffledSections />
     </div>
   );
 }

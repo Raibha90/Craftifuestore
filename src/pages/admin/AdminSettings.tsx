@@ -21,6 +21,7 @@ export default function AdminSettings() {
     showSocial: true,
     showNewsletter: true,
     showPaymentLogos: true,
+    commissionRate: 15,
   });
 
   useEffect(() => {
@@ -205,6 +206,20 @@ export default function AdminSettings() {
                   className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
                   value={settings.facebook}
                   onChange={e => setSettings({...settings, facebook: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2 relative md:col-span-2 mt-4 pt-8 border-t border-gray-100">
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1 flex items-center">
+                   Vendor Commission Rate (%)
+                </label>
+                <input 
+                  type="number" 
+                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
+                  value={settings.commissionRate}
+                  onChange={e => setSettings({...settings, commissionRate: parseFloat(e.target.value) || 0})}
+                  min="0"
+                  max="100"
+                  step="0.1"
                 />
               </div>
             </div>

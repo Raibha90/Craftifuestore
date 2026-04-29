@@ -2,34 +2,48 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import PageBanner from '../components/PageBanner';
+import ShuffledSections from '../components/ShuffledSections';
 
 export default function Cart() {
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
 
   if (items.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-        <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-brand-gold/10 text-brand-gold mb-8">
-          <ShoppingBag className="w-10 h-10" />
+      <div>
+        <PageBanner 
+          title="Shopping Cart" 
+          subtitle="Your selected handcrafted treasures." 
+          image="https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop" 
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-brand-gold/10 text-brand-gold mb-8">
+            <ShoppingBag className="w-10 h-10" />
+          </div>
+          <h1 className="text-4xl font-serif font-bold text-brand-olive mb-4">Your cart is empty</h1>
+          <p className="text-gray-500 mb-12 max-w-md mx-auto">Looks like you haven't added any handcrafted treasures to your cart yet.</p>
+          <Link 
+            to="/category/all" 
+            className="inline-flex items-center space-x-3 bg-brand-olive text-brand-cream px-10 py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-olive/90 transition-all shadow-lg"
+          >
+            <span>Explore Collections</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
-        <h1 className="text-4xl font-serif font-bold text-brand-olive mb-4">Your cart is empty</h1>
-        <p className="text-gray-500 mb-12 max-w-md mx-auto">Looks like you haven't added any handcrafted treasures to your cart yet.</p>
-        <Link 
-          to="/category/all" 
-          className="inline-flex items-center space-x-3 bg-brand-olive text-brand-cream px-10 py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-olive/90 transition-all shadow-lg"
-        >
-          <span>Explore Collections</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
+        <ShuffledSections />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-serif font-bold text-brand-olive mb-12 text-center">Shopping Cart</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+    <div>
+      <PageBanner 
+        title="Shopping Cart" 
+        subtitle="Your selected handcrafted treasures." 
+        image="https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop" 
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 mt-8">
         {/* Items List */}
         <div className="lg:col-span-2 space-y-8">
           {items.map((item) => (
@@ -113,6 +127,8 @@ export default function Cart() {
           </div>
         </div>
       </div>
+      </div>
+      <ShuffledSections />
     </div>
   );
 }

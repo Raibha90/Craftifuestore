@@ -1,24 +1,19 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { RefreshCcw, ShieldCheck, Clock, Truck } from 'lucide-react';
+import PageBanner from '../components/PageBanner';
+import ShuffledSections from '../components/ShuffledSections';
 
 export default function ReturnPolicy() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-20">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-16"
-      >
-        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-brand-gold mb-4 block">Hassle-Free Returns</span>
-        <h1 className="text-5xl font-serif font-bold text-brand-olive mb-6">Return & Exchange Policy</h1>
-        <div className="w-24 h-1 bg-brand-gold mx-auto mb-8" />
-        <p className="text-gray-500 italic max-w-2xl mx-auto">
-          At Artisan Treasures, we take pride in the craftsmanship of our products. If you are not completely satisfied, we are here to help.
-        </p>
-      </motion.div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+    <div>
+      <PageBanner 
+        title="Return & Exchange Policy" 
+        subtitle="Hassle-Free Returns" 
+        image="https://images.unsplash.com/photo-1578500494198-246f612d3b3d?q=80&w=1974&auto=format&fit=crop" 
+      />
+      <div className="max-w-4xl mx-auto px-4 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
         {[
           { icon: Clock, title: "7-Day Return Window", desc: "You have 7 working days from the date of delivery to request a return or exchange." },
           { icon: RefreshCcw, title: "Easy Replacements", desc: "If you receive a damaged item, we will replace it free of cost within 3-5 working days." },
@@ -58,6 +53,9 @@ export default function ReturnPolicy() {
           </div>
         </section>
       </div>
+      </div>
+
+      <ShuffledSections />
     </div>
   );
 }

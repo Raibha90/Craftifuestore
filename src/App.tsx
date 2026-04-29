@@ -24,6 +24,7 @@ import AdminBanners from './pages/admin/AdminBanners';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminCMS from './pages/admin/AdminCMS';
 import AdminReviews from './pages/admin/AdminReviews';
+import AdminVendors from './pages/admin/AdminVendors';
 import AdminWorkbook from './pages/admin/workbook/AdminWorkbook';
 import Wishlist from './pages/Wishlist';
 import PrivateRoute from './components/PrivateRoute';
@@ -35,6 +36,7 @@ import ReturnPolicy from './pages/ReturnPolicy';
 import TermsConditions from './pages/TermsConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import StoreLocator from './pages/StoreLocator';
+import VendorRegistration from './pages/VendorRegistration';
 
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -61,6 +63,7 @@ function App() {
                     <Route path="coupons" element={<AdminCoupons />} />
                     <Route path="banners" element={<AdminBanners />} />
                     <Route path="reviews" element={<AdminReviews />} />
+                    <Route path="vendors" element={<AdminVendors />} />
                     <Route path="cms" element={<AdminCMS />} />
                     <Route path="workbook" element={<AdminWorkbook />} />
                     <Route path="settings" element={<AdminSettings />} />
@@ -85,6 +88,7 @@ function App() {
                         } />
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<CreateAccount />} />
+                        <Route path="/vendor-signup" element={<VendorRegistration />} />
                         <Route path="/customer-login" element={<CustomerLogin />} />
                         <Route path="/about/mission-vision" element={<MissionVision />} />
                         <Route path="/about/craftifue" element={<AboutCraftifue />} />

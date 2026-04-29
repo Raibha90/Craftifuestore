@@ -5,6 +5,8 @@ import { auth, db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, Smartphone, MapPin, Loader2, ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react';
+import PageBanner from '../components/PageBanner';
+import ShuffledSections from '../components/ShuffledSections';
 
 export default function CreateAccount() {
   const [error, setError] = useState('');
@@ -196,8 +198,14 @@ export default function CreateAccount() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-cream/30 py-24 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="max-w-xl w-full">
+    <div>
+      <PageBanner 
+        title="Join Our Artisan Community" 
+        subtitle="Create your account to start your journey." 
+        image="https://images.unsplash.com/photo-1579547945413-497e1b99dac0?q=80&w=2039&auto=format&fit=crop" 
+      />
+      <div className="min-h-screen bg-brand-cream/30 py-24 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="max-w-xl w-full">
         <div className="mb-12">
           <Link to="/login" className="inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-brand-olive hover:text-brand-gold transition-colors">
             <ArrowLeft className="w-3 h-3 mr-2" />
@@ -338,6 +346,8 @@ export default function CreateAccount() {
           </AnimatePresence>
         </motion.div>
       </div>
+      </div>
+      <ShuffledSections />
     </div>
   );
 }

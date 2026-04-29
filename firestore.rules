@@ -107,5 +107,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Rules for Vendors
+    match /vendors/{vendorId} {
+      allow read, write: if isAdmin();
+    }
   }
 }
