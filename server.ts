@@ -33,8 +33,10 @@ async function startServer() {
 
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const modelInstance = ai.getGenerativeModel({ model });
-      const result = await modelInstance.generateContent({ contents });
+      const result = await ai.models.generateContent({
+        model: model,
+        contents: contents,
+      });
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

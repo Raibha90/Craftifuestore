@@ -24,7 +24,24 @@ export default function AdminLogin() {
 
       // Check if user is actually an admin
       const adminDoc = await getDoc(doc(db, 'users', user.uid));
+      const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@craftique.store';
+      
+      let isRoleAdmin = false;
       if (adminDoc.exists() && adminDoc.data().role === 'admin') {
+        isRoleAdmin = true;
+      }
+
+      if (isRoleAdmin || isAdminEmail) {
+        // Ensure their document exists and is set to admin
+        if (!adminDoc.exists() || adminDoc.data().role !== 'admin') {
+          await setDoc(doc(db, 'users', user.uid), { 
+            role: 'admin', 
+            email: user.email,
+            uid: user.uid,
+            displayName: user.displayName || 'Admin',
+            addresses: []
+          }, { merge: true });
+        }
         navigate('/admin');
       } else {
         await auth.signOut();
