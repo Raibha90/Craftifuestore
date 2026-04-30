@@ -75,7 +75,7 @@ export default function AdminVendorDiscovery() {
       if (isAiScrapingOn) {
         // AI Prompts to simulate scraping / generating realistic leads
         const result = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-1.5-flash',
           contents: `Act as a B2B search engine. Find 5 realistic (can be fictional but realistic) dealer, manufacturer, or vendor businesses for "${category}" in "${city}". 
           Return a JSON array of objects. Do not use markdown.
           Format: [{"name": "Vendor Name", "description": "Brief about what they sell", "source": "Google Maps", "location": "${city}, India"}]`
@@ -104,7 +104,13 @@ export default function AdminVendorDiscovery() {
       }
     } catch (e: any) {
       console.error(e);
-      showToast('Failed to discover vendors. ' + e.message, "error");
+      let message = 'Failed to discover vendors.';
+      if (e.message?.includes('503') || e.message?.includes('high demand') || e.status === 'UNAVAILABLE' || e.message?.includes('UNAVAILABLE')) {
+        message = 'AI is experiencing high demand. Please wait a few seconds and try again.';
+      } else {
+        message += ' ' + e.message;
+      }
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }

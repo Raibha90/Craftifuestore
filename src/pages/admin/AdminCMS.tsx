@@ -152,7 +152,7 @@ export default function AdminCMS() {
             bannerImage: 'https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=1915&auto=format&fit=crop',
             address: '1B3-2E, Sanhita Simoco Township Project, Satulia, Kashipur, Near Hatishala Six Lane, Newtown, Kolkata-700135',
             phone: '+91 93301 23456',
-            email: 'bulk@craftifue.store'
+            email: 'bulk@cratifue.store'
           },
           commission_info: {
             title: 'Artisan Commission Structure',

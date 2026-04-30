@@ -70,7 +70,7 @@ export default function AdminDashboard() {
         shippingThreshold: Number(shippingThreshold),
         updatedAt: new Date().toISOString()
       }, { merge: true });
-      showToast('Success! Your store identity has been updated for the Handcrafted Team.', 'success');
+      showToast('Success! Welcome to Cratifue Handcrafted Team', 'success');
     } catch (err) {
       console.error('Error saving settings:', err);
       showToast('Failed to save settings. Please try again.', 'error');

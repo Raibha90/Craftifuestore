@@ -68,7 +68,7 @@ export default function Footer({ id }: { id: string }) {
           <div>
             <h4 className="font-serif text-lg font-bold mb-6">Information</h4>
             <ul className="space-y-4 text-sm text-brand-cream/70">
-              <li><Link to="/about/craftifue" className="hover:text-brand-gold transition-colors">Our Story</Link></li>
+              <li><Link to="/about/cratifue" className="hover:text-brand-gold transition-colors">Our Story</Link></li>
               <li><Link to="/stores" className="hover:text-brand-gold transition-colors">Store Locator</Link></li>
               <li><Link to="/returns" className="hover:text-brand-gold transition-colors">Return Policy</Link></li>
               <li><Link to="/dashboard" className="hover:text-brand-gold transition-colors">Track Order</Link></li>

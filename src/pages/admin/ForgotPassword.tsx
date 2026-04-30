@@ -89,7 +89,7 @@ export default function ForgotPassword() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@craftifue.store"
+                placeholder="admin@cratifue.store"
                 className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 transition-all font-medium"
               />
             </div>
@@ -113,7 +113,7 @@ export default function ForgotPassword() {
             <span>Back to Login</span>
           </button>
 
-          <a href="mailto:support@craftifue.store" className="text-[10px] font-bold text-gray-400 hover:text-brand-gold uppercase tracking-widest flex items-center space-x-1 transition-colors">
+          <a href="mailto:support@cratifue.store" className="text-[10px] font-bold text-gray-400 hover:text-brand-gold uppercase tracking-widest flex items-center space-x-1 transition-colors">
             <HelpCircle className="w-3 h-3" />
             <span>Support</span>
           </a>

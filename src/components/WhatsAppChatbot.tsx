@@ -26,18 +26,20 @@ export default function WhatsAppChatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  // Hide on admin routes
-  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
-    return null;
-  }
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isTyping, isOpen]);
+
+  // Hide on admin routes
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
+    return null;
+  }
 
   const handleSend = () => {
     if (!inputValue.trim()) return;

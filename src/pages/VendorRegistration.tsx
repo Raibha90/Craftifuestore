@@ -76,7 +76,7 @@ export default function VendorRegistration() {
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Thank you for registering as a vendor. We are excited to collaborate with you to showcase your amazing artisan crafts to the world!</p>
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Our operations team will review your account soon. Meanwhile, you can log in and start customizing your profile.</p>
                 <div style="text-align: center; margin: 40px 0;">
-                  <a href="https://craftifue.store/login" style="background-color: #d4af37; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; text-transform: uppercase;">Login to Portal</a>
+                  <a href="https://cratifue.store/login" style="background-color: #d4af37; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; text-transform: uppercase;">Login to Portal</a>
                 </div>
               </div>
             `

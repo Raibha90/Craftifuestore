@@ -56,7 +56,7 @@ async function main() {
     console.log('Initializing settings...');
     await setDoc(doc(db, 'settings', 'general'), {
       storeName: 'Artisan Treasures',
-      contactEmail: 'contact@craftifue.store',
+      contactEmail: 'contact@cratifue.store',
       logoUrl: '/regenerated_image_1777410191797.png'
     }, { merge: true });
     

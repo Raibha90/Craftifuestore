@@ -13,12 +13,12 @@ const CompareContext = createContext<CompareContextType | undefined>(undefined);
 
 export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [compareList, setCompareList] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('craftifue_compare');
+    const saved = localStorage.getItem('cratifue_compare');
     return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
-    localStorage.setItem('craftifue_compare', JSON.stringify(compareList));
+    localStorage.setItem('cratifue_compare', JSON.stringify(compareList));
   }, [compareList]);
 
   const addToCompare = (product: Product) => {

@@ -43,7 +43,7 @@ export default function AdminLogin() {
 
       // Check if user is actually an admin
       const adminDoc = await getDoc(doc(db, 'users', user.uid));
-      const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@craftique.store' || user.email === 'admin@craftifue.store';
+      const isAdminEmail = user.email === 'rd14190@gmail.com' || user.email === 'admin@cratifue.store';
       
       let isRoleAdmin = false;
       if (adminDoc.exists() && adminDoc.data().role === 'admin') {
@@ -147,7 +147,7 @@ export default function AdminLogin() {
             disabled={loading}
             type="button"
             onClick={() => {
-              setEmail('admin@craftifue.store');
+              setEmail('admin@cratifue.store');
               setPassword('admin123456');
             }}
             className="w-full bg-white text-brand-olive border border-brand-olive/10 py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-olive/5 transition-all flex items-center justify-center space-x-3 mt-4"

@@ -88,7 +88,7 @@ export default function CreateAccount() {
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Thank you for joining our Artisan Community. We are thrilled to have you.</p>
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Start exploring our handcrafted luxury products today!</p>
                 <div style="text-align: center; margin: 40px 0;">
-                  <a href="https://craftifue.store/shop" style="background-color: #d4af37; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; text-transform: uppercase;">Explore Collection</a>
+                  <a href="https://cratifue.store/shop" style="background-color: #d4af37; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; text-transform: uppercase;">Explore Collection</a>
                 </div>
               </div>
             `

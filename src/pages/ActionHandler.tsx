@@ -85,16 +85,16 @@ export default function ActionHandler() {
     }
   };
 
+  let content;
+
   if (loading) {
-    return (
+    content = (
       <div className="min-h-screen bg-brand-cream flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
       </div>
     );
-  }
-
-  if (error) {
-    return (
+  } else if (error) {
+    content = (
       <div className="min-h-screen bg-brand-cream flex items-center justify-center p-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -115,10 +115,8 @@ export default function ActionHandler() {
         </motion.div>
       </div>
     );
-  }
-
-  if (success) {
-    return (
+  } else if (success) {
+    content = (
       <div className="min-h-screen bg-brand-cream flex items-center justify-center p-6">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -134,58 +132,60 @@ export default function ActionHandler() {
         </motion.div>
       </div>
     );
+  } else {
+    content = (
+      <div className="min-h-screen bg-brand-cream flex items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white p-8 rounded-[2rem] shadow-xl max-w-md w-full"
+        >
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 bg-brand-gold/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              {actionType === 'password_reset' ? <KeyRound className="w-6 h-6 text-brand-gold" /> : <Mail className="w-6 h-6 text-brand-gold" />}
+            </div>
+            <h2 className="text-2xl font-serif font-bold text-brand-olive uppercase tracking-tight">
+              {actionType === 'password_reset' ? 'New Credential' : 'Verifying Action'}
+            </h2>
+          </div>
+
+          {actionType === 'password_reset' && (
+            <form onSubmit={handlePasswordReset} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-4">New Password</label>
+                <input 
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand-gold transition-all"
+                  placeholder="••••••••••••"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-4">Confirm New Password</label>
+                <input 
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand-gold transition-all"
+                  placeholder="••••••••••••"
+                />
+              </div>
+
+              <button 
+                disabled={submitting}
+                className="w-full py-4 bg-brand-olive text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-brand-olive/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center justify-center"
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set New Password'}
+              </button>
+            </form>
+          )}
+        </motion.div>
+      </div>
+    );
   }
 
-  return (
-    <div className="min-h-screen bg-brand-cream flex items-center justify-center p-6">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 rounded-[2rem] shadow-xl max-w-md w-full"
-      >
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-brand-gold/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            {actionType === 'password_reset' ? <KeyRound className="w-6 h-6 text-brand-gold" /> : <Mail className="w-6 h-6 text-brand-gold" />}
-          </div>
-          <h2 className="text-2xl font-serif font-bold text-brand-olive uppercase tracking-tight">
-            {actionType === 'password_reset' ? 'New Credential' : 'Verifying Action'}
-          </h2>
-        </div>
-
-        {actionType === 'password_reset' && (
-          <form onSubmit={handlePasswordReset} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-4">New Password</label>
-              <input 
-                type="password"
-                required
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand-gold transition-all"
-                placeholder="••••••••••••"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-4">Confirm New Password</label>
-              <input 
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand-gold transition-all"
-                placeholder="••••••••••••"
-              />
-            </div>
-
-            <button 
-              disabled={submitting}
-              className="w-full py-4 bg-brand-olive text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-brand-olive/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center justify-center"
-            >
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set New Password'}
-            </button>
-          </form>
-        )}
-      </motion.div>
-    </div>
-  );
+  return content;
 }

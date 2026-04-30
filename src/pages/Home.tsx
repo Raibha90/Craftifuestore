@@ -468,7 +468,7 @@ export default function Home() {
                 ))}
               </ul>
               <Link
-                to="/about/craftifue"
+                to="/about/cratifue"
                 className="inline-block border border-brand-cream/30 hover:border-brand-gold hover:text-brand-gold px-10 py-4 rounded-full transition-all text-xs font-bold uppercase tracking-widest"
               >
                 Learn More

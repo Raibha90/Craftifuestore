@@ -53,7 +53,7 @@ export default function ContactUs() {
   const contactInfo = {
     address: cms?.address || "1B3-2E, Sanhita Simoco Township Project, Satulia, Kashipur, Near Hatishala Six Lane, Newtown, Kolkata-700135",
     phone: cms?.phone || "+91 93301 23456",
-    email: cms?.email || "bulk@craftifue.store"
+    email: cms?.email || "bulk@cratifue.store"
   };
 
   return (

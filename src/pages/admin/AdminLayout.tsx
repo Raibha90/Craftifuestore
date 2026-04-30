@@ -55,7 +55,7 @@ export default function AdminLayout() {
              {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="w-auto h-12 object-contain opacity-90 group-hover:opacity-100 transition-opacity drop-shadow-sm" />
              ) : (
-                <span className="font-serif text-xl font-bold tracking-tight group-hover:text-brand-gold transition-colors">HANDCRAFTED</span>
+                <span className="font-serif text-xl font-bold tracking-tight group-hover:text-brand-gold transition-colors uppercase">CRATIFUE</span>
              )}
             <span className="text-[10px] uppercase tracking-[0.2em] text-brand-gold -mt-1">Admin Central</span>
           </Link>
