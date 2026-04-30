@@ -24,6 +24,7 @@ export default function WhatsAppChatbot() {
   const [isAgentTransferred, setIsAgentTransferred] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatbotRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
   const scrollToBottom = () => {
@@ -35,6 +36,20 @@ export default function WhatsAppChatbot() {
       scrollToBottom();
     }
   }, [messages, isTyping, isOpen]);
+
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && chatbotRef.current && !chatbotRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // Hide on admin routes
   if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
@@ -105,10 +120,11 @@ export default function WhatsAppChatbot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
+    <div className="fixed bottom-6 right-6 z-[200] flex flex-col items-end pointer-events-none">
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={chatbotRef}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -139,9 +155,10 @@ export default function WhatsAppChatbot() {
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:text-gray-200 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-full transition-all active:scale-95"
+                title="Close chat"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
