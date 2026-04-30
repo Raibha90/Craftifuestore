@@ -35,7 +35,7 @@ import Wishlist from './pages/Wishlist';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 
-import AboutCraftifue from './pages/about/AboutCraftifue';
+import AboutCratifue from './pages/about/AboutCratifue';
 import MissionVision from './pages/about/MissionVision';
 import ReturnPolicy from './pages/ReturnPolicy';
 import TermsConditions from './pages/TermsConditions';
@@ -147,7 +147,7 @@ function App() {
                         <Route path="/customer-login" element={<CustomerLogin />} />
                         <Route path="/offers" element={<Offers />} />
                         <Route path="/about/mission-vision" element={<MissionVision />} />
-                        <Route path="/about/craftifue" element={<AboutCraftifue />} />
+                        <Route path="/about/cratifue" element={<AboutCratifue />} />
                         <Route path="/returns" element={<ReturnPolicy />} />
                         <Route path="/terms" element={<TermsConditions />} />
                         <Route path="/contact" element={<ContactUs />} />

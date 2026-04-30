@@ -15,7 +15,7 @@ export default function WhatsAppChatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi there! I am Craftifue's AI Assistant. How can I help you today?",
+      text: "Hi there! I am Cratifue's AI Assistant. How can I help you today?",
       sender: 'bot',
       timestamp: new Date()
     }
@@ -128,7 +128,7 @@ export default function WhatsAppChatbot() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm">
-                    {isAgentTransferred ? 'Sarah (Live Agent)' : 'Craftifue AI Support'}
+                    {isAgentTransferred ? 'Sarah (Live Agent)' : 'Cratifue AI Support'}
                   </h3>
                   <p className="text-xs text-[#DCF8C6]">
                     {isAgentTransferred ? 'Online' : 'Typically replies instantly'}

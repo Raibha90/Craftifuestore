@@ -67,11 +67,11 @@ export default function VendorRegistration() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: formData.email,
-            subject: 'Welcome to Craftifue as a Vendor!',
+            subject: 'Welcome to Cratifue as a Vendor!',
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
                 <div style="text-align: center; margin-bottom: 30px;">
-                  <h2 style="color: #4a5d23; font-size: 24px;">Welcome to Craftifue, ${formData.businessName}!</h2>
+                  <h2 style="color: #4a5d23; font-size: 24px;">Welcome to Cratifue, ${formData.businessName}!</h2>
                 </div>
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Thank you for registering as a vendor. We are excited to collaborate with you to showcase your amazing artisan crafts to the world!</p>
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Our operations team will review your account soon. Meanwhile, you can log in and start customizing your profile.</p>

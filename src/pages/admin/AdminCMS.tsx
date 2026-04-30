@@ -126,14 +126,14 @@ export default function AdminCMS() {
             heroTitle: 'Artisan Crafted Elegance',
             heroSubtitle: 'Discover unique handcrafted treasures from across India.',
             philosophyHeading: 'Craftsmanship with Conscious Soul',
-            philosophyContent: 'Craftifue is dedicated to bringing you the finest handmade treasures from across India...',
+            philosophyContent: 'Cratifue is dedicated to bringing you the finest handmade treasures from across India...',
             philosophyImage: 'https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=1915&auto=format&fit=crop'
           },
           about_story: {
             title: 'Where Tradition Meets Transformation',
-            subtitle: '"Craftifue was born from a simple observation: the incredible talent of local artisans was often hidden from the world."',
+            subtitle: '"Cratifue was born from a simple observation: the incredible talent of local artisans was often hidden from the world."',
             storyHeading: 'Ethical Sourcing & Heritage',
-            storyParagraph1: 'Started in 2024, Craftifue began as a small initiative to support bamboo craftsmen in North East India...',
+            storyParagraph1: 'Started in 2024, Cratifue began as a small initiative to support bamboo craftsmen in North East India...',
             storyParagraph2: 'Today, we have expanded to include brass artisans, meenakari jewelry makers...',
             mainImage: 'https://images.unsplash.com/photo-1596752002341-2a6c1e549da7?q=80&w=2070&auto=format&fit=crop'
           },

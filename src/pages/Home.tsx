@@ -453,7 +453,7 @@ export default function Home() {
                 {cmsHome?.philosophyHeading || 'Craftsmanship with Conscious Soul'}
               </h2>
               <p className="text-brand-cream/70 leading-relaxed text-lg">
-                {cmsHome?.philosophyContent || 'Craftifue is dedicated to bringing you the finest handmade treasures from across India. Every product in our collection is a testament to the skill of our artisans and our commitment to sustainable luxury.'}
+                {cmsHome?.philosophyContent || 'Cratifue is dedicated to bringing you the finest handmade treasures from across India. Every product in our collection is a testament to the skill of our artisans and our commitment to sustainable luxury.'}
               </p>
               <ul className="space-y-4">
                 {[

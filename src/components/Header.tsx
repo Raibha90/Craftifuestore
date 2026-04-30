@@ -85,7 +85,7 @@ export default function Header({ id }: { id: string }) {
       name: 'About US', 
       items: [
         { label: 'Our Mission & Vision', path: '/about/mission-vision' },
-        { label: 'About Craftifue', path: '/about/craftifue' }
+        { label: 'About Cratifue', path: '/about/cratifue' }
       ]
     },
     { 
@@ -147,7 +147,7 @@ export default function Header({ id }: { id: string }) {
           <Link to="/" className="flex items-center">
             <img 
               src={logoUrl || "/regenerated_image_1777410191797.png"} 
-              alt="Craftifue Logo" 
+              alt="Cratifue Logo" 
               className="h-16 w-auto"
               referrerPolicy="no-referrer"
             />

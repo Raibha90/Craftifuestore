@@ -11,10 +11,10 @@ export default function AdminLayout() {
   const [logoUrl, setLogoUrl] = useState('');
 
   useEffect(() => {
-    document.title = "Craftifue-HandCrafts";
+    document.title = "Cratifue-HandCrafts";
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.setAttribute('content', 'Craftifue Admin Dashboard - Manage products, orders, and store settings.');
+      metaDescription.setAttribute('content', 'Cratifue Admin Dashboard - Manage products, orders, and store settings.');
     }
 
     const unsub = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {

@@ -13,7 +13,7 @@ export default function ForgotPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Craftifue-HandCrafts";
+    document.title = "Cratifue-HandCrafts";
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {

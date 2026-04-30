@@ -82,7 +82,7 @@ export default function Commissions() {
                 <h2 className="text-4xl font-serif font-bold text-brand-olive uppercase tracking-tight">Fairness as a <span className="text-brand-gold italic">Standard</span></h2>
                 <div className="h-1.5 w-24 bg-brand-gold rounded-full" />
                 <p className="text-gray-600 leading-relaxed text-lg italic">
-                  {content?.content || "At Craftifue, our commission model is more than a fee—it is an investment in the long-term survival of Indian heritage. We prioritize artisan take-home pay while maintaining a sustainable ecosystem."}
+                  {content?.content || "At Cratifue, our commission model is more than a fee—it is an investment in the long-term survival of Indian heritage. We prioritize artisan take-home pay while maintaining a sustainable ecosystem."}
                 </p>
               </div>
 
@@ -169,7 +169,7 @@ export default function Commissions() {
           </h3>
           <div className="flex items-center justify-center space-x-4">
             <div className="w-12 h-[1px] bg-brand-gold" />
-            <span className="text-xs font-bold uppercase tracking-[0.4em] text-brand-gold">Craftifue Ethics Code</span>
+            <span className="text-xs font-bold uppercase tracking-[0.4em] text-brand-gold">Cratifue Ethics Code</span>
             <div className="w-12 h-[1px] bg-brand-gold" />
           </div>
         </div>

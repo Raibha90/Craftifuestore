@@ -16,10 +16,10 @@ export default function AdminLogin() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Craftifue-HandCrafts";
+    document.title = "Cratifue-HandCrafts";
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.setAttribute('content', 'Craftifue Admin Portal - Secure entry point for administrative access.');
+      metaDescription.setAttribute('content', 'Cratifue Admin Portal - Secure entry point for administrative access.');
     }
 
     const fetchSettings = async () => {
@@ -61,7 +61,7 @@ export default function AdminLogin() {
             addresses: []
           }, { merge: true });
         }
-        showToast('Success! Welcome to Craftifue Handcrafted Team', 'success');
+        showToast('Success! Welcome to Cratifue Handcrafted Team', 'success');
         navigate('/admin');
       } else {
         await auth.signOut();
@@ -157,7 +157,7 @@ export default function AdminLogin() {
         </form>
 
         <div className="mt-10 pt-8 border-t border-gray-50 text-center">
-          <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Craftifue Admin</p>
+          <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Cratifue Admin</p>
         </div>
       </motion.div>
     </div>

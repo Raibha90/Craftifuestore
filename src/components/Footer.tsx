@@ -48,7 +48,7 @@ export default function Footer({ id }: { id: string }) {
             <Link to="/" className="flex items-center">
               <img 
                 src={logoUrl || "/regenerated_image_1777410191797.png"} 
-                alt="Craftifue Logo" 
+                alt="Cratifue Logo" 
                 className="h-16 w-auto brightness-0 invert"
                 referrerPolicy="no-referrer"
               />
@@ -129,7 +129,7 @@ export default function Footer({ id }: { id: string }) {
         <div className="mt-16 pt-8 border-t border-brand-cream/10 flex flex-col items-center justify-center space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-center w-full space-y-4 md:space-y-0 text-[10px] uppercase tracking-widest text-brand-cream/40">
             <div className="flex flex-col md:flex-row items-center md:space-x-8 space-y-2 md:space-y-0">
-              <p>{appearance?.copyrightText || "© 2026 Craftifue Heritage. All rights reserved."}</p>
+              <p>{appearance?.copyrightText || "© 2026 Cratifue Heritage. All rights reserved."}</p>
               <div className="flex space-x-4">
                 <Link to="/privacy" className="hover:text-brand-gold transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-brand-gold transition-colors">Terms & Conditions</Link>

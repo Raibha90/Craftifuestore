@@ -116,7 +116,7 @@ export default function Login() {
           <div className="w-8 h-8 bg-brand-olive rounded-full flex items-center justify-center">
             <Home className="w-4 h-4 text-brand-cream" />
           </div>
-          <span className="font-sans font-bold text-lg text-[#1A1A3F]">Craftifue</span>
+          <span className="font-sans font-bold text-lg text-[#1A1A3F]">Cratifue</span>
         </Link>
 
         {/* Text bottom left */}

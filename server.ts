@@ -44,9 +44,9 @@ async function startServer() {
 
     try {
       const info = await transporter.sendMail({
-        from: `"Craftifue" <${process.env.SMTP_USER}>`,
+        from: `"Cratifue" <${process.env.SMTP_USER}>`,
         to,
-        bcc: "admin@craftifue.store",
+        bcc: "admin@cratifue.store",
         subject,
         html,
       });
@@ -75,16 +75,16 @@ async function startServer() {
       // await db.collection('password_resets').add({ email, token: resetToken, expires: tokenExpiry });
       
       // Send the recovery email
-      const resetLink = `https://craftifue.store/admin/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+      const resetLink = `https://cratifue.store/admin/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
       const mailOptions = {
-        from: `"Craftifue Admin" <${process.env.SMTP_USER}>`,
+        from: `"Cratifue Admin" <${process.env.SMTP_USER}>`,
         to: email,
-        bcc: "admin@craftifue.store",
+        bcc: "admin@cratifue.store",
         subject: "Admin Portal - Password Recovery",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h2 style="color: #4a5d23; font-size: 24px;">Craftifue Admin Portal</h2>
+              <h2 style="color: #4a5d23; font-size: 24px;">Cratifue Admin Portal</h2>
             </div>
             <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">You requested a password reset for your admin account. Click the button below to set a new password.</p>
             <div style="text-align: center; margin: 40px 0;">
@@ -277,7 +277,7 @@ async function startServer() {
     // 1. Send Email Notification
     if (email && process.env.SMTP_USER && process.env.SMTP_PASS) {
       try {
-        let subject = `Craftifue Order Update: ${status.toUpperCase()}`;
+        let subject = `Cratifue Order Update: ${status.toUpperCase()}`;
         let htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; border: 1px solid #f0eee5;">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -296,14 +296,14 @@ async function startServer() {
                 </tr>
               </table>
             </div>` : ""}
-            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 40px;">Thank you for shopping with Craftifue.</p>
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 40px;">Thank you for shopping with Cratifue.</p>
           </div>
         `;
 
         let mailOptions: any = {
-          from: `"Craftifue" <${process.env.SMTP_USER}>`,
+          from: `"Cratifue" <${process.env.SMTP_USER}>`,
           to: email,
-          bcc: "admin@craftifue.store",
+          bcc: "admin@cratifue.store",
           subject,
           html: htmlContent,
         };
@@ -322,7 +322,7 @@ async function startServer() {
           });
 
           // Header
-          doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
+          doc.fontSize(20).fillColor("#4a5d23").text("Cratifue", { align: "left" });
           doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
           doc.moveDown();
 
@@ -417,14 +417,14 @@ async function startServer() {
         try {
           // Send Email
           await transporter.sendMail({
-            from: `"Craftifue Orders" <${process.env.SMTP_USER}>`,
+            from: `"Cratifue Orders" <${process.env.SMTP_USER}>`,
             to: email,
-            bcc: "admin@craftifue.store",
+            bcc: "admin@cratifue.store",
             subject: `Your Invoice for Order #${order.id.slice(-6).toUpperCase()}`,
             html: `
               <p>Hi ${order.address?.fullName || "Customer"},</p>
-              <p>Thank you for shopping at Craftifue. Please find attached the invoice for your recent order.</p>
-              <p>Best,<br>Craftifue Team</p>
+              <p>Thank you for shopping at Cratifue. Please find attached the invoice for your recent order.</p>
+              <p>Best,<br>Cratifue Team</p>
             `,
             attachments: [
               {
@@ -441,7 +441,7 @@ async function startServer() {
       });
 
       // Header
-      doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
+      doc.fontSize(20).fillColor("#4a5d23").text("Cratifue", { align: "left" });
       doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
       doc.moveDown();
 
@@ -520,7 +520,7 @@ async function startServer() {
       doc.pipe(res);
 
       // Header
-      doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
+      doc.fontSize(20).fillColor("#4a5d23").text("Cratifue", { align: "left" });
       doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
       doc.moveDown();
 

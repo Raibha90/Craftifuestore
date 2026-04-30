@@ -79,11 +79,11 @@ export default function CreateAccount() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: signupData.email,
-            subject: 'Welcome to Craftifue - HandCrafts!',
+            subject: 'Welcome to Cratifue - HandCrafts!',
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
                 <div style="text-align: center; margin-bottom: 30px;">
-                  <h2 style="color: #4a5d23; font-size: 24px;">Welcome to Craftifue, ${signupData.name}!</h2>
+                  <h2 style="color: #4a5d23; font-size: 24px;">Welcome to Cratifue, ${signupData.name}!</h2>
                 </div>
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Thank you for joining our Artisan Community. We are thrilled to have you.</p>
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Start exploring our handcrafted luxury products today!</p>

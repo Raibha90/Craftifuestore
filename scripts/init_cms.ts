@@ -43,7 +43,7 @@ async function main() {
     console.log('Sending cms/about_story update...');
     await setDoc(aboutDoc, {
       title: 'Where Tradition Meets Transformation',
-      subtitle: '"Craftifue was born from a simple observation: the incredible talent of local artisans was often hidden from the world."',
+      subtitle: '"Cratifue was born from a simple observation: the incredible talent of local artisans was often hidden from the world."',
       storyHeading: 'Ethical Sourcing & Heritage',
       storyParagraph1: 'Our journey begins in the heart of rural India, where we source sustainable materials directly from artisan clusters. By cutting out middlemen, we ensure that every rupee goes towards preserving ancient crafts and supporting local families.',
       storyParagraph2: 'From the bamboo groves of the North East to the brass workshops of Central India, we prioritize ethical practices, fair wages, and natural materials that respect both the artisan and the environment.',
