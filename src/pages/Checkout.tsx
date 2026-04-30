@@ -26,11 +26,12 @@ export default function Checkout() {
     city: '',
     state: '',
     zipCode: '',
+    phone: '',
     country: 'India'
   });
 
   const handlePlaceOrder = async () => {
-    if (!user || user?.email === 'rd14190@gmail.com' || user?.email === 'admin@craftique.store' || user?.email === 'admin@craftifue.store') {
+    if (!user) {
       navigate('/login', { state: { from: { pathname: '/checkout' } } });
       return;
     }
@@ -47,7 +48,7 @@ export default function Checkout() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: finalTotal * 100, // Amount in paise
+          amount: Math.round(finalTotal * 100), // Amount in paise, rounded to integer
           currency: 'INR',
           receipt: `rcpt_${Math.random().toString(36).substring(7)}`,
         }),
@@ -256,6 +257,17 @@ export default function Checkout() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">State <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
+                    <input 
+                      type="text" 
+                      placeholder="Rajasthan"
+                      required
+                      className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-gold/30 outline-none"
+                      value={address.state}
+                      onChange={(e) => setAddress({...address, state: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Pincode <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
                     <input 
                       type="text" 
@@ -263,13 +275,24 @@ export default function Checkout() {
                       required
                       className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-gold/30 outline-none"
                       value={address.zipCode}
-                      onChange={(e) => setAddress({...address, zipCode: e.target.value})}
+                   onChange={(e) => setAddress({...address, zipCode: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">Phone Number <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
+                    <input 
+                      type="tel" 
+                      placeholder="9876543210"
+                      required
+                      className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-gold/30 outline-none"
+                      value={address.phone}
+                      onChange={(e) => setAddress({...address, phone: e.target.value})}
                     />
                   </div>
                 </div>
                 <button 
                   onClick={() => setCurrentStep(1)}
-                  disabled={!address.street || !address.city || !address.zipCode}
+                  disabled={!address.street || !address.city || !address.zipCode || !address.phone || !address.state}
                   className="w-full sm:w-auto bg-brand-olive text-brand-cream px-12 py-5 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-brand-olive/20 transition-all disabled:opacity-50"
                 >
                   Continue to Shipping

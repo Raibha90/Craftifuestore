@@ -9,7 +9,7 @@ import { useToast } from '../../components/Toast';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-type PageType = 'home' | 'about_story' | 'about_mission' | 'contact' | 'banners' | 'terms' | 'privacy' | 'return_policy' | 'refund_policy' | 'login';
+type PageType = 'home' | 'about_story' | 'about_mission' | 'contact' | 'banners' | 'commission_info' | 'terms' | 'privacy' | 'return_policy' | 'refund_policy' | 'login';
 
 export default function AdminCMS() {
   const { showToast } = useToast();
@@ -153,6 +153,12 @@ export default function AdminCMS() {
             address: '1B3-2E, Sanhita Simoco Township Project, Satulia, Kashipur, Near Hatishala Six Lane, Newtown, Kolkata-700135',
             phone: '+91 93301 23456',
             email: 'bulk@craftifue.store'
+          },
+          commission_info: {
+            title: 'Artisan Commission Structure',
+            subtitle: 'Transparent and fair heritage-focused partnership models.',
+            bannerImage: 'https://images.unsplash.com/photo-1513519245088-0e12902e35ca?q=80&w=2070&auto=format&fit=crop',
+            content: 'Our commission model is designed to maximize artisan earnings while sustaining the marketplace...'
           },
           login: {
             image: 'https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop',
@@ -537,6 +543,7 @@ export default function AdminCMS() {
           >
             <option value="home">Home Page</option>
             <option value="banners">Home: Visual Highlights</option>
+            <option value="commission_info">Commission Structure Page</option>
             <option value="about_story">About: Our Story</option>
             <option value="about_mission">About: Mission & Vision</option>
             <option value="contact">Contact Us Page</option>

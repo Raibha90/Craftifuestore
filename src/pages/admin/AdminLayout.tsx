@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, ListOrdered, Tag, LayoutPanelLeft, Home, FileText, Gem, MessageSquare, Users, Sparkles, CreditCard, Search, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ListOrdered, Tag, LayoutPanelLeft, Home, FileText, Gem, MessageSquare, Users, Sparkles, CreditCard, Search, LogOut, Percent } from 'lucide-react';
 import { auth, db } from '../../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -41,6 +41,7 @@ export default function AdminLayout() {
     { icon: MessageSquare, label: 'Reviews', path: '/admin/reviews' },
     { icon: Tag, label: 'Coupons', path: '/admin/coupons' },
     { icon: FileText, label: 'CMS Pages', path: '/admin/cms' },
+    { icon: Percent, label: 'Commissions', path: '/admin/commissions' },
     { icon: Sparkles, label: 'AI Personalizer', path: '/admin/ai' },
     { icon: Home, label: 'Settings', path: '/admin/settings' },
   ];

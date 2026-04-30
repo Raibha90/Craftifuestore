@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
 
@@ -7,6 +7,16 @@ console.log('Firebase: Initializing app with config for project:', firebaseConfi
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+
+// Enforce session persistence (kills session on tab/browser close)
+setPersistence(auth, browserSessionPersistence)
+  .then(() => {
+    console.log('Firebase: Persistence set to session');
+  })
+  .catch((error) => {
+    console.error('Firebase: Error setting persistence:', error);
+  });
+
 console.log('Firebase: Initialization complete');
 
 export enum OperationType {

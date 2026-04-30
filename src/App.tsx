@@ -30,6 +30,7 @@ import AdminReviews from './pages/admin/AdminReviews';
 import AdminVendors from './pages/admin/AdminVendors';
 import AdminWorkbook from './pages/admin/workbook/AdminWorkbook';
 import AdminAI from './pages/admin/AdminAI';
+import AdminCommissions from './pages/admin/AdminCommissions';
 import Wishlist from './pages/Wishlist';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
@@ -42,6 +43,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import RefundPolicy from './pages/RefundPolicy';
 import StoreLocator from './pages/StoreLocator';
 import VendorRegistration from './pages/VendorRegistration';
+import Commissions from './pages/Commissions';
 import Offers from './pages/Offers';
 import FloatingGiftBox from './components/FloatingGiftBox';
 import WhatsAppChatbot from './components/WhatsAppChatbot';
@@ -117,6 +119,7 @@ function App() {
                     <Route path="cms" element={<AdminCMS />} />
                     <Route path="workbook" element={<AdminWorkbook />} />
                     <Route path="ai" element={<AdminAI />} />
+                    <Route path="commissions" element={<AdminCommissions />} />
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="payments" element={<AdminPayments />} />
                   </Route>
@@ -148,6 +151,7 @@ function App() {
                         <Route path="/returns" element={<ReturnPolicy />} />
                         <Route path="/terms" element={<TermsConditions />} />
                         <Route path="/contact" element={<ContactUs />} />
+                        <Route path="/commissions" element={<Commissions />} />
                         <Route path="/privacy" element={<PrivacyPolicy />} />
                         <Route path="/refund-policy" element={<RefundPolicy />} />
                         <Route path="/stores" element={<StoreLocator />} />

@@ -108,8 +108,7 @@ export default function Header({ id }: { id: string }) {
         { label: 'Organizers', path: '/category/bamboo-pen-stand' }
       ]
     },
-    { 
-      name: 'Lamps & Lighting', 
+    { name: 'Lamps & Lighting', 
       path: '/category/lamps-lighting',
       items: [
         { label: 'All Lighting', path: '/category/lamps-lighting' },
@@ -118,6 +117,7 @@ export default function Header({ id }: { id: string }) {
         { label: 'Night Lamps', path: '/category/bamboo-night-lamp' }
       ]
     },
+    { name: 'Commissions', path: '/commissions' },
     { name: 'Contact US', path: '/contact' }
   ];
 
