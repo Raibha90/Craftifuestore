@@ -6,5 +6,5 @@ export const firebaseConfig = {
   "firestoreDatabaseId": "ai-studio-de7b6ed5-df09-47ea-95e2-46736ccd4a48",
   "storageBucket": "project-cc836a90-e7c6-4db7-92a.firebasestorage.app",
   "messagingSenderId": "273531328719",
-  "measurementId": ""
+  "measurementId": "G-TMDMCRC1C7"
 };

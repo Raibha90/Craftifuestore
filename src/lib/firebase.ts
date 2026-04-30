@@ -1,12 +1,21 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 import { firebaseConfig } from './firebaseConfig';
 
 console.log('Firebase: Initializing app with config for project:', firebaseConfig.projectId);
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+
+// Initialize Analytics unconditionally safely
+isSupported().then((supported) => {
+  if (supported) {
+    const analytics = getAnalytics(app);
+    console.log('Firebase Analytics initialized successfully');
+  }
+}).catch(console.error);
 
 // Enforce session persistence (kills session on tab/browser close)
 setPersistence(auth, browserSessionPersistence)
