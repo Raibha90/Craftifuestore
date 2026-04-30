@@ -24,7 +24,7 @@ export default function AdminLogin() {
 
     const fetchSettings = async () => {
       try {
-        const snap = await getDoc(doc(db, 'settings', 'appearance'));
+        const snap = await getDoc(doc(db, 'settings', 'general'));
         if (snap.exists() && snap.data().logoUrl) {
           setLogoUrl(snap.data().logoUrl);
         }
@@ -61,7 +61,7 @@ export default function AdminLogin() {
             addresses: []
           }, { merge: true });
         }
-        showToast('Authorized. Welcome to Artisan Governance.', 'success');
+        showToast('Success! Welcome to Craftifue Handcrafted Team', 'success');
         navigate('/admin');
       } else {
         await auth.signOut();

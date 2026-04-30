@@ -69,7 +69,7 @@ export default function AdminSettings() {
         ...appearance,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
-      showToast('Governance settings synchronized successfully.', 'success');
+      showToast('Success! Marketplace governance has been synchronized for the Craftifue Team.', 'success');
     } catch (err) {
       console.error('Error saving settings:', err);
       showToast('Failed to update heritage settings. Please try again.', 'error');
