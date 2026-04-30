@@ -40,7 +40,6 @@ export default function AdminLayout() {
     { icon: CreditCard, label: 'Payments', path: '/admin/payments' },
     { icon: MessageSquare, label: 'Reviews', path: '/admin/reviews' },
     { icon: Tag, label: 'Coupons', path: '/admin/coupons' },
-    { icon: LayoutPanelLeft, label: 'Banners', path: '/admin/banners' },
     { icon: FileText, label: 'CMS Pages', path: '/admin/cms' },
     { icon: Sparkles, label: 'AI Personalizer', path: '/admin/ai' },
     { icon: Home, label: 'Settings', path: '/admin/settings' },

@@ -117,7 +117,8 @@ export default function Header({ id }: { id: string }) {
         { label: 'Pendant Lights', path: '/category/bamboo-pendant-light' },
         { label: 'Night Lamps', path: '/category/bamboo-night-lamp' }
       ]
-    }
+    },
+    { name: 'Contact US', path: '/contact' }
   ];
 
   return (

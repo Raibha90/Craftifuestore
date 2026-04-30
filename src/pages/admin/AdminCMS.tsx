@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Save, Loader2, Layout, FileText, Image as ImageIcon, Sparkles, Target, Eye, Upload } from 'lucide-react';
+import { Save, Loader2, Layout, FileText, Image as ImageIcon, Sparkles, Target, Eye, Upload, Plus, Trash2, Link as LinkIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { processImage } from '../../lib/imageUtils';
@@ -9,7 +9,7 @@ import { useToast } from '../../components/Toast';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-type PageType = 'home' | 'about_story' | 'about_mission' | 'terms' | 'privacy' | 'return_policy' | 'refund_policy' | 'login';
+type PageType = 'home' | 'about_story' | 'about_mission' | 'contact' | 'banners' | 'terms' | 'privacy' | 'return_policy' | 'refund_policy' | 'login';
 
 export default function AdminCMS() {
   const { showToast } = useToast();
@@ -17,11 +17,31 @@ export default function AdminCMS() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [content, setContent] = useState<any>(null);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
+  const [newBanner, setNewBanner] = useState({
+    title: '',
+    subtitle: '',
+    imageUrl: '',
+    link: '/category/all',
+    order: 1,
+    active: true
+  });
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [generatingAI, setGeneratingAI] = useState(false);
   const [targetField, setTargetField] = useState<string | null>(null);
   const [imageReqs, setImageReqs] = useState({ width: '1200', height: '800', format: 'PNG' });
+
+  const fetchBanners = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'banners'));
+      setBanners(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a: any, b: any) => a.order - b.order));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleGenerateAIImage = async () => {
     if (!aiPrompt || !targetField) return;
@@ -31,36 +51,50 @@ export default function AdminCMS() {
       const explicitInstruction = `Cinematic luxury photography. High-end aesthetic, minimal background.`;
       const prompt = `${aiPrompt}. ${explicitInstruction}`;
 
-      const response = await ai.models.generateImages({
-        model: 'imagen-3.0-generate-002',
-        prompt: prompt,
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [
+            {
+              text: prompt,
+            },
+          ],
+        },
         config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/jpeg',
-          aspectRatio: '16:9'
-        }
+          imageConfig: {
+            aspectRatio: "16:9"
+          }
+        },
       });
       
-      if (!response.generatedImages || response.generatedImages.length === 0) {
+      let base64Data = '';
+      for (const part of response.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData) {
+          base64Data = part.inlineData.data;
+          break;
+        }
+      }
+
+      if (!base64Data) {
         throw new Error('No image was generated. Please try again.');
       }
 
-      const base64 = response.generatedImages[0].image.imageBytes;
-      const rawImageUrl = `data:image/jpeg;base64,${base64}`;
+      const rawImageUrl = `data:image/jpeg;base64,${base64Data}`;
       const res = await fetch(rawImageUrl);
       const blob = await res.blob();
       const file = new File([blob], 'ai_generated.jpg', { type: 'image/jpeg' });
       const imageUrl = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg', quality: 0.8 });
 
-      // Update local state
-      const updatedContent = { ...content, [targetField]: imageUrl };
-      setContent(updatedContent);
-
-      // Automatically save to DB as requested
-      await setDoc(doc(db, 'cms', currentPage), {
-        ...updatedContent,
-        updatedAt: new Date().toISOString(),
-      });
+      if (currentPage === 'banners') {
+        setNewBanner(prev => ({ ...prev, imageUrl }));
+      } else {
+        const updatedContent = { ...content, [targetField]: imageUrl };
+        setContent(updatedContent);
+        await setDoc(doc(db, 'cms', currentPage), {
+          ...updatedContent,
+          updatedAt: new Date().toISOString(),
+        });
+      }
 
       setIsAiModalOpen(false);
       setAiPrompt('');
@@ -74,13 +108,18 @@ export default function AdminCMS() {
   };
 
   useEffect(() => {
+    if (currentPage === 'banners') {
+      setLoading(true);
+      fetchBanners().finally(() => setLoading(false));
+      return;
+    }
+
     setLoading(true);
     const unsub = onSnapshot(doc(db, 'cms', currentPage), (docSnap) => {
       if (docSnap.exists()) {
         setContent(docSnap.data());
       } else {
-        // Default initial structures if not exists
-        const defaults: Record<PageType, any> = {
+        const defaults: Record<string, any> = {
           home: {
             heroTitle: 'Artisan Crafted Elegance',
             heroSubtitle: 'Discover unique handcrafted treasures from across India.',
@@ -105,31 +144,23 @@ export default function AdminCMS() {
             visionText: 'We envision a world where traditional craftsmanship is celebrated and valued...',
             visionImage: 'https://images.unsplash.com/photo-1513519245088-0e12902e35ca?q=80&w=2070&auto=format&fit=crop'
           },
-          terms: {
-            title: 'Terms and Conditions',
-            content: 'These terms and conditions outline the rules and regulations for the use of Craftifue website...',
-          },
-          privacy: {
-            title: 'Privacy Policy',
-            content: 'This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your information...',
-          },
-          return_policy: {
-            title: 'Return Policy',
-            content: 'We offer a 30-day return policy for most items. Items must be unused and in their original packaging...',
-          },
-          refund_policy: {
-            title: 'Refund Policy',
-            content: 'Once your return is received and inspected, we will send you an email to notify you that we have received your returned item...',
+          contact: {
+            title: 'Artisan Concierge',
+            subtitle: 'Partner with us for heritage-focused bulk orders and professional consultations.',
+            bannerImage: 'https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=1915&auto=format&fit=crop',
+            address: '1B3-2E, Sanhita Simoco Township Project, Satulia, Kashipur, Near Hatishala Six Lane, Newtown, Kolkata-700135',
+            phone: '+91 93301 23456',
+            email: 'bulk@craftifue.store'
           },
           login: {
             image: 'https://images.unsplash.com/photo-1549469033-667793d508e7?q=80&w=2070&auto=format&fit=crop',
             heading: 'Find your artisan treasure',
-            subheading: 'Schedule visit in just a few clicks.\nvisits in just a few clicks',
-            title: 'Welcome Back to Artisan Treasures!',
+            subheading: 'Schedule visit in just a few clicks.',
+            title: 'Welcome Back!',
             subtitle: 'Sign in your account',
           }
         };
-        setContent(defaults[currentPage]);
+        setContent(defaults[currentPage] || { title: '', content: '' });
       }
       setLoading(false);
     });
@@ -138,6 +169,7 @@ export default function AdminCMS() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (currentPage === 'banners') return;
     setSaving(true);
     try {
       await setDoc(doc(db, 'cms', currentPage), {
@@ -147,13 +179,110 @@ export default function AdminCMS() {
       showToast('Page content updated successfully.', 'success');
     } catch (err) {
       console.error('Error saving CMS:', err);
-      showToast('Error updating page content. Please try again.', 'error');
+      showToast('Error updating page content.', 'error');
     } finally {
       setSaving(false);
     }
   };
 
+  const handleAddBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingBannerId) {
+        await updateDoc(doc(db, 'banners', editingBannerId), {
+          ...newBanner,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        await addDoc(collection(db, 'banners'), {
+          ...newBanner,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsBannerModalOpen(false);
+      setEditingBannerId(null);
+      setNewBanner({ title: '', subtitle: '', imageUrl: '', link: '/category/all', order: banners.length + 1, active: true });
+      fetchBanners();
+      showToast(`Banner ${editingBannerId ? 'updated' : 'added'} successfully.`, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Error saving banner.', 'error');
+    }
+  };
+
+  const toggleBannerActive = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateDoc(doc(db, 'banners', id), { active: !currentStatus });
+      fetchBanners();
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDeleteBanner = async (id: string) => {
+    if (!confirm('Remove this banner?')) return;
+    try {
+      await deleteDoc(doc(db, 'banners', id));
+      fetchBanners();
+    } catch (err) { console.error(err); }
+  };
+
   const renderEditor = () => {
+    if (currentPage === 'banners') {
+      return (
+        <div className="space-y-8">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-serif font-bold text-brand-olive uppercase">Home Banners</h3>
+            <button 
+              type="button"
+              onClick={() => setIsBannerModalOpen(true)}
+              className="flex items-center space-x-2 bg-brand-olive text-brand-cream px-6 py-3 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg hover:shadow-brand-olive/20 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Banner</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            {banners.map((banner) => (
+              <div key={banner.id} className={`bg-white p-6 rounded-[2rem] border ${banner.active ? 'border-brand-olive/5' : 'border-gray-200 grayscale opacity-60'} flex gap-6 items-center shadow-sm`}>
+                <img src={banner.imageUrl} alt={banner.title} className="w-32 h-20 object-cover rounded-xl" />
+                <div className="flex-grow">
+                  <h4 className="font-bold text-brand-olive">{banner.title}</h4>
+                  <p className="text-xs text-gray-400 italic line-clamp-1">{banner.subtitle}</p>
+                </div>
+                <div className="flex items-center space-x-4">
+                   <button 
+                    type="button"
+                    onClick={() => {
+                      setEditingBannerId(banner.id);
+                      setNewBanner({...banner});
+                      setIsBannerModalOpen(true);
+                    }}
+                    className="p-2 text-brand-olive hover:text-brand-gold"
+                   >
+                     <Save className="w-4 h-4" />
+                   </button>
+                   <button 
+                    type="button"
+                    onClick={() => toggleBannerActive(banner.id, banner.active)}
+                    className={`p-2 ${banner.active ? 'text-green-500' : 'text-gray-400'}`}
+                   >
+                     <Eye className="w-4 h-4" />
+                   </button>
+                   <button 
+                    type="button"
+                    onClick={() => handleDeleteBanner(banner.id)}
+                    className="p-2 text-red-300 hover:text-red-500"
+                   >
+                     <Trash2 className="w-4 h-4" />
+                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     if (!content) return null;
 
     switch (currentPage) {
@@ -208,7 +337,7 @@ export default function AdminCMS() {
                     type="button"
                     onClick={() => {
                       setTargetField('philosophyImage');
-                      setAiPrompt(content.philosophyHeading ? `A professional high-end photography of ${content.philosophyHeading}, ${content.philosophyContent.substring(0, 50)}, luxury aesthetic, cinematic lighting.` : '');
+                      setAiPrompt(content.philosophyHeading ? `A professional high-end photography of ${content.philosophyHeading}, luxury aesthetic, cinematic lighting.` : '');
                       setIsAiModalOpen(true);
                     }}
                     className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
@@ -233,7 +362,6 @@ export default function AdminCMS() {
                   />
                   <label htmlFor="philosophy-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all flex-col">
                      <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Spotlight Image</span>
-                     <span className="text-[10px] text-gray-400 mt-1">Auto-resized to max 1200x800px (JPEG format)</span>
                   </label>
                   {content.philosophyImage && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-xl">
@@ -269,226 +397,53 @@ export default function AdminCMS() {
                 />
               </div>
             </div>
-
-            <div className="bg-white p-10 rounded-[3rem] space-y-8 border border-brand-olive/5 shadow-sm">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Story Heading</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-4 py-2 border-b-2 border-brand-gold/10 focus:border-brand-gold outline-none transition-all font-serif text-xl"
-                      value={content.storyHeading}
-                      onChange={e => setContent({...content, storyHeading: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Paragraph 1</label>
-                    <textarea 
-                      rows={4}
-                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
-                      value={content.storyParagraph1}
-                      onChange={e => setContent({...content, storyParagraph1: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Paragraph 2</label>
-                    <textarea 
-                      rows={4}
-                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
-                      value={content.storyParagraph2}
-                      onChange={e => setContent({...content, storyParagraph2: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                   <div className="flex justify-between items-center px-1">
-                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Story Image Upload</label>
-                     <button 
-                        type="button"
-                        onClick={() => {
-                          setTargetField('mainImage');
-                          setAiPrompt(content.storyHeading ? `A high-end heritage-focused photography of ${content.storyHeading}, ${content.storyParagraph1.substring(0, 50)}, elegant, authentic Indian artisan theme.` : '');
-                          setIsAiModalOpen(true);
-                        }}
-                        className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
-                     >
-                       <Sparkles className="w-3 h-3" />
-                       <span>Generate AI</span>
-                     </button>
-                   </div>
-                   <div className="relative">
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        id="story-image-upload"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg' });
-                            setContent({...content, mainImage: compressed});
-                          }
-                        }}
-                        className="hidden" 
+            <div className="bg-white p-10 rounded-[3rem] border border-brand-olive/5 shadow-sm space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="space-y-4">
+                      <textarea 
+                        rows={6}
+                        className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
+                        placeholder="Story Paragraph 1"
+                        value={content.storyParagraph1}
+                        onChange={e => setContent({...content, storyParagraph1: e.target.value})}
                       />
-                      <label htmlFor="story-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all flex-col">
-                         <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Story Image</span>
-                         <span className="text-[10px] text-gray-400 mt-1">Auto-resized to max 1200x800px (JPEG format)</span>
-                      </label>
+                      <textarea 
+                        rows={6}
+                        className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
+                        placeholder="Story Paragraph 2"
+                        value={content.storyParagraph2}
+                        onChange={e => setContent({...content, storyParagraph2: e.target.value})}
+                      />
                    </div>
-                   {content.mainImage && (
-                     <div className="mt-4 aspect-[4/5] rounded-[2rem] overflow-hidden border border-brand-olive/5 shadow-sm">
-                        <img src={content.mainImage} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                     </div>
-                   )}
+                   <div className="space-y-4">
+                      <div className="flex justify-between items-center px-1">
+                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Main Story Image</label>
+                        <button type="button" onClick={() => { setTargetField('mainImage'); setIsAiModalOpen(true); }} className="text-[10px] text-brand-gold font-bold uppercase"><Sparkles className="w-3 h-3 inline mr-1" /> AI</button>
+                      </div>
+                      <input type="file" id="story-img" className="hidden" onChange={async (e) => {
+                         const file = e.target.files?.[0];
+                         if (file) {
+                           const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 1600, format: 'image/jpeg' });
+                           setContent({...content, mainImage: compressed});
+                         }
+                      }} />
+                      <label htmlFor="story-img" className="block w-full py-12 border-2 border-dashed border-gray-100 rounded-[2rem] text-center cursor-pointer hover:bg-gray-50">
+                        <ImageIcon className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                        <span className="text-xs text-gray-400 font-bold uppercase">Upload Heritage Visual</span>
+                      </label>
+                      {content.mainImage && <img src={content.mainImage} alt="Story" className="w-full h-48 object-cover rounded-2xl" />}
+                   </div>
                 </div>
-              </div>
             </div>
           </div>
         );
 
-      case 'about_mission':
-        return (
-          <div className="space-y-12">
-            <div className="space-y-2 max-w-xl">
-              <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Main Page Heading</label>
-              <input 
-                type="text" 
-                className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all font-serif text-3xl"
-                value={content.title}
-                onChange={e => setContent({...content, title: e.target.value})}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="bg-white p-10 rounded-[3rem] border border-brand-olive/5 shadow-sm space-y-6">
-                <div className="flex items-center space-x-3 text-brand-gold">
-                   <Target className="w-5 h-5" />
-                   <h4 className="text-xs font-bold uppercase tracking-widest text-brand-olive">Mission Section</h4>
-                </div>
-                <input 
-                  type="text" 
-                  className="w-full px-4 py-2 border-b border-gray-100 focus:border-brand-gold outline-none transition-all font-serif text-xl"
-                  placeholder="Mission Heading"
-                  value={content.missionHeading}
-                  onChange={e => setContent({...content, missionHeading: e.target.value})}
-                />
-                <textarea 
-                  rows={4}
-                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
-                  placeholder="Mission Description"
-                  value={content.missionText}
-                  onChange={e => setContent({...content, missionText: e.target.value})}
-                />
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center px-1">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Mission Image Upload</label>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setTargetField('missionImage');
-                        setAiPrompt(content.missionHeading ? `A symbolic professional photograph representing ${content.missionHeading}, ${content.missionText.substring(0, 50)}, inspiring, clean aesthetic.` : '');
-                        setIsAiModalOpen(true);
-                      }}
-                      className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>Generate AI</span>
-                    </button>
-                  </div>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    id="mission-image-upload"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg' });
-                        setContent({...content, missionImage: compressed});
-                      }
-                    }}
-                    className="hidden" 
-                  />
-                  <label htmlFor="mission-image-upload" className="flex items-center justify-center flex-col w-full px-6 py-2 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-all text-brand-olive">
-                    <span className="flex items-center text-xs font-bold"><ImageIcon className="w-3 h-3 mr-2" /> Upload Mission Image</span>
-                    <span className="text-[10px] text-gray-400 mt-1 font-normal">Auto-resized to max 1200x800px (JPEG format)</span>
-                  </label>
-                  {content.missionImage && (
-                    <div className="mt-2 h-20 rounded-xl overflow-hidden border border-brand-olive/5">
-                      <img src={content.missionImage} alt="Mission Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    </div>
-                  )}
-                </div>
-              </div>
- 
-              <div className="bg-white p-10 rounded-[3rem] border border-brand-olive/5 shadow-sm space-y-6">
-                <div className="flex items-center space-x-3 text-brand-gold">
-                   <Eye className="w-5 h-5" />
-                   <h4 className="text-xs font-bold uppercase tracking-widest text-brand-olive">Vision Section</h4>
-                </div>
-                <input 
-                  type="text" 
-                  className="w-full px-4 py-2 border-b border-gray-100 focus:border-brand-gold outline-none transition-all font-serif text-xl"
-                  placeholder="Vision Heading"
-                  value={content.visionHeading}
-                  onChange={e => setContent({...content, visionHeading: e.target.value})}
-                />
-                <textarea 
-                  rows={4}
-                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
-                  placeholder="Vision Description"
-                  value={content.visionText}
-                  onChange={e => setContent({...content, visionText: e.target.value})}
-                />
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center px-1">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Vision Image Upload</label>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setTargetField('visionImage');
-                        setAiPrompt(content.visionHeading ? `A symbolic professional photograph representing ${content.visionHeading}, ${content.visionText.substring(0, 50)}, inspiring, visionary aesthetic.` : '');
-                        setIsAiModalOpen(true);
-                      }}
-                      className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>Generate AI</span>
-                    </button>
-                  </div>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    id="vision-image-upload"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 800, format: 'image/jpeg' });
-                        setContent({...content, visionImage: compressed});
-                      }
-                    }}
-                    className="hidden" 
-                  />
-                  <label htmlFor="vision-image-upload" className="flex items-center justify-center flex-col w-full px-6 py-2 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-all text-brand-olive">
-                    <span className="flex items-center font-bold text-xs"><ImageIcon className="w-3 h-3 mr-2" /> Upload Vision Image</span>
-                    <span className="text-[10px] text-gray-400 mt-1 font-normal">Auto-resized to max 1200x800px (JPEG format)</span>
-                  </label>
-                  {content.visionImage && (
-                    <div className="mt-2 h-20 rounded-xl overflow-hidden border border-brand-olive/5">
-                      <img src={content.visionImage} alt="Vision Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      case 'login':
+      case 'contact':
         return (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Form Title</label>
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Banner Title</label>
                 <input 
                   type="text" 
                   className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all font-serif"
@@ -497,7 +452,7 @@ export default function AdminCMS() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Form Subtitle</label>
+                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Banner Subtitle</label>
                 <input 
                   type="text" 
                   className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all"
@@ -507,93 +462,58 @@ export default function AdminCMS() {
               </div>
             </div>
 
-            <div className="bg-brand-olive/5 p-10 rounded-[3rem] space-y-8 border border-brand-olive/5">
-              <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-brand-olive mb-4">Left Side Visual</h4>
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Image Heading</label>
-                <input 
-                  type="text" 
-                  className="w-full px-6 py-4 bg-white border border-transparent rounded-2xl focus:border-brand-gold outline-none transition-all font-serif"
-                  value={content.heading}
-                  onChange={e => setContent({...content, heading: e.target.value})}
-                />
+            <div className="bg-brand-olive/5 p-10 rounded-[3rem] space-y-6 border border-brand-olive/5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input placeholder="Phone" className="w-full px-6 py-4 rounded-2xl focus:ring-2 ring-brand-gold outline-none" value={content.phone} onChange={e => setContent({...content, phone: e.target.value})} />
+                <input placeholder="Email" className="w-full px-6 py-4 rounded-2xl focus:ring-2 ring-brand-gold outline-none" value={content.email} onChange={e => setContent({...content, email: e.target.value})} />
               </div>
+              <textarea placeholder="Address" rows={3} className="w-full px-6 py-4 rounded-2xl focus:ring-2 ring-brand-gold outline-none" value={content.address} onChange={e => setContent({...content, address: e.target.value})} />
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Image Subheading</label>
-                <textarea 
-                  rows={2}
-                  className="w-full px-6 py-4 bg-white border border-transparent rounded-2xl focus:border-brand-gold outline-none transition-all leading-relaxed"
-                  value={content.subheading}
-                  onChange={e => setContent({...content, subheading: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center px-1">
-                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Image Upload</label>
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setTargetField('image');
-                      setAiPrompt(content.heading ? `A professional high-end photography for login screen: ${content.heading}, ${content.subheading?.substring(0, 50)}, luxury aesthetic, cinematic lighting.` : '');
-                      setIsAiModalOpen(true);
-                    }}
-                    className="text-[10px] font-bold text-brand-gold uppercase tracking-widest hover:underline flex items-center space-x-1"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    <span>Generate AI</span>
-                  </button>
-                </div>
-                <div className="relative">
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    id="login-image-upload"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const compressed = await processImage(file, { maxWidth: 1200, maxHeight: 1200, format: 'image/jpeg' });
-                        setContent({...content, image: compressed});
-                      }
-                    }}
-                    className="hidden" 
-                  />
-                  <label htmlFor="login-image-upload" className="flex items-center justify-center flex-col w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
-                     <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Background Image</span>
-                     <span className="text-[10px] text-gray-400 mt-1">Auto-resized to max 1200x1200px (JPEG format)</span>
-                  </label>
-                  {content.image && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-xl">
-                      <img src={content.image} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
-                    </div>
-                  )}
-                </div>
+                 <label className="text-[10px] uppercase font-bold font-mono tracking-widest">Banner Image</label>
+                 <input type="file" id="contact-banner" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const compressed = await processImage(file, { maxWidth: 1600, maxHeight: 600, format: 'image/jpeg' });
+                      setContent({...content, bannerImage: compressed});
+                    }
+                 }} />
+                 <label htmlFor="contact-banner" className="block w-full py-6 border-2 border-dashed border-brand-olive/10 rounded-2xl text-center cursor-pointer hover:bg-white/50 transition-all font-bold text-[10px] tracking-widest text-brand-olive uppercase">Set Page Banner</label>
+                 {content.bannerImage && <img src={content.bannerImage} alt="Banner" className="w-full h-32 object-cover rounded-xl mt-4" />}
               </div>
             </div>
           </div>
         );
+
+      case 'login':
+        return (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <input placeholder="Form Title" className="w-full px-6 py-4 rounded-2xl focus:ring-2 ring-brand-gold outline-none" value={content.title} onChange={e => setContent({...content, title: e.target.value})} />
+              <input placeholder="Form Subtitle" className="w-full px-6 py-4 rounded-2xl focus:ring-2 ring-brand-gold outline-none" value={content.subtitle} onChange={e => setContent({...content, subtitle: e.target.value})} />
+            </div>
+            <div className="bg-brand-olive/5 p-10 rounded-[3rem] space-y-6">
+               <input placeholder="Image Heading" className="w-full px-6 py-4 rounded-2xl focus:ring-2 ring-brand-gold outline-none" value={content.heading} onChange={e => setContent({...content, heading: e.target.value})} />
+               <textarea placeholder="Image Subheading" rows={2} className="w-full px-6 py-4 rounded-2xl focus:ring-2 ring-brand-gold outline-none" value={content.subheading} onChange={e => setContent({...content, subheading: e.target.value})} />
+               {content.image && <img src={content.image} className="w-full h-48 object-cover rounded-2xl" />}
+            </div>
+          </div>
+        );
+
       default:
         return (
-          <div className="bg-white p-10 rounded-[3rem] space-y-8 border border-brand-olive/5 shadow-sm">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Page Title</label>
-                <input 
-                  type="text" 
-                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all font-serif text-xl"
-                  value={content.title}
-                  onChange={e => setContent({...content, title: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1">Page Content</label>
-                <textarea 
-                  rows={20}
-                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all leading-relaxed"
-                  value={content.content}
-                  onChange={e => setContent({...content, content: e.target.value})}
-                />
-              </div>
-            </div>
+          <div className="bg-white p-10 rounded-[3rem] space-y-6 border border-brand-olive/5 shadow-sm">
+            <input 
+              type="text" 
+              className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all font-serif text-xl"
+              value={content.title}
+              onChange={e => setContent({...content, title: e.target.value})}
+            />
+            <textarea 
+              rows={20}
+              className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all leading-relaxed"
+              value={content.content}
+              onChange={e => setContent({...content, content: e.target.value})}
+            />
           </div>
         );
     }
@@ -603,8 +523,8 @@ export default function AdminCMS() {
     <div className="space-y-12 pb-32">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-brand-olive uppercase tracking-tight">Content Management</h1>
-          <p className="text-gray-400 mt-2">Curate the aesthetic and narrative of your heritage marketplace.</p>
+          <h1 className="text-4xl font-serif font-bold text-brand-olive uppercase tracking-tight">CMS Management</h1>
+          <p className="text-gray-400 mt-2">Manage your marketplace content and visual highlights in one place.</p>
         </div>
 
         <div className="relative group">
@@ -614,8 +534,10 @@ export default function AdminCMS() {
             onChange={(e) => setCurrentPage(e.target.value as PageType)}
           >
             <option value="home">Home Page</option>
+            <option value="banners">Home: Visual Highlights</option>
             <option value="about_story">About: Our Story</option>
             <option value="about_mission">About: Mission & Vision</option>
+            <option value="contact">Contact Us Page</option>
             <option value="terms">Terms & Conditions</option>
             <option value="privacy">Privacy Policy</option>
             <option value="return_policy">Return Policy</option>
@@ -632,7 +554,7 @@ export default function AdminCMS() {
         {loading ? (
           <div className="py-32 flex flex-col items-center justify-center space-y-4">
              <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
-             <p className="text-gray-400 font-serif italic">Loading page content structure...</p>
+             <p className="text-gray-400 font-serif italic">Loading asset structures...</p>
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -648,7 +570,7 @@ export default function AdminCMS() {
           </AnimatePresence>
         )}
 
-        {!loading && (
+        {(!loading && currentPage !== 'banners') && (
           <div className="pt-8">
             <button 
               disabled={saving}
@@ -658,7 +580,7 @@ export default function AdminCMS() {
               {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                 <>
                   <Save className="w-5 h-5" />
-                  <span>Update Marketplace Content</span>
+                  <span>Update Page Narrative</span>
                 </>
               )}
             </button>
@@ -666,93 +588,57 @@ export default function AdminCMS() {
         )}
       </form>
 
+      {/* Banner Modal */}
+      <AnimatePresence>
+        {isBannerModalOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-brand-olive/20 backdrop-blur-sm" onClick={() => setIsBannerModalOpen(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 space-y-8">
+              <h3 className="text-2xl font-serif font-bold text-brand-olive">{editingBannerId ? 'Edit Highlight' : 'New Highlight'}</h3>
+              <form onSubmit={handleAddBanner} className="space-y-6">
+                <input placeholder="Title" required className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none" value={newBanner.title} onChange={e => setNewBanner({...newBanner, title: e.target.value})} />
+                <input placeholder="Subtitle" className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none" value={newBanner.subtitle} onChange={e => setNewBanner({...newBanner, subtitle: e.target.value})} />
+                <div className="grid grid-cols-2 gap-4">
+                  <input placeholder="Target Link" className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none" value={newBanner.link} onChange={e => setNewBanner({...newBanner, link: e.target.value})} />
+                  <input type="number" placeholder="Order" className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none" value={newBanner.order} onChange={e => setNewBanner({...newBanner, order: Number(e.target.value)})} />
+                </div>
+                <div className="space-y-2">
+                   <div className="flex justify-between items-center px-1">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-gray-400">Background Image</label>
+                      <button type="button" onClick={() => { setTargetField('banners'); setIsAiModalOpen(true); }} className="text-[10px] text-brand-gold font-bold uppercase"><Sparkles className="w-3 h-3 inline mr-1" /> AI Generate</button>
+                   </div>
+                   <input type="file" id="highlight-img" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const compressed = await processImage(file, { maxWidth: 1920, maxHeight: 1080, format: 'image/jpeg' });
+                        setNewBanner({...newBanner, imageUrl: compressed});
+                      }
+                   }} />
+                   <label htmlFor="highlight-img" className="block w-full py-4 bg-gray-50 border border-dashed border-gray-200 rounded-xl text-center cursor-pointer hover:bg-gray-100 font-bold text-[10px] uppercase tracking-widest text-gray-400">Upload Visual</label>
+                   {newBanner.imageUrl && <img src={newBanner.imageUrl} className="w-full h-24 object-cover rounded-xl mt-2" />}
+                </div>
+                <button type="submit" className="w-full bg-brand-olive text-brand-cream py-5 rounded-full font-bold uppercase tracking-widest text-[10px] shadow-lg">Save Highlight</button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* AI Image Generation Modal */}
       <AnimatePresence>
         {isAiModalOpen && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-brand-olive/40 backdrop-blur-md"
-              onClick={() => setIsAiModalOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 space-y-8"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-brand-olive/40 backdrop-blur-md" onClick={() => setIsAiModalOpen(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 space-y-8">
               <div className="text-center space-y-2">
-                <div className="w-16 h-16 bg-brand-gold/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  <Sparkles className="w-8 h-8 text-brand-gold" />
-                </div>
+                <div className="w-16 h-16 bg-brand-gold/10 rounded-3xl flex items-center justify-center mx-auto mb-6"><Sparkles className="w-8 h-8 text-brand-gold" /></div>
                 <h3 className="font-serif text-2xl font-bold text-brand-olive">Generate Brand Visual</h3>
-                <p className="text-gray-400 text-sm">Visualize your brand narrative. Describe the aesthetic, mood, and subject matter.</p>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">AI Visual Prompt</label>
-                <textarea 
-                  rows={4}
-                  className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm leading-relaxed"
-                  placeholder="e.g. A serene photograph of a skilled artisan crafting intricate jewelry in a sunlit workshop..."
-                  value={aiPrompt}
-                  onChange={e => setAiPrompt(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Width (px)</label>
-                  <input type="number" 
-                         className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm" 
-                         value={imageReqs.width}
-                         onChange={e => setImageReqs({...imageReqs, width: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Height (px)</label>
-                  <input type="number" 
-                         className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm" 
-                         value={imageReqs.height}
-                         onChange={e => setImageReqs({...imageReqs, height: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Format</label>
-                  <select 
-                         className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm" 
-                         value={imageReqs.format}
-                         onChange={e => setImageReqs({...imageReqs, format: e.target.value})}>
-                    <option value="PNG">PNG</option>
-                    <option value="JPG">JPG</option>
-                    <option value="WEBP">WEBP</option>
-                  </select>
-                </div>
-              </div>
-
+              <textarea rows={4} className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-brand-gold outline-none transition-all text-sm leading-relaxed" placeholder="Describe the aesthetic..." value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} />
               <div className="flex gap-4">
-                <button 
-                  onClick={() => setIsAiModalOpen(false)}
-                  className="flex-1 px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs text-gray-400 hover:text-brand-olive transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleGenerateAIImage}
-                  disabled={generatingAI}
-                  className="flex-1 bg-brand-olive text-brand-cream px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-brand-olive/20 transition-all flex items-center justify-center space-x-2"
-                >
-                  {generatingAI ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>Generate & Save</span>
-                    </>
-                  )}
+                <button onClick={() => setIsAiModalOpen(false)} className="flex-1 px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs text-gray-400">Cancel</button>
+                <button onClick={handleGenerateAIImage} disabled={generatingAI} className="flex-1 bg-brand-olive text-brand-cream px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg flex items-center justify-center space-x-2">
+                  {generatingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /><span>Generate</span></>}
                 </button>
               </div>
             </motion.div>
