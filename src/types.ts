@@ -18,6 +18,7 @@ export interface Product {
   isFeatured?: boolean;
   variants?: ProductVariant[];
   tags?: string[];
+  vendorId?: string;
   seoTitle?: string;
   createdAt: string;
 }
@@ -28,7 +29,7 @@ export interface UserProfile {
   email: string;
   phoneNumber?: string;
   photoURL?: string;
-  role: 'customer' | 'admin';
+  role: 'customer' | 'admin' | 'vendor';
   addresses?: Address[];
 }
 

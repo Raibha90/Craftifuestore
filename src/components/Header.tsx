@@ -12,7 +12,7 @@ import { Product } from '../types';
 
 export default function Header({ id }: { id: string }) {
   const { totalItems } = useCart();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isVendor } = useAuth();
   const { wishlist } = useWishlist();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -200,10 +200,11 @@ export default function Header({ id }: { id: string }) {
                         <p className="text-sm font-serif font-bold text-brand-olive truncate">{user.displayName || user.email}</p>
                       </div>
                       {[
-                        { label: 'My Profile', path: '/dashboard?tab=profile', icon: User },
-                        { label: 'My Account', path: '/dashboard?tab=orders', icon: ShoppingBag },
-                        { label: 'Account Settings', path: '/dashboard?tab=profile', icon: Settings },
-                      ].map((item) => (
+                        { label: 'My Profile', path: '/dashboard?tab=profile', icon: User, show: true },
+                        { label: 'Vendor Portal', path: '/vendor', icon: ShoppingBag, show: isVendor },
+                        { label: 'My Account', path: '/dashboard?tab=orders', icon: ShoppingBag, show: !isVendor },
+                        { label: 'Account Settings', path: '/dashboard?tab=profile', icon: Settings, show: true },
+                      ].filter(item => item.show).map((item) => (
                         <Link 
                           key={item.label}
                           to={item.path}

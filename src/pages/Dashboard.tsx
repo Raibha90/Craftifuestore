@@ -22,6 +22,12 @@ export default function Dashboard() {
   const location = useLocation();
 
   useEffect(() => {
+    if (profile?.role === 'vendor') {
+      navigate('/vendor', { replace: true });
+    }
+  }, [profile, navigate]);
+
+  useEffect(() => {
     // Show success toast if user just became verified in this session
     if (user?.emailVerified && sessionStorage.getItem('was_unverified') === 'true') {
       showToast('Profile Activated! Your account is now fully verified.', 'success');

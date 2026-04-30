@@ -41,7 +41,25 @@ export default function VendorRegistration() {
         displayName: formData.businessName
       });
 
-      // Save as vendor
+      // Save as vendor profile in users collection for auth
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        displayName: formData.businessName,
+        email: formData.email,
+        phoneNumber: formData.phone,
+        role: 'vendor',
+        addresses: [{
+          id: 'default',
+          street: '',
+          city: formData.city,
+          state: '',
+          zipCode: '',
+          country: 'India',
+          isDefault: true
+        }]
+      });
+
+      // Save as detailed vendor profile
       await setDoc(doc(db, 'vendors', userCredential.user.uid), {
         id: userCredential.user.uid,
         name: formData.businessName,

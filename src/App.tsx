@@ -31,10 +31,16 @@ import AdminVendors from './pages/admin/AdminVendors';
 import AdminWorkbook from './pages/admin/workbook/AdminWorkbook';
 import AdminAI from './pages/admin/AdminAI';
 import AdminCommissions from './pages/admin/AdminCommissions';
+import VendorLayout from './pages/vendor/VendorLayout';
+import VendorDashboard from './pages/vendor/VendorDashboard';
+import VendorProducts from './pages/vendor/VendorProducts';
+import VendorOrders from './pages/vendor/VendorOrders';
+import VendorProfile from './pages/vendor/VendorProfile';
 import ActionHandler from './pages/ActionHandler';
 import Wishlist from './pages/Wishlist';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
+import VendorRoute from './components/VendorRoute';
 
 import AboutCratifue from './pages/about/AboutCratifue';
 import MissionVision from './pages/about/MissionVision';
@@ -124,6 +130,18 @@ function App() {
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="payments" element={<AdminPayments />} />
                   </Route>
+                </Route>
+
+                {/* Vendor Routes */}
+                <Route path="/vendor" element={
+                  <VendorRoute>
+                    <VendorLayout />
+                  </VendorRoute>
+                }>
+                  <Route index element={<VendorDashboard />} />
+                  <Route path="products" element={<VendorProducts />} />
+                  <Route path="orders" element={<VendorOrders />} />
+                  <Route path="profile" element={<VendorProfile />} />
                 </Route>
 
                 {/* Client Routes */}
