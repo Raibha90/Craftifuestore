@@ -10,6 +10,8 @@ import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
 import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
+import passwordResetRoutes from "./server/routes/passwordReset";
+import emailChangeRoutes from "./server/routes/emailChange";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,8 +20,13 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.set("trust proxy", 1);
   app.use(cors());
   app.use(express.json());
+
+  // Action URL Routes
+  app.use(passwordResetRoutes);
+  app.use(emailChangeRoutes);
 
   // Set up Nodemailer for Hostinger SMTP
   const transporter = nodemailer.createTransport({
@@ -53,54 +60,6 @@ async function startServer() {
       res.json({ success: true, messageId: info.messageId });
     } catch (error: any) {
       console.error("Error sending email:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // 1. Custom Admin Password Reset Flow (Backend)
-  app.post("/api/admin/forgot-password", async (req, res) => {
-    const { email } = req.body;
-    
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      return res.status(500).json({ error: "SMTP credentials not configured." });
-    }
-
-    try {
-      // Create a secure token using crypto
-      const resetToken = crypto.randomBytes(32).toString("hex");
-      const tokenExpiry = Date.now() + 3600000; // 1 hour from now
-      
-      // In a real flow, you would save this token temporarily to a secure database 
-      // table like `password_resets` mapped to the admin's UUID/Email.
-      // await db.collection('password_resets').add({ email, token: resetToken, expires: tokenExpiry });
-      
-      // Send the recovery email
-      const resetLink = `https://cratifue.store/admin/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
-      const mailOptions = {
-        from: `"Cratifue Admin" <${process.env.SMTP_USER}>`,
-        to: email,
-        bcc: "admin@cratifue.store",
-        subject: "Admin Portal - Password Recovery",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h2 style="color: #4a5d23; font-size: 24px;">Cratifue Admin Portal</h2>
-            </div>
-            <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">You requested a password reset for your admin account. Click the button below to set a new password.</p>
-            <div style="text-align: center; margin: 40px 0;">
-              <a href="${resetLink}" style="background-color: #4a5d23; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Reset Password</a>
-            </div>
-            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 40px;">If you did not request this, you can safely ignore this email. This link will expire in 1 hour.</p>
-          </div>
-        `,
-      };
-
-      await transporter.sendMail(mailOptions);
-      
-      // Respond affirmatively immediately to avoid email enumeration
-      res.json({ success: true, message: "If an admin account is registered with this email, a reset link with instructions has been sent to your inbox." });
-    } catch (error: any) {
-      console.error("Password reset error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -245,10 +204,10 @@ async function startServer() {
             /*
             if (email && process.env.SMTP_USER && process.env.SMTP_PASS) {
               await transporter.sendMail({
-                 from: \`"Craftifue" <\${process.env.SMTP_USER}>\`,
+                 from: `"Cratifue" <${process.env.SMTP_USER}>`,
                  to: email,
                  subject: "Payment Confirmed via Razorpay",
-                 text: \`Your payment of ₹\${amount} for order \${orderId} was successful.\`
+                 text: `Your payment of ₹${amount} for order ${orderId} was successful.`
               });
             }
             */

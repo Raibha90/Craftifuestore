@@ -31,6 +31,7 @@ import AdminVendors from './pages/admin/AdminVendors';
 import AdminWorkbook from './pages/admin/workbook/AdminWorkbook';
 import AdminAI from './pages/admin/AdminAI';
 import AdminCommissions from './pages/admin/AdminCommissions';
+import ActionHandler from './pages/ActionHandler';
 import Wishlist from './pages/Wishlist';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
@@ -161,6 +162,7 @@ function App() {
                             <Dashboard />
                           </PrivateRoute>
                         } />
+                        <Route path="/action/*" element={<ActionHandler />} />
                       </Routes>
                     </main>
                     <Footer id="main-footer" />

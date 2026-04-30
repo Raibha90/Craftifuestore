@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
+import { auth, db } from '../../lib/firebase';
+import { getDoc, doc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Loader2, ArrowLeft, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useToast } from '../../components/Toast';
@@ -12,8 +13,21 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
   useEffect(() => {
     document.title = "Cratifue-HandCrafts";
+    const fetchSettings = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'general'));
+        if (snap.exists() && snap.data().logoUrl) {
+          setLogoUrl(snap.data().logoUrl);
+        }
+      } catch (err) {
+        console.error('Settings fetch error:', err);
+      }
+    };
+    fetchSettings();
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
@@ -21,12 +35,22 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      // Send the email
-      await sendPasswordResetEmail(auth, email);
+      // Send the email via backend API
+      const res = await fetch('/api/admin/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        showToast(data.message, 'success');
+      } else {
+        showToast(data.error || 'Failed to send recovery email.', 'error');
+      }
     } catch (err: any) {
-      console.log('Password reset requested'); 
-    } finally {
       showToast('If an admin account is registered with this email, a reset link has been sent.', 'success');
+    } finally {
       setLoading(false);
     }
   };
@@ -44,8 +68,12 @@ export default function ForgotPassword() {
         className="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl relative z-10"
       >
         <div className="text-center mb-10">
-          <div className="mb-6">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-500 font-bold text-xs uppercase tracking-widest">Logo</div>
+          <div className="mb-6 flex justify-center">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="w-auto h-24 object-contain" />
+            ) : (
+              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-500 font-bold text-xs uppercase tracking-widest font-serif">Logo</div>
+            )}
           </div>
           <h1 className="text-2xl font-serif font-bold text-brand-olive mb-2">Password Recovery</h1>
           <p className="text-sm font-medium text-gray-500 px-4">Provide your admin email address to receive secure reset instructions.</p>
