@@ -59,6 +59,7 @@ import AIPersonalizerModal from './components/AIPersonalizerModal';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 import { CompareProvider } from './contexts/CompareContext';
 import Compare from './pages/Compare';
@@ -94,6 +95,7 @@ function App() {
   return (
     <ErrorBoundary id="app-error-boundary">
       <Analytics />
+      <SpeedInsights />
       <DynamicHead />
       <AuthProvider>
         <ToastProvider>
