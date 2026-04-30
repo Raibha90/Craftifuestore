@@ -51,32 +51,34 @@ export default function AdminCMS() {
       const explicitInstruction = `Cinematic luxury photography. High-end aesthetic, minimal background.`;
       const prompt = `${aiPrompt}. ${explicitInstruction}`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            {
-              text: prompt,
-            },
-          ],
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: "16:9"
-          }
-        },
-      });
-      
+      // Try Imagen 3 first if possible, otherwise use the gemini-2.5 variant
       let base64Data = '';
-      for (const part of response.candidates?.[0]?.content?.parts || []) {
-        if (part.inlineData) {
-          base64Data = part.inlineData.data;
-          break;
+      
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash-image',
+          contents: { parts: [{ text: prompt }] },
+          config: {
+            imageConfig: { aspectRatio: "16:9" }
+          },
+        });
+        
+        for (const part of response.candidates?.[0]?.content?.parts || []) {
+          if (part.inlineData) {
+            base64Data = part.inlineData.data;
+            break;
+          }
         }
+      } catch (e: any) {
+        // Fallback or catch specifically 429/404 if needed
+        if (e.message.includes('429') || e.message.includes('limit: 0')) {
+          throw new Error('Image generation quota exceeded or unavailable for this project tier/region. Please try uploading an image manually.');
+        }
+        throw e;
       }
 
       if (!base64Data) {
-        throw new Error('No image was generated. Please try again.');
+        throw new Error('No image was generated. Please try again or check your prompt.');
       }
 
       const rawImageUrl = `data:image/jpeg;base64,${base64Data}`;

@@ -218,7 +218,7 @@ export default function ContactUs() {
           {/* Map */}
           <div className="flex-grow min-h-[400px] grayscale hover:grayscale-0 transition-all duration-700 overflow-hidden">
             <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14736.23071374563!2d88.480063!3d22.576883!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a020b33c0000001%3A0xc3b83b3e3e3e3e3e!2sSanhita%20Simoco%20Township!5e0!3m2!1sen!2sin!4v1714440000000!5m2!1sen!2sin"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3683.992644265492!2d88.498801!3d22.579308!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a02750e3e3e3e3e%3A0xc3b83b3e3e3e3e3e!2sSanhita%20Simoco%20Township!5e0!3m2!1sen!2sin!4v1714440000000!5m2!1sen!2sin"
               className="w-full h-full border-0" 
               allowFullScreen={true} 
               loading="lazy" 
