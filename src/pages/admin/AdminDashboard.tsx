@@ -4,8 +4,10 @@ import { db } from '../../lib/firebase';
 import { Order, Product } from '../../types';
 import { ShoppingCart, Users, DollarSign, Package, TrendingUp, Clock, Settings, Save, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useToast } from '../../components/Toast';
 
 export default function AdminDashboard() {
+  const { showToast } = useToast();
   const [stats, setStats] = useState({
     totalOrders: 0,
     revenue: 0,
@@ -68,8 +70,10 @@ export default function AdminDashboard() {
         shippingThreshold: Number(shippingThreshold),
         updatedAt: new Date().toISOString()
       }, { merge: true });
+      showToast('General settings updated successfully.', 'success');
     } catch (err) {
       console.error('Error saving settings:', err);
+      showToast('Failed to save settings. Please try again.', 'error');
     } finally {
       setSavingSettings(false);
     }

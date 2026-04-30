@@ -54,6 +54,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { CompareProvider } from './contexts/CompareContext';
 import Compare from './pages/Compare';
 import CompareBar from './components/CompareBar';
+import { ToastProvider } from './components/Toast';
 
 import React, { useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -86,7 +87,8 @@ function App() {
       <Analytics />
       <DynamicHead />
       <AuthProvider>
-        <WishlistProvider>
+        <ToastProvider>
+          <WishlistProvider>
           <CartProvider>
             <CompareProvider>
               <Router>
@@ -165,7 +167,8 @@ function App() {
             </CompareProvider>
           </CartProvider>
         </WishlistProvider>
-      </AuthProvider>
+      </ToastProvider>
+    </AuthProvider>
     </ErrorBoundary>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Wand2, Save, Loader2, Sparkles, TrendingUp, BarChart2 } from 'lucide-react';
+import { useToast } from '../../components/Toast';
 
 interface AIConfig {
   id?: string;
@@ -20,6 +21,7 @@ interface AIConfig {
 }
 
 export default function AdminAI() {
+  const { showToast } = useToast();
   const [config, setConfig] = useState<AIConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,10 +63,10 @@ export default function AdminAI() {
         await setDoc(docRef, config as any);
         setConfig({ ...config, id: docRef.id });
       }
-      alert('AI Configuration saved successfully!');
+      showToast('AI Configuration saved successfully!', 'success');
     } catch (e) {
       console.error('Failed to save AI config', e);
-      alert('Failed to save configuration.');
+      showToast('Failed to save configuration.', 'error');
     } finally {
       setSaving(false);
     }

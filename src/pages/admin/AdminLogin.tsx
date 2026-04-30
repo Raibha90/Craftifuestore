@@ -5,11 +5,12 @@ import { auth, db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import { Lock, Mail, ShieldAlert, Loader2 } from 'lucide-react';
+import { useToast } from '../../components/Toast';
 
 export default function AdminLogin() {
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
   const navigate = useNavigate();
@@ -35,7 +36,6 @@ export default function AdminLogin() {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -61,13 +61,14 @@ export default function AdminLogin() {
             addresses: []
           }, { merge: true });
         }
+        showToast('Authorized. Welcome to Artisan Governance.', 'success');
         navigate('/admin');
       } else {
         await auth.signOut();
-        setError('Unauthorized access. This area is for administrators only.');
+        showToast('Unauthorized access. This area is for administrators only.', 'error');
       }
     } catch (err: any) {
-      setError('Invalid credentials. Please try again.');
+      showToast('Invalid credentials. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -95,17 +96,6 @@ export default function AdminLogin() {
           </div>
           <h1 className="text-2xl font-serif font-bold text-brand-olive mb-2">Admin Portal</h1>
         </div>
-
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start space-x-3"
-          >
-            <ShieldAlert className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-red-600 font-medium leading-relaxed">{error}</p>
-          </motion.div>
-        )}
 
         <form onSubmit={handleAdminLogin} className="space-y-6">
           <div className="space-y-2">

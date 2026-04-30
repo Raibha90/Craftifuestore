@@ -5,12 +5,14 @@ import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCompare } from '../contexts/CompareContext';
 import { ShoppingCart, Heart, ShieldCheck, Truck, RefreshCw, Star, ArrowLeft, ImagePlus, X, MessageSquare, GitCompare } from 'lucide-react';
+import { useToast } from '../components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, ProductVariant } from '../types';
 
 export default function ProductDetail() {
+  const { showToast } = useToast();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -80,7 +82,7 @@ export default function ProductDetail() {
   const submitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("Please login to submit a review");
+      showToast("Please login to submit a review", "info");
       navigate('/login');
       return;
     }
@@ -97,14 +99,14 @@ export default function ProductDetail() {
         status: 'pending',
         createdAt: serverTimestamp()
       });
-      alert('Review submitted successfully! It will appear once approved.');
+      showToast('Review submitted successfully! It will appear once approved.', 'success');
       setReviewFormOpen(false);
       setReviewText('');
       setReviewRating(5);
       setReviewImages([]);
     } catch (err) {
       console.error(err);
-      alert('Failed to submit review');
+      showToast('Failed to submit review', 'error');
     } finally {
       setSubmittingReview(false);
     }
@@ -131,8 +133,10 @@ export default function ProductDetail() {
     }
     if (isFavorited) {
       await removeFromWishlist(product.id || '');
+      showToast('Removed from wishlist.', 'info');
     } else {
       await addToWishlist(product.id || '');
+      showToast('Added to wishlist.', 'success');
     }
   };
 
@@ -141,8 +145,10 @@ export default function ProductDetail() {
   const handleCompareToggle = () => {
     if (isCompared) {
       removeFromCompare(product.id || '');
+      showToast('Removed from comparison.', 'info');
     } else {
       addToCompare(product);
+      showToast('Added to comparison.', 'success');
     }
   };
 
@@ -274,6 +280,7 @@ export default function ProductDetail() {
                     name: selectedVariant ? `${product.name} (${selectedVariant.name})` : product.name
                   };
                   addToCart(finalProduct, quantity);
+                  showToast(`${quantity} ${finalProduct.name} added to cart.`, 'success');
                 }}
                 disabled={currentStock === 0}
                 className="flex-grow bg-brand-olive text-brand-cream py-5 rounded-full font-bold uppercase tracking-widest text-xs flex items-center justify-center space-x-3 shadow-lg hover:bg-brand-olive/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"

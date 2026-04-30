@@ -5,11 +5,12 @@ import { auth, db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, Smartphone, MapPin, Loader2, ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react';
+import { useToast } from '../components/Toast';
 import PageBanner from '../components/PageBanner';
 import ShuffledSections from '../components/ShuffledSections';
 
 export default function CreateAccount() {
-  const [error, setError] = useState('');
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   
@@ -31,7 +32,7 @@ export default function CreateAccount() {
     // 8 characters password with one Upper, Lower, Special Charatcers, and Number combinations
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(signupData.password)) {
-      setError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+      showToast('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.', 'error');
       return;
     }
     
@@ -40,13 +41,12 @@ export default function CreateAccount() {
     let sanitizedPhone = signupData.phone.replace(/[\s-()]/g, '');
     
     if (!phoneRegex.test(sanitizedPhone)) {
-      setError('Please enter a valid phone number with country code (e.g. +919876543210)');
+      showToast('Please enter a valid phone number with country code (e.g. +919876543210)', 'error');
       return;
     }
     
     setSignupData({ ...signupData, phone: sanitizedPhone });
 
-    setError('');
     setLoading(true);
 
     try {
@@ -99,8 +99,9 @@ export default function CreateAccount() {
       }
 
       setIsSuccess(true);
+      showToast('Account created! Please verify your email.', 'success');
     } catch (err: any) {
-      setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -127,13 +128,6 @@ export default function CreateAccount() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white p-10 md:p-12 rounded-[3.5rem] shadow-sm border border-brand-olive/5 relative overflow-hidden"
         >
-          {error && (
-            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl text-xs font-bold text-red-600 text-center flex items-center justify-center space-x-2">
-              <ShieldCheck className="w-4 h-4" />
-              <span>{error}</span>
-            </div>
-          )}
-
           <AnimatePresence mode="wait">
             {isSuccess ? (
               <motion.div 

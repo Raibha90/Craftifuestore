@@ -4,8 +4,10 @@ import { db } from '../../lib/firebase';
 import { Order } from '../../types';
 import { Package, Truck, CheckCircle, RefreshCcw, XCircle, Search } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useToast } from '../../components/Toast';
 
 export default function AdminOrders() {
+  const { showToast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -30,6 +32,7 @@ export default function AdminOrders() {
   const handleUpdateStatus = async (id: string, status: Order['status'], order?: Order) => {
     try {
       await updateDoc(doc(db, 'orders', id), { status });
+      showToast(`Order status updated to ${status}.`, 'success');
       
       if (order) {
         // Construct the item list for email
@@ -68,6 +71,7 @@ export default function AdminOrders() {
   const handleUpdateTracking = async (id: string, trackingNumber: string, courierName: string, order?: Order) => {
     try {
       await updateDoc(doc(db, 'orders', id), { trackingNumber, courierName });
+      showToast('Tracking information updated.', 'success');
       
       if (order) {
          fetch('/api/orders/notify-status', {
@@ -201,8 +205,8 @@ export default function AdminOrders() {
                              headers: { 'Content-Type': 'application/json' },
                              body: JSON.stringify({ order: { ...order, address: order.shippingAddress, totalAmount: order.totalAmount } })
                           });
-                          if (res.ok) alert("Invoice Email Sent!");
-                          else alert("Failed to send");
+                          if (res.ok) showToast("Invoice Email Sent!", 'success');
+                          else showToast("Failed to send", 'error');
                         } finally {
                           document.getElementById(`btn-${order.id}`)!.innerText = originalText;
                         }

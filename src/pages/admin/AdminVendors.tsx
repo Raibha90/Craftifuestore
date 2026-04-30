@@ -3,6 +3,7 @@ import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, query, orderBy,
 import { db } from '../../lib/firebase';
 import { Search, Plus, Filter, MoreVertical, Edit2, Trash2, Mail, Phone, MapPin, Star, ExternalLink, Instagram, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useToast } from '../../components/Toast';
 
 interface Vendor {
   id: string;
@@ -24,6 +25,7 @@ interface Vendor {
 }
 
 export default function AdminVendors() {
+  const { showToast } = useToast();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,19 +78,21 @@ export default function AdminVendors() {
     try {
       if (editingVendor) {
         await updateDoc(doc(db, 'vendors', editingVendor.id), { ...newVendor });
+        showToast('Vendor updated successfully.', 'success');
       } else {
         await addDoc(collection(db, 'vendors'), {
           ...newVendor,
           created_at: serverTimestamp(),
           updated_at: serverTimestamp()
         });
+        showToast('Vendor added successfully.', 'success');
       }
       setIsModalOpen(false);
       setEditingVendor(null);
       fetchVendors();
     } catch (err) {
       console.error(err);
-      alert('Failed to save vendor');
+      showToast('Failed to save vendor', 'error');
     }
   };
 
@@ -96,6 +100,7 @@ export default function AdminVendors() {
     if (!window.confirm("Are you sure you want to delete this vendor?")) return;
     try {
       await deleteDoc(doc(db, 'vendors', id));
+      showToast('Vendor deleted successfully.', 'info');
       fetchVendors();
     } catch (err) {
       console.error(err);
@@ -105,6 +110,7 @@ export default function AdminVendors() {
   const updateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
     try {
       await updateDoc(doc(db, 'vendors', id), { status });
+      showToast(`Vendor ${status}.`, 'info');
       fetchVendors();
     } catch (err) {
       console.error(err);

@@ -4,10 +4,11 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Loader2, ArrowLeft, ShieldCheck, HelpCircle } from 'lucide-react';
+import { useToast } from '../../components/Toast';
 
 export default function ForgotPassword() {
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -23,12 +24,9 @@ export default function ForgotPassword() {
       // Send the email
       await sendPasswordResetEmail(auth, email);
     } catch (err: any) {
-      // Regardless of the error (user-not-found, etc.), we show success message 
-      // to prevent email enumeration attacks (Security Best Practice).
       console.log('Password reset requested'); 
     } finally {
-      // Always show success message
-      setMessage('If an admin account is registered with this email, a reset link with instructions has been sent to your inbox.');
+      showToast('If an admin account is registered with this email, a reset link has been sent.', 'success');
       setLoading(false);
     }
   };
@@ -53,19 +51,6 @@ export default function ForgotPassword() {
           <p className="text-sm font-medium text-gray-500 px-4">Provide your admin email address to receive secure reset instructions.</p>
         </div>
 
-        <AnimatePresence>
-          {message && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mb-8 p-4 bg-brand-olive/10 border border-brand-olive/20 rounded-2xl flex items-start space-x-3"
-            >
-              <ShieldCheck className="w-5 h-5 text-brand-olive flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-brand-olive font-medium leading-relaxed">{message}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <form onSubmit={handleReset} className="space-y-8">
           <div className="space-y-2">
             <label className="text-[10px] uppercase tracking-widest font-bold text-brand-olive px-4">Registered Email</label>
@@ -83,7 +68,7 @@ export default function ForgotPassword() {
           </div>
 
           <button
-            disabled={loading || !!message}
+            disabled={loading}
             type="submit"
             className="w-full bg-brand-olive text-brand-cream py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-xl shadow-brand-olive/20 hover:shadow-brand-olive/30 transition-all flex items-center justify-center space-x-3 disabled:opacity-70"
           >

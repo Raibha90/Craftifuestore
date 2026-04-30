@@ -4,8 +4,10 @@ import { db } from '../../lib/firebase';
 import { Save, Loader2, Globe, Settings, Mail, Phone, Instagram, Facebook, Layout, Image as ImageIcon, Upload } from 'lucide-react';
 import { motion } from 'motion/react';
 import { processImage } from '../../lib/imageUtils';
+import { useToast } from '../../components/Toast';
 
 export default function AdminSettings() {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
@@ -67,9 +69,10 @@ export default function AdminSettings() {
         ...appearance,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
+      showToast('Governance settings synchronized successfully.', 'success');
     } catch (err) {
       console.error('Error saving settings:', err);
-      alert('Error updating heritage settings');
+      showToast('Failed to update heritage settings. Please try again.', 'error');
     } finally {
       setSaving(false);
     }

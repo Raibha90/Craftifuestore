@@ -5,6 +5,7 @@ import { Product } from '../../types';
 import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkles, Loader2, Upload, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI, Type } from '@google/genai';
+import { useToast } from '../../components/Toast';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -12,6 +13,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 import { processImage } from '../../lib/imageUtils';
 
 export default function AdminProducts() {
+  const { showToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,7 +45,7 @@ export default function AdminProducts() {
 
   const handleGenerateMetadata = async () => {
     if (!newProduct.name) {
-      alert('Please enter at least a Product Name first.');
+      showToast('Please enter at least a Product Name first.', 'info');
       return;
     }
     setGeneratingMeta(true);
@@ -80,9 +82,10 @@ export default function AdminProducts() {
         tags: data.tags || prev.tags,
         seoTitle: data.seoTitle || prev.seoTitle
       }));
+      showToast('AI Metadata generated successfully.', 'success');
     } catch (err: any) {
       console.error(err);
-      alert('Error generating metadata: ' + err.message);
+      showToast('Error generating metadata: ' + err.message, 'error');
     } finally {
       setGeneratingMeta(false);
     }
@@ -135,9 +138,10 @@ export default function AdminProducts() {
       
       setIsAiModalOpen(false);
       setAiPrompt('');
+      showToast('AI Image generated and applied to product.', 'success');
     } catch (err: any) {
       console.error(err);
-      alert('Error generating image: ' + err.message);
+      showToast('Error generating image: ' + err.message, 'error');
     } finally {
       setGeneratingAI(null);
     }
@@ -246,9 +250,10 @@ export default function AdminProducts() {
       setEditingId(null);
       setNewProduct({ name: '', description: '', price: 0, category: 'Necklace', images: [''], stock: 0, material: '', seoTitle: '', tags: [], variants: [] });
       fetchProducts();
+      showToast(`Product ${editingId ? 'updated' : 'added'} successfully.`, 'success');
     } catch (err) {
       console.error(err);
-      alert('Error saving product');
+      showToast('Failed to save product. Please try again.', 'error');
     }
   };
 
@@ -257,8 +262,10 @@ export default function AdminProducts() {
     try {
       await deleteDoc(doc(db, 'products', id));
       fetchProducts();
+      showToast('Product deleted from heritage catalog.', 'success');
     } catch (err) {
       console.error(err);
+      showToast('Failed to delete product. Please try again.', 'error');
     }
   };
 

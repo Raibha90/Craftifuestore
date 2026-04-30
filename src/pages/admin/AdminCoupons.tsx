@@ -5,10 +5,12 @@ import { Coupon } from '../../types';
 import { Plus, Trash2, Tag, Check, X, Calendar, Ticket, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
+import { useToast } from '../../components/Toast';
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
 
 export default function AdminCoupons() {
+  const { showToast } = useToast();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [generatingAI, setGeneratingAI] = useState(false);
@@ -50,10 +52,11 @@ export default function AdminCoupons() {
         });
       }
 
+      showToast(`Successfully generated ${generatedCoupons.length} promotional codes.`, 'success');
       fetchCoupons();
     } catch (e: any) {
       console.error(e);
-      alert('AI Generation Failed: ' + e.message);
+      showToast('AI Generation Failed: ' + e.message, 'error');
     } finally {
       setGeneratingAI(false);
     }
@@ -62,6 +65,7 @@ export default function AdminCoupons() {
   const toggleCouponActive = async (id: string, currentStatus: boolean) => {
     try {
       await updateDoc(doc(db, 'coupons', id), { active: !currentStatus });
+      showToast(`Coupon ${!currentStatus ? 'activated' : 'deactivated'}.`, 'info');
       fetchCoupons();
     } catch (err) {
       console.error(err);
@@ -72,6 +76,7 @@ export default function AdminCoupons() {
     if (!confirm('Discard this privilege code?')) return;
     try {
       await deleteDoc(doc(db, 'coupons', id));
+      showToast('Coupon deleted successfully.', 'info');
       fetchCoupons();
     } catch (err) {
       console.error(err);

@@ -4,11 +4,13 @@ import { db } from '../../lib/firebase';
 import { Banner } from '../../types';
 import { Plus, Trash2, LayoutPanelLeft, Link as LinkIcon, Eye, Save, X, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useToast } from '../../components/Toast';
 
 import { GoogleGenAI } from '@google/genai';
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export default function AdminBanners() {
+  const { showToast } = useToast();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,15 +62,16 @@ export default function AdminBanners() {
       setEditingId(null);
       setNewBanner({ title: '', subtitle: '', imageUrl: '', link: '/category/all', order: banners.length + 1, active: true });
       fetchBanners();
+      showToast(`Highlight ${editingId ? 'updated' : 'added'} successfully.`, 'success');
     } catch (err) {
       console.error(err);
-      alert('Error saving highlight');
+      showToast('Error saving highlight. Please try again.', 'error');
     }
   };
 
   const handleGenerateAIImage = async () => {
     if (!aiPrompt && !newBanner.title) {
-      alert('Please provide a prompt or a title.');
+      showToast('Please provide a prompt or a title.', 'info');
       return;
     }
 
@@ -101,6 +104,9 @@ export default function AdminBanners() {
       
       const updatedBanner = { ...newBanner, imageUrl };
       setNewBanner(updatedBanner);
+      setIsAiModalOpen(false);
+      setAiPrompt('');
+      showToast('AI Image generated and applied successfully.', 'success');
 
       if (editingId) {
         await updateDoc(doc(db, 'banners', editingId), {

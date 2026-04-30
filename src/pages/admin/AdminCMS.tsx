@@ -5,12 +5,14 @@ import { Save, Loader2, Layout, FileText, Image as ImageIcon, Sparkles, Target, 
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { processImage } from '../../lib/imageUtils';
+import { useToast } from '../../components/Toast';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 type PageType = 'home' | 'about_story' | 'about_mission' | 'terms' | 'privacy' | 'return_policy' | 'refund_policy' | 'login';
 
 export default function AdminCMS() {
+  const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState<PageType>('home');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -62,9 +64,10 @@ export default function AdminCMS() {
 
       setIsAiModalOpen(false);
       setAiPrompt('');
+      showToast('AI Image generated and applied successfully.', 'success');
     } catch (err: any) {
       console.error(err);
-      alert('Error generating image: ' + err.message);
+      showToast('Error generating image: ' + err.message, 'error');
     } finally {
       setGeneratingAI(false);
     }
@@ -141,9 +144,10 @@ export default function AdminCMS() {
         ...content,
         updatedAt: new Date().toISOString(),
       });
+      showToast('Page content updated successfully.', 'success');
     } catch (err) {
       console.error('Error saving CMS:', err);
-      alert('Error updating page content');
+      showToast('Error updating page content. Please try again.', 'error');
     } finally {
       setSaving(false);
     }

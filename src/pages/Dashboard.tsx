@@ -8,24 +8,24 @@ import { signOut, sendEmailVerification } from 'firebase/auth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { useToast } from '../components/Toast';
+
 export default function Dashboard() {
+  const { showToast } = useToast();
   const { profile, user, refreshUser } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'addresses' | 'profile'>('orders');
   const [resending, setResending] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     // Show success toast if user just became verified in this session
     if (user?.emailVerified && sessionStorage.getItem('was_unverified') === 'true') {
-      setShowSuccessToast(true);
+      showToast('Profile Activated! Your account is now fully verified.', 'success');
       sessionStorage.removeItem('was_unverified');
-      setTimeout(() => setShowSuccessToast(false), 8000);
     }
     
     if (user && !user.emailVerified) {
@@ -73,10 +73,10 @@ export default function Dashboard() {
     setResending(true);
     try {
       await sendEmailVerification(user);
-      setResendSuccess(true);
-      setTimeout(() => setResendSuccess(false), 5000);
-    } catch (err) {
+      showToast('Verification email resent successfully.', 'success');
+    } catch (err: any) {
       console.error('Error resending verification:', err);
+      showToast('Failed to resend verification: ' + err.message, 'error');
     } finally {
       setResending(false);
     }
@@ -86,8 +86,33 @@ export default function Dashboard() {
     setRefreshing(true);
     try {
       await refreshUser();
+      showToast('Account status refreshed.', 'info');
+    } catch (err) {
+      showToast('Failed to refresh status.', 'error');
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const displayName = formData.get('displayName') as string;
+    const phoneNumber = formData.get('phoneNumber') as string;
+
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        displayName,
+        phoneNumber,
+        updatedAt: new Date().toISOString()
+      });
+      await refreshUser();
+      showToast('Profile updated successfully.', 'success');
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      showToast('Failed to update profile.', 'error');
     }
   };
 
@@ -102,34 +127,6 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Activation Success Toast */}
-      <AnimatePresence>
-        {showSuccessToast && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed bottom-12 right-12 z-[100] bg-brand-olive text-brand-cream p-8 rounded-[2.5rem] shadow-2xl border border-brand-gold/20 max-w-sm"
-          >
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="w-12 h-12 bg-brand-gold rounded-2xl flex items-center justify-center text-white">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <h3 className="font-serif font-bold text-xl">Profile Activated!</h3>
-            </div>
-            <p className="text-sm opacity-80 leading-relaxed">
-              Welcome to the inner circle! Your account is now fully verified and you can explore all artisan collections.
-            </p>
-            <button 
-              onClick={() => setShowSuccessToast(false)}
-              className="mt-6 w-full text-[10px] font-bold uppercase tracking-widest bg-white/10 hover:bg-white/20 py-3 rounded-full transition-colors"
-            >
-              Dismiss
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Verification Banner */}
       {!user?.emailVerified && (
         <motion.div 
@@ -157,20 +154,11 @@ export default function Dashboard() {
             </button>
             <button 
               onClick={handleResendVerification}
-              disabled={resending || resendSuccess}
-              className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest text-white py-3 px-6 rounded-full bg-brand-gold shadow-lg shadow-brand-gold/20 disabled:opacity-50 disabled:bg-green-500"
+              disabled={resending}
+              className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest text-white py-3 px-6 rounded-full bg-brand-gold shadow-lg shadow-brand-gold/20 disabled:opacity-50"
             >
-              {resendSuccess ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Email Sent!</span>
-                </>
-              ) : (
-                <>
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>{resending ? 'Sending...' : 'Resend Link'}</span>
-                </>
-              )}
+              <Mail className="w-3.5 h-3.5" />
+              <span>{resending ? 'Sending...' : 'Resend Link'}</span>
             </button>
           </div>
         </motion.div>
@@ -283,7 +271,7 @@ export default function Dashboard() {
                                   window.URL.revokeObjectURL(url);
                                 } catch (error) {
                                   console.error(error);
-                                  alert("Could not download invoice at this time.");
+                                  showToast("Could not download invoice at this time.", "error");
                                 }
                               }}
                               className="text-[10px] font-bold uppercase tracking-widest text-brand-olive hover:text-brand-gold ml-2 flex items-center"
@@ -387,15 +375,15 @@ export default function Dashboard() {
               </div>
 
               <div className="bg-white p-10 rounded-[3rem] border border-brand-olive/5 shadow-sm max-w-2xl">
-                 <form className="space-y-6">
+                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                        <div className="space-y-2">
                           <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Full Name</label>
-                          <input type="text" defaultValue={profile?.displayName} className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30" />
+                          <input name="displayName" type="text" defaultValue={profile?.displayName} className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30" />
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 px-4">Phone</label>
-                          <input type="tel" defaultValue={profile?.phoneNumber} className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30" />
+                          <input name="phoneNumber" type="tel" defaultValue={profile?.phoneNumber} className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30" />
                        </div>
                     </div>
                     <div className="space-y-2">

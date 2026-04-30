@@ -6,10 +6,12 @@ import { ArrowRight, MapPin, CreditCard, Truck, CheckCircle, Package } from 'luc
 import { motion, AnimatePresence } from 'motion/react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useToast } from '../components/Toast';
 
 const steps = ['Address', 'Shipping', 'Payment', 'Review'];
 
 export default function Checkout() {
+  const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
@@ -129,12 +131,13 @@ export default function Checkout() {
 
               clearCart();
               setCurrentStep(4);
+              showToast('Payment verified. Order confirmed!', 'success');
             } else {
-              alert('Payment verification failed. Please contact support.');
+              showToast('Payment verification failed. Please contact support.', 'error');
             }
           } catch (err) {
             console.error('Verification error:', err);
-            alert('Something went wrong during verification.');
+            showToast('Something went wrong during verification.', 'error');
           }
         },
         prefill: {
@@ -148,13 +151,13 @@ export default function Checkout() {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
-        alert(`Payment failed: ${response.error.description}`);
+        showToast(`Payment failed: ${response.error.description}`, 'error');
       });
       rzp.open();
 
     } catch (err: any) {
       console.error('Error placing order:', err);
-      alert(err.message || 'Failed to place order. Please try again.');
+      showToast(err.message || 'Failed to place order. Please try again.', 'error');
     } finally {
       setLoading(false);
     }

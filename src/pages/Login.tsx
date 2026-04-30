@@ -5,13 +5,14 @@ import { auth, db } from '../lib/firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, ShieldCheck, Eye, EyeOff, Home, Facebook, Check } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 export default function Login() {
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [cmsContent, setCmsContent] = useState<any>(null);
 
@@ -39,19 +40,19 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
       if (userDoc.exists() && userDoc.data().role === 'admin') {
          await auth.signOut();
-         setError('Admin access from this portal is restricted. Please use the Admin Portal.');
+         showToast('Admin access from this portal is restricted. Please use the Admin Portal.', 'error');
          setLoading(false);
          return;
       }
+      showToast('Login successful. Welcome back!', 'success');
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError('Invalid email or password');
+      showToast('Invalid email or password', 'error');
     } finally {
       setLoading(false);
     }
@@ -59,20 +60,20 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    setError('');
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const userDoc = await getDoc(doc(db, 'users', result.user.uid));
       if (userDoc.exists() && userDoc.data().role === 'admin') {
          await auth.signOut();
-         setError('Admin access from this portal is restricted. Please use the Admin Portal.');
+         showToast('Admin access from this portal is restricted. Please use the Admin Portal.', 'error');
          setLoading(false);
          return;
       }
+      showToast('Successfully logged in with Google.', 'success');
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Google login failed');
+      showToast(err.message || 'Google login failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -80,20 +81,20 @@ export default function Login() {
 
   const handleFacebookLogin = async () => {
     setLoading(true);
-    setError('');
     try {
       const provider = new FacebookAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const userDoc = await getDoc(doc(db, 'users', result.user.uid));
       if (userDoc.exists() && userDoc.data().role === 'admin') {
          await auth.signOut();
-         setError('Admin access from this portal is restricted. Please use the Admin Portal.');
+         showToast('Admin access from this portal is restricted. Please use the Admin Portal.', 'error');
          setLoading(false);
          return;
       }
+      showToast('Successfully logged in with Facebook.', 'success');
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Facebook login failed');
+      showToast(err.message || 'Facebook login failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -138,20 +139,6 @@ export default function Login() {
             <p className="text-gray-400 text-sm mb-2">{cmsContent?.subtitle || 'Sign in your account'}</p>
             <p className="text-xs text-red-500 font-medium">Fields marked with <span className="font-bold">(*)</span> are mandatory.</p>
           </div>
-
-          <AnimatePresence mode="wait">
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }} 
-                animate={{ opacity: 1, height: 'auto' }} 
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-sm font-medium text-red-600 flex items-center space-x-2"
-              >
-                <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2 text-left">

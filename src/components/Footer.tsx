@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Instagram, Facebook, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
@@ -60,7 +60,6 @@ export default function Footer({ id }: { id: string }) {
               <div className="flex space-x-4">
                 <a href={instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram}`} className="hover:text-brand-gold transition-colors"><Instagram className="w-5 h-5" /></a>
                 <a href={facebook.startsWith('http') ? facebook : `https://facebook.com/${facebook}`} className="hover:text-brand-gold transition-colors"><Facebook className="w-5 h-5" /></a>
-                <a href="#" className="hover:text-brand-gold transition-colors"><Twitter className="w-5 h-5" /></a>
               </div>
             )}
           </div>
@@ -104,6 +103,26 @@ export default function Footer({ id }: { id: string }) {
                 <span>{email}</span>
               </li>
             </ul>
+
+            {/* Compact Developer Credits */}
+            {(appearance?.developerName || appearance?.developerImage) && (
+              <div className="mt-8 pt-6 border-t border-brand-cream/10">
+                <div className="flex items-center space-x-3 opacity-60 hover:opacity-100 transition-opacity group">
+                  {appearance?.developerImage && (
+                    <img 
+                      src={appearance.developerImage} 
+                      alt={appearance.developerName || "Developer"} 
+                      className="w-8 h-8 rounded-full object-cover border border-brand-gold/30 group-hover:border-brand-gold transition-colors"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
+                  <div className="text-left">
+                    <p className="text-[9px] text-brand-cream/40 uppercase tracking-widest font-bold">Developed by</p>
+                    <p className="text-xs font-serif font-bold text-brand-gold">{appearance?.developerName}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -146,29 +165,6 @@ export default function Footer({ id }: { id: string }) {
               </div>
             )}
           </div>
-
-          {/* Developer Credits UI */}
-          {(appearance?.developerName || appearance?.developerImage) && (
-             <div className="pt-6 border-t border-brand-cream/5 w-full flex justify-center">
-                <div className="flex items-center space-x-4 bg-brand-olive-dark px-6 py-3 rounded-full border border-brand-olive-darker shadow-sm">
-                   {appearance?.developerImage && (
-                     <img 
-                       src={appearance.developerImage} 
-                       alt={appearance.developerName || "Developer"} 
-                       className="w-10 h-10 rounded-full object-cover border-2 border-brand-gold/30"
-                       referrerPolicy="no-referrer"
-                     />
-                   )}
-                   <div className="text-left">
-                     <p className="text-[10px] text-brand-cream/50 uppercase tracking-widest font-bold">Website Designed & Developed by</p>
-                     <p className="text-sm font-serif font-bold text-brand-gold mt-0.5">{appearance?.developerName}</p>
-                     {appearance?.developerTitle && (
-                        <p className="text-[9px] text-brand-cream/40 uppercase tracking-widest mt-0.5">{appearance.developerTitle}</p>
-                     )}
-                   </div>
-                </div>
-             </div>
-          )}
         </div>
       </div>
     </footer>

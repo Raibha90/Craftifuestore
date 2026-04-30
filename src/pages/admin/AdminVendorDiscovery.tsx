@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { Search, Loader2, Target, Check, X, Building2, MapPin, Briefcase } from 'lucide-react';
+import { useToast } from '../../components/Toast';
 import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
@@ -18,6 +19,7 @@ interface DiscoveredVendor {
 }
 
 export default function AdminVendorDiscovery() {
+  const { showToast } = useToast();
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('home_decor');
   const [isAiScrapingOn, setIsAiScrapingOn] = useState(false);
@@ -60,12 +62,13 @@ export default function AdminVendorDiscovery() {
         }));
 
         setProspects(generatedProspects);
+        showToast(`Discovered ${generatedProspects.length} potential vendors.`, 'success');
       } else {
-         alert("AI Scraping is currently toggled OFF. Turn it on to search with AI.");
+         showToast("AI Scraping is currently toggled OFF. Turn it on to search with AI.", "info");
       }
     } catch (e: any) {
       console.error(e);
-      alert('Failed to discover vendors. ' + e.message);
+      showToast('Failed to discover vendors. ' + e.message, "error");
     } finally {
       setLoading(false);
     }
@@ -90,10 +93,11 @@ export default function AdminVendorDiscovery() {
         rating: 0,
         review_count: 0
       });
+      showToast(`Prospect ${currentProspect.name} approved and added to vendor list.`, 'success');
       moveToNext();
     } catch (e) {
       console.error(e);
-      alert('Failed to approve vendor.');
+      showToast('Failed to approve vendor.', 'error');
     }
   };
 

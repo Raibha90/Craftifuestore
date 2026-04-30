@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, updateDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Check, X, Trash2, ImageIcon } from 'lucide-react';
+import { useToast } from '../../components/Toast';
 
 export default function AdminReviews() {
+  const { showToast } = useToast();
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,10 +29,11 @@ export default function AdminReviews() {
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
       await updateDoc(doc(db, 'reviews', id), { status });
+      showToast(`Review ${status} successfully.`, 'success');
       fetchReviews();
     } catch (err) {
       console.error(err);
-      alert("Failed to update status");
+      showToast("Failed to update status", 'error');
     }
   };
 
@@ -38,10 +41,11 @@ export default function AdminReviews() {
     if (!window.confirm("Delete this review entirely?")) return;
     try {
       await deleteDoc(doc(db, 'reviews', id));
+      showToast('Review deleted successfully.', 'info');
       fetchReviews();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete review");
+      showToast("Failed to delete review", 'error');
     }
   };
 

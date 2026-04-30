@@ -5,7 +5,10 @@ import { motion } from 'motion/react';
 import PageBanner from '../components/PageBanner';
 import ShuffledSections from '../components/ShuffledSections';
 
+import { useToast } from '../components/Toast';
+
 export default function Cart() {
+  const { showToast } = useToast();
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
 
   if (items.length === 0) {
@@ -79,7 +82,10 @@ export default function Cart() {
               <div className="text-right flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto">
                 <p className="font-bold text-brand-olive mb-4">₹{(item.price * item.quantity).toLocaleString()}</p>
                 <button 
-                  onClick={() => removeFromCart(item.id)}
+                  onClick={() => {
+                    removeFromCart(item.id);
+                    showToast(`${item.name} removed from cart.`, 'info');
+                  }}
                   className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50/50 rounded-full transition-all"
                 >
                   <Trash2 className="w-5 h-5" />

@@ -3,8 +3,10 @@ import { Mail, Phone, MapPin, Send, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useToast } from '../components/Toast';
 
 export default function ContactUs() {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,12 +15,10 @@ export default function ContactUs() {
     message: ''
   });
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setSuccess(false);
     
     try {
       // 1. Save to Firestore
@@ -33,7 +33,7 @@ export default function ContactUs() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: 'contact@craftifue.store', // Admin email, change if needed
+          to: 'contact@craftifue.store',
           subject: `New Bulk Order Enquiry from ${formData.name}`,
           html: `
             <h3>New Bulk Order Enquiry</h3>
@@ -46,12 +46,11 @@ export default function ContactUs() {
         })
       });
 
-      setSuccess(true);
+      showToast('Thank you! Your enquiry has been sent successfully.', 'success');
       setFormData({ name: '', email: '', phone: '', company: '', message: '' });
-      setTimeout(() => setSuccess(false), 5000); // Hide toast after 5 seconds
     } catch (error) {
       console.error(error);
-      alert('Failed to send enquiry. Please try again.');
+      showToast('Failed to send enquiry. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -161,17 +160,6 @@ export default function ContactUs() {
             </button>
           </form>
 
-          {/* Toast Notification */}
-          {success && (
-             <motion.div 
-               initial={{ opacity: 0, y: 50 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="absolute bottom-10 left-10 right-10 flex items-center p-4 space-x-3 bg-green-100 text-green-700 rounded-2xl border border-green-200"
-             >
-                <div className="shrink-0 w-8 h-8 flex items-center justify-center bg-green-200 rounded-full">✓</div>
-                <p className="text-sm font-medium">Thank you! Your enquiry has been sent. We will get back to you shortly.</p>
-             </motion.div>
-          )}
         </div>
       </div>
     </div>
