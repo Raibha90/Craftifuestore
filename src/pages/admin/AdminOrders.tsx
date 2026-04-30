@@ -80,7 +80,9 @@ export default function AdminOrders() {
            body: JSON.stringify({
              orderId: order.id,
              phone: (order.shippingAddress as any)?.phone,
-             status: 'shipped (tracking updated)',
+             email: localStorage.getItem('last_user_email') || "",
+             status: 'shipped',
+             trackingNumber: trackingNumber,
              totalAmount: order.totalAmount.toLocaleString()
            })
          });

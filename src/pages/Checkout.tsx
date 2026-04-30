@@ -16,10 +16,12 @@ export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'cod'>('razorpay');
   const [loading, setLoading] = useState(false);
 
   const deliveryCharge = totalPrice >= 10000 ? 0 : 250;
-  const finalTotal = totalPrice + deliveryCharge;
+  const codFee = paymentMethod === 'cod' ? 30 : 0;
+  const finalTotal = totalPrice + deliveryCharge + codFee;
 
   const [address, setAddress] = useState({
     street: '',
@@ -38,6 +40,64 @@ export default function Checkout() {
 
     setLoading(true);
     try {
+      if (paymentMethod === 'cod') {
+        const orderRef = await addDoc(collection(db, 'orders'), {
+          userId: user.uid,
+          items,
+          totalAmount: finalTotal,
+          status: 'pending',
+          shippingAddress: address,
+          paymentMethod: 'cod',
+          paymentId: 'COD',
+          razorpayOrderId: 'N/A',
+          createdAt: serverTimestamp(),
+        });
+
+        // Send order confirmation email and SMS via our backend route
+        const orderItemsHtml = items.map(item => `
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4b5563;">${item.name} <span style="color: #9ca3af; font-size: 12px;">x ${item.quantity}</span></td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #4b5563; font-weight: bold;">₹${(item.price * item.quantity).toLocaleString()}</td>
+          </tr>
+        `).join('') + `
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4b5563;">Delivery Charge</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #4b5563; font-weight: bold;">₹${deliveryCharge.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; color: #4b5563;">COD Fee</td>
+            <td style="padding: 12px; text-align: right; color: #4b5563; font-weight: bold;">₹${codFee.toLocaleString()}</td>
+          </tr>
+        `;
+
+        await fetch('/api/orders/notify-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderRef.id,
+            phone: (address as any).phone || user.phoneNumber,
+            email: user.email,
+            status: 'confirmed',
+            itemsHtml: orderItemsHtml,
+            totalAmount: finalTotal.toLocaleString(),
+            order: {
+              id: orderRef.id,
+              createdAt: { seconds: Math.floor(Date.now() / 1000) },
+              status: 'confirmed',
+              address,
+              items,
+              totalAmount: finalTotal
+            }
+          })
+        }).catch(err => console.error('Failed to send confirmation alerts', err));
+
+        clearCart();
+        setCurrentStep(4);
+        showToast('Order confirmed via Cash on Delivery!', 'success');
+        setLoading(false);
+        return;
+      }
+
       const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
       if (!razorpayKeyId) {
         throw new Error('Razorpay Key ID is missing');
@@ -91,6 +151,7 @@ export default function Checkout() {
                 totalAmount: finalTotal,
                 status: 'pending', // Now it's paid
                 shippingAddress: address,
+                paymentMethod: 'razorpay',
                 paymentId: response.razorpay_payment_id,
                 razorpayOrderId: response.razorpay_order_id,
                 createdAt: serverTimestamp(),
@@ -107,6 +168,12 @@ export default function Checkout() {
                   <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4b5563;">Delivery Charge</td>
                   <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #4b5563; font-weight: bold;">₹${deliveryCharge.toLocaleString()}</td>
                 </tr>
+                ${codFee > 0 ? `
+                <tr>
+                  <td style="padding: 12px; color: #4b5563;">COD Fee</td>
+                  <td style="padding: 12px; text-align: right; color: #4b5563; font-weight: bold;">₹${codFee.toLocaleString()}</td>
+                </tr>
+                ` : ''}
               `;
 
               await fetch('/api/orders/notify-status', {
@@ -353,12 +420,42 @@ export default function Checkout() {
               >
                 <div className="flex items-center space-x-3 mb-8">
                   <CreditCard className="w-6 h-6 text-brand-gold" />
-                  <h2 className="text-2xl font-serif font-bold text-brand-olive">Payment Details (Razorpay)</h2>
+                  <h2 className="text-2xl font-serif font-bold text-brand-olive">Payment Method</h2>
                 </div>
-                <div className="p-8 bg-brand-olive/5 rounded-3xl border border-dashed border-brand-olive/20 text-center">
-                  <p className="text-gray-500 mb-6 italic">Secure payment processing via Razorpay. You can pay using UPI, Cards, Netbanking or Wallets.</p>
-                  <img src="https://razorpay.com/assets/razorpay-logo.svg" alt="Razorpay" className="h-8 mx-auto opacity-50 mb-8" />
+                
+                <div className="space-y-4">
+                  <div 
+                    onClick={() => setPaymentMethod('razorpay')}
+                    className={`flex items-center justify-between p-6 border-2 rounded-3xl cursor-pointer transition-all ${paymentMethod === 'razorpay' ? 'border-brand-olive bg-white' : 'border-gray-100 bg-gray-50'}`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'razorpay' ? 'border-brand-gold' : 'border-gray-300'}`}>
+                        {paymentMethod === 'razorpay' && <div className="w-3 h-3 bg-brand-gold rounded-full" />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-brand-olive">Prepaid Online</p>
+                        <p className="text-xs text-gray-500">UPI, Credit/Debit Cards, Netbanking</p>
+                      </div>
+                    </div>
+                    <img src="https://razorpay.com/assets/razorpay-logo.svg" alt="Razorpay" className="h-4 opacity-50" />
+                  </div>
+
+                  <div 
+                    onClick={() => setPaymentMethod('cod')}
+                    className={`flex items-center justify-between p-6 border-2 rounded-3xl cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-brand-olive bg-white' : 'border-gray-100 bg-gray-50'}`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cod' ? 'border-brand-gold' : 'border-gray-300'}`}>
+                        {paymentMethod === 'cod' && <div className="w-3 h-3 bg-brand-gold rounded-full" />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-brand-olive">Cash on Delivery</p>
+                        <p className="text-xs text-gray-500">Pay at the time of delivery (+ ₹30)</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
                 <div className="flex space-x-4">
                    <button 
                     onClick={() => setCurrentStep(1)}
@@ -457,6 +554,12 @@ export default function Checkout() {
                  {deliveryCharge === 0 ? 'Free' : `₹${deliveryCharge.toLocaleString()}`}
                </span>
              </div>
+             {paymentMethod === 'cod' && (
+               <div className="flex justify-between items-center mb-1 mt-3">
+                 <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">COD Fee</span>
+                 <span className="text-xl font-bold text-brand-olive">₹{codFee.toLocaleString()}</span>
+               </div>
+             )}
              <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-50 mb-8">
                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">Total Amount</span>
                <span className="text-2xl font-bold text-brand-olive">₹{finalTotal.toLocaleString()}</span>

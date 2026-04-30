@@ -237,6 +237,14 @@ async function startServer() {
     if (email && process.env.SMTP_USER && process.env.SMTP_PASS) {
       try {
         let subject = `Cratifue Order Update: ${status.toUpperCase()}`;
+        let trackingHtml = req.body.trackingNumber ? `
+          <div style="background: #e6f4ea; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #ceead6; text-align: center;">
+            <p style="color: #137333; margin: 0; font-weight: bold; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Tracking Number</p>
+            <p style="color: #0d652d; margin: 5px 0 0 0; font-size: 18px; font-weight: bold;">${req.body.trackingNumber}</p>
+            <p style="margin-top: 10px;"><a href="https://track.aftership.com/${req.body.trackingNumber}" style="color: #137333; text-decoration: underline; font-size: 14px;">Click here to track your package</a></p>
+          </div>
+        ` : '';
+
         let htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px; border: 1px solid #f0eee5;">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -245,6 +253,7 @@ async function startServer() {
             </div>
             <p style="color: #4b5563; line-height: 1.6;">Hello,</p>
             <p style="color: #4b5563; line-height: 1.6;">The status of your order has been updated to: <strong style="color: #4a5d23; font-size: 16px;">${status.toUpperCase()}</strong></p>
+            ${trackingHtml}
             ${itemsHtml ? `
             <div style="background: #fff; padding: 20px; border-radius: 8px; margin-top: 30px;">
               <table style="width: 100%; border-collapse: collapse;">
@@ -355,8 +364,32 @@ async function startServer() {
       }
     }
 
-    // 2. We could send other notifications here
-    // e.g. web push, or other gateway that doesn't use twilio
+    // 2. Send SMS via Twilio
+    if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+      try {
+        const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        let messageBody = `Cratifue: Your order #${orderId.slice(-6).toUpperCase()} status is now ${status.toUpperCase()}.`;
+        if (req.body.trackingNumber) {
+          messageBody += ` Track here: https://track.aftership.com/${req.body.trackingNumber}`;
+        }
+
+        let toPhone = phone;
+        // Ensure +91 prefix for Indian numbers if not present
+        if (!toPhone.startsWith('+')) {
+          toPhone = '+91' + toPhone.replace(/\D/g, '').slice(-10);
+        }
+
+        await client.messages.create({
+          body: messageBody,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: toPhone
+        });
+        smssent = true;
+      } catch (err) {
+        console.error("Twilio SMS error:", err);
+      }
+    }
+
     res.json({ success: true, emailSent, smssent });
   });
 
