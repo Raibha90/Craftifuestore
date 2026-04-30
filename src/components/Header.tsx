@@ -144,11 +144,11 @@ export default function Header({ id }: { id: string }) {
           <div className="flex justify-between items-center h-20 md:h-24">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center group">
             <img 
               src={logoUrl || "/regenerated_image_1777410191797.png"} 
               alt="Cratifue Logo" 
-              className="h-16 w-auto"
+              className="h-14 md:h-20 w-auto object-contain transition-all duration-500 group-hover:scale-105 drop-shadow-sm"
               referrerPolicy="no-referrer"
             />
           </Link>
@@ -360,11 +360,11 @@ export default function Header({ id }: { id: string }) {
             className="fixed inset-0 bg-gray-900/90 backdrop-blur-lg z-[80] flex flex-col"
           >
             <div className="flex justify-between items-center p-6 md:p-10 border-b border-white/10">
-              <Link to="/" onClick={() => setIsMenuOpen(false)}>
+              <Link to="/" onClick={() => setIsMenuOpen(false)} className="group">
                 <img 
                   src={logoUrl || "/regenerated_image_1777410191797.png"} 
                   alt="Logo" 
-                  className="h-10 md:h-12 brightness-0 invert" 
+                  className="h-12 md:h-20 w-auto brightness-0 invert opacity-90 group-hover:opacity-100 transition-all duration-500 scale-110" 
                   referrerPolicy="no-referrer"
                 />
               </Link>

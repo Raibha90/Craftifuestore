@@ -40,11 +40,11 @@ export default function VendorLayout() {
         <div className="p-8 border-b border-brand-cream/10 sticky top-0 bg-brand-olive z-10">
           <Link to="/" className="flex flex-col items-center group">
              {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-auto h-12 object-contain opacity-90 group-hover:opacity-100 transition-opacity drop-shadow-sm" />
+                <img src={logoUrl} alt="Logo" className="w-auto h-16 object-contain opacity-90 group-hover:brightness-0 group-hover:invert transition-all duration-300 drop-shadow-sm scale-110" />
              ) : (
-                <span className="font-serif text-xl font-bold tracking-tight group-hover:text-brand-gold transition-colors uppercase">CRATIFUE</span>
+                <span className="font-serif text-2xl font-bold tracking-tight group-hover:text-brand-gold transition-colors uppercase">CRATIFUE</span>
              )}
-            <span className="text-[10px] uppercase tracking-[0.2em] text-brand-gold -mt-1">Vendor Portal</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-brand-gold mt-2">Vendor Portal</span>
           </Link>
         </div>
         
