@@ -466,7 +466,10 @@ export default function AdminProducts() {
                   {/* Images Section */}
                   <div className="space-y-4 col-span-2">
                     <div className="flex justify-between items-center">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Product Images <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest ml-1">Product Images <span className="text-red-500 font-bold text-xs ml-1">(*)</span></label>
+                        <p className="text-[10px] text-gray-400 ml-1 mt-0.5">Uploaded images auto-resize to max 800x800px (JPEG format)</p>
+                      </div>
                       <button 
                         type="button" 
                         onClick={() => setNewProduct({...newProduct, images: [...newProduct.images, '']})}

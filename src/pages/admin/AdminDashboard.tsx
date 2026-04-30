@@ -202,8 +202,9 @@ export default function AdminDashboard() {
                            }}
                            className="hidden" 
                         />
-                        <label htmlFor="dashboard-logo-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-full cursor-pointer hover:bg-gray-100 transition-all">
+                        <label htmlFor="dashboard-logo-upload" className="flex items-center justify-center flex-col w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-full cursor-pointer hover:bg-gray-100 transition-all">
                           <span className="text-sm font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Logo</span>
+                          <span className="text-[10px] text-gray-400 mt-1">Auto-resized to max 500x500px</span>
                         </label>
                      </div>
                   </div>

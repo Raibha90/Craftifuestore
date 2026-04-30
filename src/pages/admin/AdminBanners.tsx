@@ -321,8 +321,9 @@ export default function AdminBanners() {
                           }}
                           className="hidden" 
                         />
-                        <label htmlFor="banner-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                        <label htmlFor="banner-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all flex-col">
                           <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Background Image</span>
+                          <span className="text-[10px] text-gray-400 mt-1">Auto-resized to max 1920x1080px (JPEG format)</span>
                         </label>
                         {newBanner.imageUrl && (
                           <div className="mt-4 p-4 bg-gray-50 rounded-xl">

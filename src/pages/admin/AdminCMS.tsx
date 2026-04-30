@@ -227,8 +227,9 @@ export default function AdminCMS() {
                     }}
                     className="hidden" 
                   />
-                  <label htmlFor="philosophy-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                  <label htmlFor="philosophy-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all flex-col">
                      <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Spotlight Image</span>
+                     <span className="text-[10px] text-gray-400 mt-1">Auto-resized to max 1200x800px (JPEG format)</span>
                   </label>
                   {content.philosophyImage && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-xl">
@@ -326,8 +327,9 @@ export default function AdminCMS() {
                         }}
                         className="hidden" 
                       />
-                      <label htmlFor="story-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                      <label htmlFor="story-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all flex-col">
                          <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Story Image</span>
+                         <span className="text-[10px] text-gray-400 mt-1">Auto-resized to max 1200x800px (JPEG format)</span>
                       </label>
                    </div>
                    {content.mainImage && (
@@ -403,8 +405,9 @@ export default function AdminCMS() {
                     }}
                     className="hidden" 
                   />
-                  <label htmlFor="mission-image-upload" className="flex items-center justify-center w-full px-6 py-2 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-all text-xs text-brand-olive font-bold">
-                    <ImageIcon className="w-3 h-3 mr-2" /> Upload Mission Image
+                  <label htmlFor="mission-image-upload" className="flex items-center justify-center flex-col w-full px-6 py-2 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-all text-brand-olive">
+                    <span className="flex items-center text-xs font-bold"><ImageIcon className="w-3 h-3 mr-2" /> Upload Mission Image</span>
+                    <span className="text-[10px] text-gray-400 mt-1 font-normal">Auto-resized to max 1200x800px (JPEG format)</span>
                   </label>
                   {content.missionImage && (
                     <div className="mt-2 h-20 rounded-xl overflow-hidden border border-brand-olive/5">
@@ -462,8 +465,9 @@ export default function AdminCMS() {
                     }}
                     className="hidden" 
                   />
-                  <label htmlFor="vision-image-upload" className="flex items-center justify-center w-full px-6 py-2 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-all text-xs text-brand-olive font-bold">
-                    <ImageIcon className="w-3 h-3 mr-2" /> Upload Vision Image
+                  <label htmlFor="vision-image-upload" className="flex items-center justify-center flex-col w-full px-6 py-2 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-all text-brand-olive">
+                    <span className="flex items-center font-bold text-xs"><ImageIcon className="w-3 h-3 mr-2" /> Upload Vision Image</span>
+                    <span className="text-[10px] text-gray-400 mt-1 font-normal">Auto-resized to max 1200x800px (JPEG format)</span>
                   </label>
                   {content.visionImage && (
                     <div className="mt-2 h-20 rounded-xl overflow-hidden border border-brand-olive/5">
@@ -549,8 +553,9 @@ export default function AdminCMS() {
                     }}
                     className="hidden" 
                   />
-                  <label htmlFor="login-image-upload" className="flex items-center justify-center w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
+                  <label htmlFor="login-image-upload" className="flex items-center justify-center flex-col w-full px-6 py-4 bg-gray-50 border border-brand-olive/10 hover:border-brand-gold border-dashed rounded-2xl cursor-pointer hover:bg-gray-100 transition-all">
                      <span className="text-xs font-bold text-brand-olive flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Upload Background Image</span>
+                     <span className="text-[10px] text-gray-400 mt-1">Auto-resized to max 1200x1200px (JPEG format)</span>
                   </label>
                   {content.image && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-xl">

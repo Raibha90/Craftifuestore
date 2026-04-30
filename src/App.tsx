@@ -61,7 +61,7 @@ import { db } from './lib/firebase';
 
 function DynamicHead() {
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'settings', 'appearance'), (docSnap) => {
+    const unsub = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.faviconUrl) {
