@@ -30,6 +30,8 @@ export default function AdminVendors() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [countryFilter, setCountryFilter] = useState('');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
@@ -121,7 +123,9 @@ export default function AdminVendors() {
     const matchesSearch = (v.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (v.city || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter ? v.category === categoryFilter : true;
-    return matchesSearch && matchesCategory;
+    const matchesStatus = statusFilter ? v.status === statusFilter : true;
+    const matchesCountry = countryFilter ? (v.country || '').toLowerCase().includes(countryFilter.toLowerCase()) : true;
+    return matchesSearch && matchesCategory && matchesStatus && matchesCountry;
   });
 
   return (
@@ -145,7 +149,7 @@ export default function AdminVendors() {
       </header>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-3xl border border-brand-olive/5 shadow-sm">
+      <div className="flex flex-col xl:flex-row gap-4 bg-white p-6 rounded-[2rem] border border-brand-olive/5 shadow-sm">
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input 
@@ -153,17 +157,53 @@ export default function AdminVendors() {
             placeholder="Search by name or city..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-gold outline-none transition-all"
+            className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-gold outline-none transition-all placeholder:text-gray-400"
           />
         </div>
-        <select
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value)}
-          className="px-4 py-3 bg-gray-50 border-none rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-gold outline-none text-brand-olive font-medium"
-        >
-          <option value="">All Categories</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        
+        <div className="flex flex-wrap md:flex-nowrap gap-4">
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="px-6 py-4 bg-gray-50 border-none rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-gold outline-none text-brand-olive font-bold uppercase tracking-widest text-[10px] min-w-[140px]"
+          >
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            className="px-6 py-4 bg-gray-50 border-none rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-gold outline-none text-brand-olive font-bold uppercase tracking-widest text-[10px] min-w-[160px]"
+          >
+            <option value="">All Categories</option>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+
+          <input 
+            type="text" 
+            placeholder="Country..."
+            value={countryFilter}
+            onChange={e => setCountryFilter(e.target.value)}
+            className="px-6 py-4 bg-gray-50 border-none rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-gold outline-none text-brand-olive font-bold uppercase tracking-widest text-[10px] w-32"
+          />
+
+          {(searchTerm || statusFilter || categoryFilter || countryFilter) && (
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('');
+                setCategoryFilter('');
+                setCountryFilter('');
+              }}
+              className="px-6 py-4 text-[10px] font-bold text-red-500 uppercase tracking-widest hover:bg-red-50 rounded-2xl transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -87,13 +87,13 @@ export default function AdminLogin() {
         className="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl relative z-10"
       >
         <div className="text-center mb-10">
-          <div className="mb-6 flex justify-center">
+          <Link to="/" className="mb-6 flex justify-center hover:scale-105 transition-transform">
             {logoUrl ? (
               <img src={logoUrl} alt="Logo" className="w-auto h-24 object-contain" />
             ) : (
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto text-gray-500 font-bold text-xs uppercase tracking-widest">Admin</div>
             )}
-          </div>
+          </Link>
           <h1 className="text-2xl font-serif font-bold text-brand-olive mb-2">Admin Portal</h1>
         </div>
 

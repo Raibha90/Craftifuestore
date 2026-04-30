@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
-import { Search, Loader2, Target, Check, X, Building2, MapPin, Briefcase } from 'lucide-react';
+import { Search, Loader2, Target, Check, X, Building2, MapPin, Briefcase, Filter, Globe, Tag } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import { db } from '../../lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
 
@@ -18,8 +18,19 @@ interface DiscoveredVendor {
   onboardingFee: number;
 }
 
+interface ExistingVendor {
+  id: string;
+  name: string;
+  category: string;
+  status: 'pending' | 'approved' | 'rejected';
+  country: string;
+  city: string;
+}
+
 export default function AdminVendorDiscovery() {
   const { showToast } = useToast();
+  
+  // AI Discovery States
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('home_decor');
   const [isAiScrapingOn, setIsAiScrapingOn] = useState(false);
@@ -27,7 +38,32 @@ export default function AdminVendorDiscovery() {
   const [prospects, setProspects] = useState<DiscoveredVendor[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Database Filtering States
+  const [existingVendors, setExistingVendors] = useState<ExistingVendor[]>([]);
+  const [dbLoading, setDbLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [countryFilter, setCountryFilter] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
+
   const categories = ['jewelry', 'home_decor', 'pottery', 'textiles'];
+
+  useEffect(() => {
+    const q = query(collection(db, 'vendors'), orderBy('name', 'asc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setExistingVendors(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExistingVendor)));
+      setDbLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const filteredVendors = existingVendors.filter(v => {
+    const matchesStatus = statusFilter ? v.status === statusFilter : true;
+    const matchesCategory = categoryFilter ? v.category === categoryFilter : true;
+    const matchesCountry = countryFilter ? (v.country || '').toLowerCase().includes(countryFilter.toLowerCase()) : true;
+    const matchesSearch = searchFilter ? (v.name || '').toLowerCase().includes(searchFilter.toLowerCase()) : true;
+    return matchesStatus && matchesCategory && matchesCountry && matchesSearch;
+  });
 
   const handleSearch = async () => {
     if (!city || !category) return;
@@ -241,6 +277,128 @@ export default function AdminVendorDiscovery() {
                <p className="text-gray-500">Enable AI Scraping and search to discover vendors</p>
             </div>
         )}
+      </div>
+
+      {/* Database Filter Section */}
+      <div className="mt-24 space-y-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-8 h-8 bg-brand-gold/10 rounded-lg flex items-center justify-center">
+                <Filter className="w-4 h-4 text-brand-gold" />
+              </div>
+              <h2 className="text-2xl font-serif font-bold text-brand-olive uppercase tracking-tight">Marketplace Repository</h2>
+            </div>
+            <p className="text-gray-400 text-sm">Advanced filtering of the artisan database.</p>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3">
+             <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-brand-gold transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Filter by name..." 
+                  value={searchFilter}
+                  onChange={e => setSearchFilter(e.target.value)}
+                  className="pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-gold/30 w-48 text-sm"
+                />
+             </div>
+
+             <select 
+               value={statusFilter}
+               onChange={e => setStatusFilter(e.target.value)}
+               className="px-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-gold/30 text-sm font-bold uppercase tracking-widest text-brand-olive"
+             >
+               <option value="">All Status</option>
+               <option value="pending">Pending</option>
+               <option value="approved">Approved</option>
+               <option value="rejected">Rejected</option>
+             </select>
+
+             <select 
+               value={categoryFilter}
+               onChange={e => setCategoryFilter(e.target.value)}
+               className="px-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-gold/30 text-sm font-bold uppercase tracking-widest text-brand-olive"
+             >
+               <option value="">All Categories</option>
+               {categories.map(c => <option key={c} value={c}>{c}</option>)}
+             </select>
+
+             <div className="relative group">
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Country" 
+                  value={countryFilter}
+                  onChange={e => setCountryFilter(e.target.value)}
+                  className="pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-gold/30 w-32 text-sm"
+                />
+             </div>
+
+             {(statusFilter || categoryFilter || countryFilter || searchFilter) && (
+               <button 
+                 onClick={() => {
+                   setStatusFilter('');
+                   setCategoryFilter('');
+                   setCountryFilter('');
+                   setSearchFilter('');
+                 }}
+                 className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors font-bold uppercase tracking-widest text-[10px]"
+                 title="Clear Filters"
+               >
+                 Clear
+               </button>
+             )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[2rem] border border-brand-olive/5 overflow-hidden shadow-sm">
+           <table className="w-full text-left">
+              <thead>
+                <tr className="bg-brand-olive/5 border-b border-brand-olive/5">
+                  <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Artisan Name</th>
+                  <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Category</th>
+                  <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Location</th>
+                  <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {dbLoading ? (
+                  <tr>
+                    <td colSpan={4} className="px-8 py-12 text-center text-gray-400 italic font-serif">Syncing with marketplace database...</td>
+                  </tr>
+                ) : filteredVendors.length > 0 ? filteredVendors.map(v => (
+                  <tr key={v.id} className="hover:bg-brand-olive/[0.02] transition-colors group">
+                    <td className="px-8 py-6">
+                      <p className="font-bold text-brand-olive group-hover:text-brand-gold transition-colors">{v.name}</p>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center text-xs text-gray-500 uppercase tracking-widest">
+                        <Tag className="w-3 h-3 mr-2 opacity-50" />
+                        {v.category}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                       <span className="text-xs text-gray-400 font-medium">{v.city}, {v.country}</span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                        v.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        v.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                        'bg-brand-gold/10 text-brand-gold'
+                      }`}>
+                        {v.status}
+                      </span>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={4} className="px-8 py-12 text-center text-gray-400 italic">No vendors found matching current repository filters.</td>
+                  </tr>
+                )}
+              </tbody>
+           </table>
+        </div>
       </div>
     </div>
   );

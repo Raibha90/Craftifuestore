@@ -51,14 +51,14 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-brand-olive text-brand-cream hidden lg:flex flex-col flex-shrink-0 h-full shadow-2xl overflow-y-auto no-scrollbar">
         <div className="p-8 border-b border-brand-cream/10 sticky top-0 bg-brand-olive z-10">
-          <div className="flex flex-col items-center">
+          <Link to="/" className="flex flex-col items-center group">
              {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-auto h-12 object-contain filter invert opacity-90 mb-2 brightness-0" />
+                <img src={logoUrl} alt="Logo" className="w-auto h-12 object-contain filter invert opacity-90 mb-2 brightness-0 group-hover:opacity-100 transition-opacity" />
              ) : (
-                <span className="font-serif text-xl font-bold tracking-tight">HANDCRAFTED</span>
+                <span className="font-serif text-xl font-bold tracking-tight group-hover:text-brand-gold transition-colors">HANDCRAFTED</span>
              )}
             <span className="text-[10px] uppercase tracking-[0.2em] text-brand-gold -mt-1">Admin Central</span>
-          </div>
+          </Link>
         </div>
         
         <nav className="flex-grow p-6 space-y-2">
