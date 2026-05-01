@@ -41,6 +41,7 @@ export default function AdminLayout() {
     { icon: MessageSquare, label: 'Reviews', path: '/admin/reviews' },
     { icon: Tag, label: 'Coupons', path: '/admin/coupons' },
     { icon: FileText, label: 'CMS Pages', path: '/admin/cms' },
+    { icon: Sparkles, label: 'Event Marketing', path: '/admin/events' },
     { icon: LayoutPanelLeft, label: 'Prodetails', path: '/admin/pdp' },
     { icon: Percent, label: 'Commissions', path: '/admin/commissions' },
     { icon: Sparkles, label: 'AI Personalizer', path: '/admin/ai' },

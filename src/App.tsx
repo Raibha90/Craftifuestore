@@ -33,6 +33,7 @@ import AdminVendors from './pages/admin/AdminVendors';
 import AdminWorkbook from './pages/admin/workbook/AdminWorkbook';
 import AdminAI from './pages/admin/AdminAI';
 import AdminCommissions from './pages/admin/AdminCommissions';
+import AdminEvents from './pages/admin/AdminEvents';
 import VendorLayout from './pages/vendor/VendorLayout';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import VendorProducts from './pages/vendor/VendorProducts';
@@ -58,6 +59,7 @@ import FloatingGiftBox from './components/FloatingGiftBox';
 import WhatsAppChatbot from './components/WhatsAppChatbot';
 
 import AIPersonalizerModal from './components/AIPersonalizerModal';
+import EventModal from './components/EventModal';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { Analytics } from "@vercel/analytics/react";
@@ -108,6 +110,7 @@ function App() {
                 <FloatingGiftBox />
                 <WhatsAppChatbot />
                 <AIPersonalizerModal />
+                <EventModal />
                 <CompareBar />
                 <Routes>
                   {/* Admin Routes */}
@@ -129,6 +132,7 @@ function App() {
                     <Route path="discovery" element={<AdminVendorDiscovery />} />
                     <Route path="cms" element={<AdminCMS />} />
                     <Route path="workbook" element={<AdminWorkbook />} />
+                    <Route path="events" element={<AdminEvents />} />
                     <Route path="ai" element={<AdminAI />} />
                     <Route path="commissions" element={<AdminCommissions />} />
                     <Route path="settings" element={<AdminSettings />} />
