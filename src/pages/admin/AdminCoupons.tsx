@@ -35,7 +35,7 @@ export default function AdminCoupons() {
     try {
       setGeneratingAI(true);
       const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: "As an expert E-commerce Marketer in India, analyze upcoming public events, holidays, or seasons within the next 3 months. Generate 3 unique discount coupons. Format as JSON array: [{code: 'DIWALI20', discountType: 'percentage', discountValue: 20, minPurchase: 1000, expiryDate: 'YYYY-MM-DD'}]. Omit markdown."
       });
 

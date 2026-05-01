@@ -55,19 +55,18 @@ export default function AdminCMS() {
       let base64Data = '';
       
       try {
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash-image',
-          contents: { parts: [{ text: prompt }] },
+        const response = await ai.models.generateImages({
+          model: 'imagen-3.0-generate-002',
+          prompt: prompt,
           config: {
-            imageConfig: { aspectRatio: "16:9" }
+            numberOfImages: 1,
+            outputMimeType: 'image/jpeg',
+            aspectRatio: "16:9"
           },
         });
         
-        for (const part of response.candidates?.[0]?.content?.parts || []) {
-          if (part.inlineData) {
-            base64Data = part.inlineData.data;
-            break;
-          }
+        if (response.generatedImages && response.generatedImages.length > 0) {
+          base64Data = response.generatedImages[0].image.imageBytes;
         }
       } catch (e: any) {
         // Fallback or catch specifically 429/404 if needed
