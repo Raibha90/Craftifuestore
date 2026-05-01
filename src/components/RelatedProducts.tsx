@@ -3,6 +3,7 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
+import { fallbackProducts } from '../lib/fallbackData';
 
 export default function RelatedProducts({ category, currentProductId }: { category: string; currentProductId: string }) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,10 +18,16 @@ export default function RelatedProducts({ category, currentProductId }: { catego
           limit(5)
         );
         const snapshot = await getDocs(q);
-        const fetched = snapshot.docs
-          .map(d => ({ id: d.id, ...d.data() } as Product))
-          .filter(p => p.id !== currentProductId) // manually filter to avoid needing an inequality index
+        let fetched = snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() } as Product));
+        
+        if (fetched.length === 0) {
+           fetched = fallbackProducts.filter(p => p.category === category);
+        }
+
+        fetched = fetched.filter(p => p.id !== currentProductId) // manually filter to avoid needing an inequality index
           .slice(0, 4);
+
         setProducts(fetched);
       } catch (err) {
         console.error('Error fetching related products:', err);

@@ -11,6 +11,7 @@ import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp
 import { db } from '../lib/firebase';
 import { Product, ProductVariant } from '../types';
 import RelatedProducts from '../components/RelatedProducts';
+import { fallbackProducts } from '../lib/fallbackData';
 
 export default function ProductDetail() {
   const { showToast } = useToast();
@@ -61,8 +62,14 @@ export default function ProductDetail() {
         if (docSnap.exists()) {
           setProduct({ id: docSnap.id, ...docSnap.data() } as Product);
         } else {
-          navigate('/category/all');
-          return;
+          // Check fallback products
+          const fallback = fallbackProducts.find(p => p.id === id);
+          if (fallback) {
+            setProduct(fallback);
+          } else {
+            navigate('/category');
+            return;
+          }
         }
 
         // Fetch reviews

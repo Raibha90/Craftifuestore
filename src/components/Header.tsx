@@ -81,6 +81,7 @@ export default function Header({ id }: { id: string }) {
 
   const navItems = [
     { name: 'Home', path: '/' },
+    { name: 'Categories', path: '/category' },
     { 
       name: 'About US', 
       items: [
@@ -332,7 +333,7 @@ export default function Header({ id }: { id: string }) {
                     {searchResults.length > 0 && (
                       <div className="mt-10 text-center">
                         <Link 
-                          to="/category/all" 
+                          to="/category" 
                           className="inline-flex items-center space-x-3 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-olive hover:text-brand-gold transition-colors border-b-2 border-brand-gold/20 pb-2"
                           onClick={() => setIsSearchOpen(false)}
                         >

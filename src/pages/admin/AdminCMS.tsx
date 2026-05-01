@@ -56,7 +56,7 @@ export default function AdminCMS() {
       
       try {
         const response = await ai.models.generateImages({
-          model: 'imagen-3.0-generate-002',
+          model: 'gemini-3.1-flash-image-preview',
           prompt: prompt,
           config: {
             numberOfImages: 1,

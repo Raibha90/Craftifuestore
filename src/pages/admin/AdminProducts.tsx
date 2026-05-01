@@ -104,7 +104,7 @@ export default function AdminProducts() {
       const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A high-quality, professional product photograph of ${newProduct.name} - ${newProduct.material}. Elegant aesthetic, soft lighting, clean white background.`;
       
       const response = await ai.models.generateImages({
-        model: 'imagen-3.0-generate-002',
+        model: 'gemini-3.1-flash-image-preview',
         prompt: prompt,
         config: {
           numberOfImages: 1,

@@ -5,6 +5,7 @@ import { WishlistProvider } from './contexts/WishlistContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
+import AllCategories from './pages/AllCategories';
 import CategoryProducts from './pages/CategoryProducts';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
@@ -155,6 +156,7 @@ function App() {
                     <main className="flex-grow pt-20">
                       <Routes>
                         <Route path="/" element={<Home />} />
+                        <Route path="/category" element={<AllCategories />} />
                         <Route path="/category/:category" element={<CategoryProducts />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
                         <Route path="/cart" element={<Cart />} />
