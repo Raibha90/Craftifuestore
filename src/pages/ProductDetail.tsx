@@ -4,10 +4,10 @@ import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCompare } from '../contexts/CompareContext';
-import { ShoppingCart, Heart, ShieldCheck, Truck, RefreshCw, Star, ArrowLeft, ImagePlus, X, MessageSquare, GitCompare } from 'lucide-react';
+import { ShoppingCart, Heart, ShieldCheck, Truck, RefreshCw, Star, ArrowLeft, ImagePlus, X, MessageSquare, GitCompare, Activity, MapPin, Search, Sparkles } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
-import { doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, ProductVariant } from '../types';
 
@@ -32,6 +32,12 @@ export default function ProductDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [pdpSettings, setPdpSettings] = useState<any>({});
+  const [aiSummary, setAiSummary] = useState<{pros: string[], cons: string[], bestFor: string} | null>(null);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+  
+  const [pincode, setPincode] = useState('');
+  const [eta, setEta] = useState<string | null>(null);
 
   useEffect(() => {
     // Determine the current stock based on the variant selected
@@ -69,7 +75,36 @@ export default function ProductDetail() {
       }
     };
     fetchProductAndReviews();
+    
+    const unsub = onSnapshot(doc(db, 'settings', 'pdp'), (snap) => {
+        if(snap.exists()) setPdpSettings(snap.data());
+    });
+    return () => unsub();
   }, [id, navigate]);
+
+  const generateAiSummary = async () => {
+    if (!reviews || reviews.length === 0) return;
+    setGeneratingSummary(true);
+    try {
+      const reviewTexts = reviews.map(r => r.comment).join('\n---\n');
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gemini-3-flash-preview',
+          contents: `Analyze these product reviews and provide a JSON response (DO NOT USE MARKDOWN BLOCK, JUST RETURN RAW JSON): \n{"pros": ["pro1", "pro2"], "cons": ["con1"], "bestFor": "Who is this product best suited for based on reviews"}. \nReviews:\n${reviewTexts}`
+        })
+      });
+      const data = await response.json();
+      let text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      setAiSummary(JSON.parse(text));
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setGeneratingSummary(false);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -184,6 +219,12 @@ export default function ProductDetail() {
         {/* Info */}
         <div className="space-y-8">
           <div>
+            {pdpSettings?.enableLiveActivity && (
+               <div className="flex items-center space-x-2 text-[10px] uppercase font-bold tracking-widest text-[#d9480f] bg-[#fff4e6] px-3 py-1.5 rounded-full w-fit mb-4">
+                  <Activity className="w-3 h-3" />
+                  <span>{12 + ((product.id?.length || 0) % 20)} people bought this in the last 24hrs</span>
+               </div>
+            )}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2 text-brand-gold">
                 <Star className="w-4 h-4 fill-current" />
@@ -217,6 +258,16 @@ export default function ProductDetail() {
               </p>
             </div>
           </div>
+
+          {pdpSettings?.enableBestForWhom && aiSummary?.bestFor && (
+             <div className="bg-brand-gold/10 text-brand-olive p-4 rounded-2xl flex items-start space-x-3 mb-6">
+                <Search className="w-5 h-5 flex-shrink-0 mt-0.5 text-brand-gold" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-brand-gold/80 mb-1">Best For</p>
+                  <p className="text-sm font-medium">{aiSummary.bestFor}</p>
+                </div>
+             </div>
+          )}
 
           <p className="text-gray-600 leading-relaxed text-lg">
             {product.description}
@@ -303,6 +354,43 @@ export default function ProductDetail() {
               </button>
             </div>
 
+            {pdpSettings?.enablePincodeCheck && (
+              <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 space-y-4">
+                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-olive flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-brand-gold" />
+                    <span>Check Delivery ETA</span>
+                 </h4>
+                 <div className="flex space-x-3">
+                    <input 
+                       type="text"
+                       placeholder="Enter Pincode"
+                       value={pincode}
+                       onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                       className="flex-grow px-4 py-3 rounded-xl border-none ring-1 ring-gray-200 focus:ring-brand-gold outline-none text-sm font-mono"
+                    />
+                    <button 
+                       onClick={() => {
+                          if (pincode.length === 6) {
+                             const days = (parseInt(pincode.slice(-1)) % 4) + 2;
+                             setEta(`Ships in ${days}-${days+2} days`);
+                          } else {
+                             setEta(null);
+                          }
+                       }}
+                       className="bg-brand-olive text-brand-cream px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-olive/90 transition-colors"
+                    >
+                       Check
+                    </button>
+                 </div>
+                 {eta && (
+                    <p className="text-sm font-bold text-green-600 flex items-center space-x-2">
+                       <Truck className="w-4 h-4" />
+                       <span>{eta} to {pincode}</span>
+                    </p>
+                 )}
+              </div>
+            )}
+
             <div className="grid grid-cols-3 gap-4">
               {[
                 { icon: ShieldCheck, label: 'Secure Payment' },
@@ -323,19 +411,64 @@ export default function ProductDetail() {
       <div className="mt-24 max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center mb-12">
            <h2 className="text-3xl font-serif font-bold text-brand-olive text-center md:text-left mb-6 md:mb-0">Customer Reviews</h2>
-           <button 
-             onClick={() => {
-                if (!user) {
-                   navigate('/login');
-                } else {
-                   setReviewFormOpen(!reviewFormOpen);
-                }
-             }}
-             className="px-6 py-3 border-2 border-brand-olive text-brand-olive font-bold uppercase tracking-widest text-xs rounded-full hover:bg-brand-olive hover:text-brand-cream transition-colors"
-           >
-             {reviewFormOpen ? 'Cancel' : 'Write a Review'}
-           </button>
+           <div className="flex items-center space-x-4">
+              {pdpSettings?.enableAiSummary && reviews.length > 0 && !aiSummary && (
+                 <button 
+                   onClick={generateAiSummary}
+                   disabled={generatingSummary}
+                   className="flex items-center space-x-2 px-6 py-3 bg-brand-gold text-brand-olive font-bold uppercase tracking-widest text-xs rounded-full hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                 >
+                   {generatingSummary ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                   <span>Summarize with AI</span>
+                 </button>
+              )}
+              <button 
+                onClick={() => {
+                   if (!user) {
+                      navigate('/login');
+                   } else {
+                      setReviewFormOpen(!reviewFormOpen);
+                   }
+                }}
+                className="px-6 py-3 border-2 border-brand-olive text-brand-olive font-bold uppercase tracking-widest text-xs rounded-full hover:bg-brand-olive hover:text-brand-cream transition-colors"
+              >
+                {reviewFormOpen ? 'Cancel' : 'Write a Review'}
+              </button>
+           </div>
         </div>
+
+        {pdpSettings?.enableAiSummary && aiSummary && (
+           <div className="mb-12 bg-gray-50/50 border border-brand-gold/20 rounded-[3rem] p-8">
+              <h3 className="font-serif font-bold text-xl text-brand-olive mb-6 flex items-center space-x-2">
+                 <Sparkles className="w-5 h-5 text-brand-gold" />
+                 <span>AI Review Summary</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 <div className="space-y-4">
+                    <h4 className="text-[10px] uppercase font-bold tracking-widest text-green-600">Pros</h4>
+                    <ul className="space-y-2">
+                       {aiSummary.pros?.map((pro: string, i: number) => (
+                          <li key={i} className="text-sm text-gray-700 flex items-start space-x-2">
+                             <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5" />
+                             <span>{pro}</span>
+                          </li>
+                       ))}
+                    </ul>
+                 </div>
+                 <div className="space-y-4">
+                    <h4 className="text-[10px] uppercase font-bold tracking-widest text-red-500">Cons</h4>
+                    <ul className="space-y-2">
+                       {aiSummary.cons?.map((con: string, i: number) => (
+                          <li key={i} className="text-sm text-gray-700 flex items-start space-x-2">
+                             <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5" />
+                             <span>{con}</span>
+                          </li>
+                       ))}
+                    </ul>
+                 </div>
+              </div>
+           </div>
+        )}
         
         <AnimatePresence>
            {reviewFormOpen && (

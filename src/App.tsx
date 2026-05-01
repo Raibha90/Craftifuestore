@@ -22,6 +22,7 @@ import AdminVendorDiscovery from './pages/admin/AdminVendorDiscovery';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminPayments from './pages/admin/AdminPayments';
+import AdminPDP from './pages/admin/AdminPDP';
 import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminBanners from './pages/admin/AdminBanners';
 import AdminSettings from './pages/admin/AdminSettings';
@@ -131,6 +132,7 @@ function App() {
                     <Route path="commissions" element={<AdminCommissions />} />
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="payments" element={<AdminPayments />} />
+                    <Route path="pdp" element={<AdminPDP />} />
                   </Route>
                 </Route>
 
