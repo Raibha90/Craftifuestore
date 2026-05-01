@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowRight, MapPin, CreditCard, Truck, CheckCircle, Package } from 'lucide-react';
@@ -498,7 +498,9 @@ export default function Checkout() {
                     <div className="space-y-4">
                       {items.map(item => (
                         <div key={item.id} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">{item.name} x {item.quantity}</span>
+                          <Link to={`/product/${item.id}`} className="text-gray-600 hover:text-brand-olive hover:underline transition-colors block">
+                            {item.name} x {item.quantity}
+                          </Link>
                           <span className="font-bold text-brand-olive">₹{(item.price * item.quantity).toLocaleString()}</span>
                         </div>
                       ))}
@@ -539,7 +541,9 @@ export default function Checkout() {
              <div className="space-y-4 text-sm mb-6 pb-6 border-b border-gray-50">
                {items.map(item => (
                  <div key={item.id} className="flex justify-between text-gray-500">
-                   <span className="line-clamp-1 flex-1 mr-4">{item.name}</span>
+                   <Link to={`/product/${item.id}`} className="line-clamp-1 flex-1 mr-4 hover:text-brand-olive hover:underline transition-colors block">
+                     {item.name}
+                   </Link>
                    <span>x{item.quantity}</span>
                  </div>
                ))}

@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, ProductVariant } from '../types';
+import RelatedProducts from '../components/RelatedProducts';
 
 export default function ProductDetail() {
   const { showToast } = useToast();
@@ -582,6 +583,9 @@ export default function ProductDetail() {
           )}
         </div>
       </div>
+      
+      {/* Related Products / Bundle Section */}
+      <RelatedProducts category={product.category} currentProductId={product.id!} />
     </div>
   );
 }

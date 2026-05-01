@@ -57,12 +57,14 @@ export default function Cart() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-8 p-6 bg-white rounded-3xl border border-brand-olive/5 shadow-sm"
             >
-              <div className="w-24 h-32 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0">
-                <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
-              </div>
+              <Link to={`/product/${item.id}`} className="w-24 h-32 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 block group">
+                <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+              </Link>
               
               <div className="flex-grow text-center sm:text-left">
-                <h3 className="font-serif text-xl font-bold text-brand-olive mb-1">{item.name}</h3>
+                <Link to={`/product/${item.id}`}>
+                  <h3 className="font-serif text-xl font-bold text-brand-olive mb-1 hover:text-brand-gold transition-colors">{item.name}</h3>
+                </Link>
                 <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">{item.category}</p>
                 <p className="text-brand-gold font-medium">₹{item.price.toLocaleString()}</p>
               </div>

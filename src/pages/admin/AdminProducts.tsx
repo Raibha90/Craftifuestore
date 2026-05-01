@@ -6,6 +6,7 @@ import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkl
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { useToast } from '../../components/Toast';
+import { Link } from 'react-router-dom';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -342,10 +343,10 @@ export default function AdminProducts() {
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-8 py-6">
-                    <div className="flex items-center space-x-4">
+                    <Link to={`/product/${product.id}`} className="flex items-center space-x-4 hover:underline">
                       <img src={product.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover" />
                       <span className="font-bold text-brand-olive">{product.name}</span>
-                    </div>
+                    </Link>
                   </td>
                   <td className="px-8 py-6 text-sm text-gray-500 uppercase tracking-widest">{product.category}</td>
                   <td className="px-8 py-6">

@@ -6,6 +6,7 @@ import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkl
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { useToast } from '../../components/Toast';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { processImage } from '../../lib/imageUtils';
 
@@ -312,10 +313,10 @@ export default function VendorProducts() {
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-8 py-6">
-                    <div className="flex items-center space-x-4">
+                    <Link to={`/product/${product.id}`} className="flex items-center space-x-4 hover:underline">
                       <img src={product.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover" />
                       <span className="font-bold text-brand-olive">{product.name}</span>
-                    </div>
+                    </Link>
                   </td>
                   <td className="px-8 py-6 text-[10px] uppercase tracking-widest font-bold text-gray-400">{product.category}</td>
                   <td className="px-8 py-6 font-bold text-brand-gold">₹{product.price.toLocaleString()}</td>
