@@ -27,8 +27,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { GoogleGenAI, Type } from "@google/genai";
 import { useToast } from "../../components/Toast";
 import { Link } from "react-router-dom";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
