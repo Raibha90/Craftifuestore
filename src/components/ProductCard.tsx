@@ -10,9 +10,10 @@ import { motion } from 'motion/react';
 
 interface ProductCardProps {
   product: Product;
+  aiMatchReason?: string;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, aiMatchReason }) => {
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
@@ -96,7 +97,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </button>
         </div>
       </div>
-      <div className="mt-4 px-1">
+      {aiMatchReason && (
+        <div className="mt-3 px-3 py-1.5 bg-brand-gold/10 border border-brand-gold/20 rounded-full inline-block">
+          <p className="text-[10px] text-brand-olive font-bold tracking-tight">✨ {aiMatchReason}</p>
+        </div>
+      )}
+      <div className="mt-3 px-1">
         <Link to={`/product/${product.id}`}>
           <h3 className="font-serif text-lg font-bold text-gray-900 group-hover:text-brand-olive transition-colors">
             {product.name}

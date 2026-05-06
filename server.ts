@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
 
   app.set("trust proxy", 1);
   app.use(cors());
@@ -51,9 +51,9 @@ async function startServer() {
 
     try {
       const info = await transporter.sendMail({
-        from: `"Cratifue" <${process.env.SMTP_USER}>`,
+        from: `"Craftifue" <${process.env.SMTP_USER}>`,
         to,
-        bcc: "admin@cratifue.store",
+        bcc: "admin@craftifue.store",
         subject,
         html,
       });
@@ -264,14 +264,14 @@ async function startServer() {
                 </tr>
               </table>
             </div>` : ""}
-            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 40px;">Thank you for shopping with Cratifue.</p>
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 40px;">Thank you for shopping with Craftifue.</p>
           </div>
         `;
 
         let mailOptions: any = {
-          from: `"Cratifue" <${process.env.SMTP_USER}>`,
+          from: `"Craftifue" <${process.env.SMTP_USER}>`,
           to: email,
-          bcc: "admin@cratifue.store",
+          bcc: "admin@craftifue.store",
           subject,
           html: htmlContent,
         };
@@ -290,7 +290,7 @@ async function startServer() {
           });
 
           // Header
-          doc.fontSize(20).fillColor("#4a5d23").text("Cratifue", { align: "left" });
+          doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
           doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
           doc.moveDown();
 
@@ -368,7 +368,7 @@ async function startServer() {
     if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
       try {
         const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        let messageBody = `Cratifue: Your order #${orderId.slice(-6).toUpperCase()} status is now ${status.toUpperCase()}.`;
+        let messageBody = `Craftifue: Your order #${orderId.slice(-6).toUpperCase()} status is now ${status.toUpperCase()}.`;
         if (req.body.trackingNumber) {
           messageBody += ` Track here: https://track.aftership.com/${req.body.trackingNumber}`;
         }
@@ -409,14 +409,14 @@ async function startServer() {
         try {
           // Send Email
           await transporter.sendMail({
-            from: `"Cratifue Orders" <${process.env.SMTP_USER}>`,
+            from: `"Craftifue Orders" <${process.env.SMTP_USER}>`,
             to: email,
-            bcc: "admin@cratifue.store",
+            bcc: "admin@craftifue.store",
             subject: `Your Invoice for Order #${order.id.slice(-6).toUpperCase()}`,
             html: `
               <p>Hi ${order.address?.fullName || "Customer"},</p>
-              <p>Thank you for shopping at Cratifue. Please find attached the invoice for your recent order.</p>
-              <p>Best,<br>Cratifue Team</p>
+              <p>Thank you for shopping at Craftifue. Please find attached the invoice for your recent order.</p>
+              <p>Best,<br>Craftifue Team</p>
             `,
             attachments: [
               {
@@ -433,7 +433,7 @@ async function startServer() {
       });
 
       // Header
-      doc.fontSize(20).fillColor("#4a5d23").text("Cratifue", { align: "left" });
+      doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
       doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
       doc.moveDown();
 
@@ -512,7 +512,7 @@ async function startServer() {
       doc.pipe(res);
 
       // Header
-      doc.fontSize(20).fillColor("#4a5d23").text("Cratifue", { align: "left" });
+      doc.fontSize(20).fillColor("#4a5d23").text("Craftifue", { align: "left" });
       doc.fontSize(10).fillColor("gray").text("Artisan Heritage", { align: "left" });
       doc.moveDown();
 

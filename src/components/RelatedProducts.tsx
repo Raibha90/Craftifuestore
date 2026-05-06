@@ -42,6 +42,13 @@ export default function RelatedProducts({ category, currentProductId }: { catego
 
   if (loading || products.length === 0) return null;
 
+  const aiReasons = [
+    "Bought together by 60% of users like you",
+    "Matches the material texture you viewed",
+    "Frequently bundled with this category",
+    "Same designer collection"
+  ];
+
   return (
     <div className="mt-32">
       <div className="flex flex-col items-center text-center mb-16">
@@ -49,8 +56,8 @@ export default function RelatedProducts({ category, currentProductId }: { catego
         <div className="w-24 h-1 bg-brand-gold rounded-full" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {products.map(product => (
-          <ProductCard key={product.id} product={product} />
+        {products.map((product, idx) => (
+          <ProductCard key={product.id} product={product} aiMatchReason={aiReasons[idx % aiReasons.length]} />
         ))}
       </div>
     </div>

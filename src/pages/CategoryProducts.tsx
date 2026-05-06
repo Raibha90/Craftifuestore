@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useMemo, useEffect, useState } from 'react';
 import ProductCard from '../components/ProductCard';
 import { Product } from '../types';
-import { Filter, ChevronDown, Loader2 } from 'lucide-react';
+import { Filter, ChevronDown, Loader2, Sparkles, LayoutGrid, List } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -17,6 +17,7 @@ export default function CategoryProducts() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [shoppingIntent, setShoppingIntent] = useState<'browsing' | 'comparing' | 'ready-to-buy' | 'gifting'>('browsing');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -111,6 +112,29 @@ export default function CategoryProducts() {
           Explore our collection of {categoryTitle.toLowerCase()} handcrafted by expert artisans with premium materials.
         </p>
       </motion.div>
+
+      {/* Concept 1: AI Intent-Aware PLP */}
+      <div className="mb-8 flex flex-col md:flex-row items-center justify-between bg-brand-gold/5 border border-brand-gold/20 p-4 rounded-2xl">
+         <div className="flex items-center space-x-2 text-brand-olive mb-4 md:mb-0">
+           <Sparkles className="w-5 h-5 text-brand-gold" />
+           <span className="text-xs font-bold uppercase tracking-widest">AI Shopping Intent Detected:</span>
+         </div>
+         <div className="flex space-x-2">
+           {['browsing', 'comparing', 'ready-to-buy', 'gifting'].map(intent => (
+             <button
+               key={intent}
+               onClick={() => setShoppingIntent(intent as any)}
+               className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                 shoppingIntent === intent 
+                 ? 'bg-brand-olive text-brand-cream shadow-sm' 
+                 : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'
+               }`}
+             >
+               {intent.replace(/-/g, ' ')}
+             </button>
+           ))}
+         </div>
+      </div>
 
       {/* Filters & Sorting */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-12 py-4 border-y border-brand-olive/10 relative z-30">
@@ -214,9 +238,19 @@ export default function CategoryProducts() {
 
       {/* Grid */}
       {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+        <div className={`grid gap-10 ${
+          shoppingIntent === 'comparing' ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6' :
+          shoppingIntent === 'ready-to-buy' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
+          'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+        }`}>
           {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+             <motion.div key={product.id} layout transition={{ duration: 0.4 }}>
+               <ProductCard key={product.id} product={product} aiMatchReason={
+                  shoppingIntent === 'gifting' ? 'Perfect for anniversaries' : 
+                  shoppingIntent === 'comparing' ? 'Top specs in category' : 
+                  shoppingIntent === 'ready-to-buy' ? 'Ships today, highly rated' : undefined
+               } />
+             </motion.div>
           ))}
         </div>
       ) : (

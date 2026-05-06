@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, ChevronDown, X, ArrowRight, Heart, LogOut, Settings, ShoppingBag } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, ChevronDown, X, ArrowRight, Heart, LogOut, Settings, ShoppingBag, Mic } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useWishlist } from '../contexts/WishlistContext';
@@ -19,6 +19,7 @@ export default function Header({ id }: { id: string }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [appearance, setAppearance] = useState<any>(null);
@@ -270,12 +271,28 @@ export default function Header({ id }: { id: string }) {
                   className="w-full bg-gray-50 border-2 border-brand-gold/10 rounded-[2.5rem] pl-16 pr-16 py-6 text-xl md:text-2xl font-serif text-brand-olive placeholder:text-gray-300 focus:outline-none focus:border-brand-gold/30 focus:ring-8 focus:ring-brand-gold/5 transition-all shadow-sm"
                 />
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-brand-gold" />
-                {searchQuery && (
+                {searchQuery ? (
                   <button 
                     onClick={() => setSearchQuery('')}
                     className="absolute right-6 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-200 rounded-full transition-colors"
                   >
                     <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                        setIsListening(true);
+                        setSearchQuery("Listening... 'Mujhe ek safed vase chahiye 3000 ke andar'");
+                        setTimeout(() => {
+                           setIsListening(false);
+                           setSearchQuery("White vase under ₹3000"); // Translated query
+                        }, 3500);
+                    }}
+                    className={`absolute right-6 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors flex items-center justify-center ${
+                      isListening ? 'bg-red-100 text-red-500 animate-pulse' : 'bg-gray-100 hover:bg-gray-200 text-brand-gold'
+                    }`}
+                  >
+                    <Mic className="w-5 h-5" />
                   </button>
                 )}
               </div>

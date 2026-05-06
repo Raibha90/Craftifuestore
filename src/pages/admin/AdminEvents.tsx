@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Calendar, Image as ImageIcon, Sparkles, Loader2, Plus, Trash2, SwitchCamera, Check } from 'lucide-react';
+import { Calendar, Image as ImageIcon, Sparkles, Loader2, Plus, Trash2, SwitchCamera, Check, X } from 'lucide-react';
 import { collection, query, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { GoogleGenAI } from '@google/genai';
