@@ -126,9 +126,90 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["sku", "productName", "category", "metal", "purity", "netWt", "status"]
+    },
+    "AppEvent": {
+      "title": "Application Event",
+      "description": "Marketing events and festival celebrations.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "date": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "bannerUrl": { "type": "string" },
+        "offerText": { "type": "string" },
+        "aiMessage": { "type": "string" }
+      },
+      "required": ["name", "date", "isActive"]
+    },
+    "AIConfig": {
+      "title": "AI Configuration",
+      "description": "Settings for the AI Personalizer Engine.",
+      "type": "object",
+      "properties": {
+        "promptContext": { "type": "string" },
+        "formFieldsVisibility": { "type": "object" },
+        "weights": { "type": "object" }
+      }
+    },
+    "CommissionRate": {
+      "title": "Commission Rate",
+      "description": "Marketplace fee structure per category.",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "rate": { "type": "number" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      }
+    },
+    "CommissionPayout": {
+      "title": "Commission Payout",
+      "description": "Settlement record for a vendor.",
+      "type": "object",
+      "properties": {
+        "vendorId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "paid"] },
+        "date": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ContactInquiry": {
+      "title": "Contact Inquiry",
+      "description": "Customer enquiries and bulk order requests.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "company": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" },
+        "type": { "type": "string" }
+      }
     }
   },
   "firestore": {
+    "/aiConfig/{configId}": {
+      "schema": "AIConfig",
+      "description": "AI configurations for the personal shopper."
+    },
+    "/commission_rates/{rateId}": {
+      "schema": "CommissionRate",
+      "description": "List of commission rates by category."
+    },
+    "/commission_payouts/{payoutId}": {
+      "schema": "CommissionPayout",
+      "description": "History of vendor payouts."
+    },
+    "/contact_inquiries/{inquiryId}": {
+      "schema": "ContactInquiry",
+      "description": "Customer enquiries and bulk order requests."
+    },
+    "/events/{eventId}": {
+      "schema": "AppEvent",
+      "description": "Collection of marketing events."
+    },
     "/jewellery_master/{sku}": {
       "schema": "JewelleryMaster",
       "description": "Collection of all jewellery inventory items."

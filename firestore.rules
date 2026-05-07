@@ -37,7 +37,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isSignedIn() && userId == request.auth.uid && (
-        incoming().role == 'customer' || (request.auth.token.email == 'rd14190@gmail.com' && incoming().role == 'admin')
+        incoming().role == 'customer' || incoming().role == 'vendor' || (request.auth.token.email == 'rd14190@gmail.com' && incoming().role == 'admin')
       );
       allow update: if isOwner(userId) && (
         !incoming().diff(existing()).affectedKeys().hasAny(['role'])
@@ -110,7 +110,38 @@ service cloud.firestore {
 
     // Rules for Vendors
     match /vendors/{vendorId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || isOwner(vendorId);
+      allow create: if isSignedIn() && vendorId == request.auth.uid && incoming().status == 'pending';
+      allow update: if isAdmin() || (isOwner(vendorId) && !incoming().diff(existing()).affectedKeys().hasAny(['status', 'role', 'quality_score']));
+      allow delete: if isAdmin();
+    }
+
+    // Rules for Events
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Rules for AI Config
+    match /aiConfig/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Rules for Commissions
+    match /commission_rates/{rateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /commission_payouts/{payoutId} {
+      allow read: if isAdmin() || (isSignedIn() && existing().vendorId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // Rules for Contact Inquiries
+    match /contact_inquiries/{inquiryId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
     }
   }
 }
