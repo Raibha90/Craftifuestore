@@ -189,46 +189,33 @@ export default function AdminWorkbook() {
       const explicitInstruction = `Required Image Properties: Dimension strictly ${imageReqs.width}x${imageReqs.height} pixels, output format must be ${imageReqs.format}.`;
       const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A professional high-end jewellery photograph of ${editingItem?.productName}, ${editingItem?.metal} ${editingItem?.purity}, ${editingItem?.category}. Studio lighting, elegant display, photorealistic. ${explicitInstruction}`;
       
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          model: 'gemini-3-flash-preview',
-          contents: [{ text: prompt }] 
-        })
+      const { generateGeminiImage } = await import('../../../lib/gemini');
+      const response = await generateGeminiImage({
+        model: 'gemini-3.1-flash-image-preview',
+        prompt: prompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: "image/jpeg",
+          aspectRatio: "1:1",
+        },
       });
-      if (!response.ok) throw new Error('AI request failed');
-      const result = await response.json();
 
-      let foundImage = false;
-      if (result.candidates) {
-        for (const candidate of result.candidates) {
-          if (candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData) {
-                const base64 = part.inlineData.data;
-                const imageUrl = `data:image/png;base64,${base64}`;
-                setEditingItem({ ...editingItem, imageUrl });
-                
-                // Automatically save to DB if SKU exists
-                if (editingItem?.sku) {
-                  await setDoc(doc(db, 'jewellery_master', editingItem.sku), {
-                    imageUrl,
-                    updatedAt: new Date().toISOString()
-                  }, { merge: true });
-                }
-                
-                foundImage = true;
-                break;
-              }
-            }
-          }
-          if (foundImage) break;
-        }
+      if (!response.generatedImages || response.generatedImages.length === 0) {
+        throw new Error("No image was generated. Please try again.");
       }
 
-      if (!foundImage) {
-        throw new Error('No image was generated. Please try again.');
+      const base64 = response.generatedImages[0].image.imageBytes;
+      const imageUrl = `data:image/jpeg;base64,${base64}`;
+      setEditingItem({ ...editingItem, imageUrl });
+      
+      // Automatically save to DB if SKU exists
+      if (editingItem?.sku) {
+        const { doc, setDoc } = await import('firebase/firestore');
+        const { db } = await import('../../../lib/firebase');
+        await setDoc(doc(db, 'jewellery_master', editingItem.sku), {
+          imageUrl,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
       }
       
       setIsAiModalOpen(false);

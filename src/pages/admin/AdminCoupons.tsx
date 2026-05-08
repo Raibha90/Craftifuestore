@@ -35,7 +35,7 @@ export default function AdminCoupons() {
     try {
       setGeneratingAI(true);
       const response = await generateGeminiContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `Act as a senior e-commerce growth strategist in India. 
         Identify 3 upcoming major events, festivals, or shopping seasons in India for the next 3 months.
         Generate 3 unique, attractive promo codes for an artisan handicraft marketplace.
@@ -57,18 +57,16 @@ export default function AdminCoupons() {
         `
       });
 
-      const responseData = response.response || {};
-      const candidates = responseData.candidates || [];
-      let text = candidates[0]?.content?.parts?.[0]?.text || '[]';
+      const text = response.text || '[]';
       
       // Better cleaning
-      text = text.trim();
-      if (text.includes('[')) {
-        text = text.substring(text.indexOf('['), text.lastIndexOf(']') + 1);
+      let couponsJson = text.trim();
+      if (couponsJson.includes('[')) {
+        couponsJson = couponsJson.substring(couponsJson.indexOf('['), couponsJson.lastIndexOf(']') + 1);
       }
       
-      console.log('AI Raw Coupon Output:', text);
-      const generatedCoupons = JSON.parse(text);
+      console.log('AI Raw Coupon Output:', couponsJson);
+      const generatedCoupons = JSON.parse(couponsJson);
 
       if (!Array.isArray(generatedCoupons)) throw new Error('Invalid AI response: not an array');
 

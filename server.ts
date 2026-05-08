@@ -102,15 +102,30 @@ async function startServer() {
         config: config,
       });
 
-      // Include text getter manually for the frontend since it's not serialized by default
-      const responsePayload = {
+      // Include text property for the frontend
+      let text = '';
+      try {
+        if (typeof result.text === 'function') {
+          text = result.text();
+        } else if (result.response && typeof result.response.text === 'function') {
+          text = result.response.text();
+        } else if (typeof result.text === 'string') {
+          text = result.text;
+        }
+      } catch (e) {
+        console.warn("Could not extract text from Gemini response:", e);
+      }
+
+      res.json({
         ...result,
-        text: result.text
-      };
-      res.json(responsePayload);
+        text: text
+      });
     } catch (error: any) {
       console.error("Gemini Proxy Error:", error);
-      res.status(500).json({ error: error.message });
+      res.status(error.status || 500).json({ 
+        error: error.message,
+        details: error.response?.data || error
+      });
     }
   });
 
