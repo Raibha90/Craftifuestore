@@ -94,7 +94,7 @@ export default function AIPersonalizerModal() {
       `;
 
       const response = await generateGeminiContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         contents: promptContext,
         config: {
           systemInstruction,
@@ -102,9 +102,7 @@ export default function AIPersonalizerModal() {
         }
       });
 
-      const responseData = response.response || {};
-      const candidates = responseData.candidates || [];
-      const rawText = candidates[0]?.content?.parts?.[0]?.text || "[]";
+      const rawText = response.text || "[]";
       
       let recommendedIds: string[] = [];
       try {

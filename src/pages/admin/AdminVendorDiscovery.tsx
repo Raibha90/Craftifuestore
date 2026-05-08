@@ -83,32 +83,37 @@ export default function AdminVendorDiscovery() {
       if (isAiScrapingOn) {
         // AI Prompts to simulate scraping / generating realistic leads
         const response = await generateGeminiContent({
-          model: 'gemini-1.5-flash',
-          contents: `Act as a professional B2B lead generation specialist for the Indian handicraft market. 
-          Generate 5 realistic artisan vendors, wholesale dealers, or craft manufacturers for the category "${category}" located in "${city}", India. 
+          model: 'gemini-3-flash-preview',
+          contents: [{
+            role: 'user',
+            parts: [{
+              text: `Find REAL artisan vendors, wholesale dealers, or craft manufacturers for the category "${category}" located in "${city}", India. 
+              Search the web to find actual businesses with their contact details.
 
-          CRITICAL: Your response must be NOTHING but a raw JSON array. 
-          Do NOT use markdown code blocks (no \`\`\`json). 
-          Do NOT include any introductory or concluding text.
-          
-          Required JSON structure for each object:
-          {
-            "name": "Official Business Name",
-            "description": "Unique 2-sentence description of their heritage and specialties",
-            "location": "Address or major landmark in ${city}",
-            "source": "Verified via Google Business Profile",
-            "email": "contact@business-name.com",
-            "phone": "+91XXXXXXXXXX",
-            "website": "URL to their business page or social media"
+              CRITICAL: Your response must be NOTHING but a raw JSON array. 
+              Do NOT use markdown code blocks.
+              
+              Required JSON structure for each object:
+              {
+                "name": "Official Business Name",
+                "description": "2-sentence summary of what they sell and their reputation",
+                "location": "Actual address or specific area in ${city}",
+                "source": "Verified via Search",
+                "email": "actual business email if found",
+                "phone": "actual contact number",
+                "website": "business website or social media page"
+              }
+
+              If a detail is unknown, return an empty string "". 
+              Output 6-8 entries.`
+            }]
+          }],
+          config: {
+            tools: [{ googleSearch: {} }]
           }
-
-          If a specific detail is unknown, return an empty string "" for that field. 
-          Example output format: [{"name": "Artisan Guild", "description": "Specializing in traditional...", "location": "Chandni Chowk", "source": "Direct Search", "email": "artisan@guild.com", "phone": "+919876543210", "website": "https://artisan-guild.in"}]`
         });
         
-        const responseData = response.response || {};
-        const candidates = responseData.candidates || [];
-        let text = candidates[0]?.content?.parts?.[0]?.text || '';
+        const text = response.text || '';
         
         console.log('AI Discovery Raw Text:', text);
 
@@ -136,11 +141,11 @@ export default function AdminVendorDiscovery() {
         
         const generatedProspects = data.map((v: any, index: number) => ({
           id: `prospect-${Date.now()}-${index}`,
-          name: v.name || 'Incognito artisan',
+          name: v.name || 'Artisan Lead',
           category: category,
           location: v.location || city,
           description: v.description || 'Verified local craft vendor.',
-          source: v.source || 'Web Search',
+          source: v.source || 'Lead Discovery',
           onboardingFee: 2000,
           email: v.email || '',
           phone: v.phone || '',
@@ -187,15 +192,16 @@ export default function AdminVendorDiscovery() {
         source: currentProspect.source,
         email: currentProspect.email || '',
         phone: currentProspect.phone || '',
+        website: currentProspect.website || '',
         quality_score: 80,
         rating: 0,
         review_count: 0
       });
-      showToast(`Prospect ${currentProspect.name} approved and added to vendor list.`, 'success');
+      showToast(`Prospect ${currentProspect.name} moved to Pipeline.`, 'success');
       moveToNext();
     } catch (e) {
       console.error(e);
-      showToast('Failed to approve vendor.', 'error');
+      showToast('Failed to onboard discovery lead.', 'error');
     }
   };
 
@@ -510,8 +516,52 @@ export default function AdminVendorDiscovery() {
                               onClick={async () => {
                                 try {
                                   await updateDoc(doc(db, 'vendors', v.id), { status: 'approved' });
-                                  // NOTE: We could also trigger email here if we had vendor email in existingVendor record
-                                  showToast(`${v.name} approved.`, 'success');
+                                  
+                                  // Send invitation email if email is available
+                                  if (v.email) {
+                                    try {
+                                      await fetch('/api/send-email', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          to: v.email,
+                                          subject: 'Your Artisan Profile on Craftifue has been Approved!',
+                                          html: `
+                                            <div style="font-family: 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border: 1px solid #e5e7eb;">
+                                              <div style="text-align: center; margin-bottom: 30px;">
+                                                <h1 style="color: #4a5d23; font-size: 28px; margin-bottom: 10px;">Craftifue</h1>
+                                                <p style="color: #d4af37; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; font-weight: bold;">Artisan Heritage Marketplace</p>
+                                              </div>
+                                              
+                                              <h2 style="color: #4a5d23; text-align: center;">Welcome to the Family, ${v.name}</h2>
+                                              <p style="color: #4b5563; line-height: 1.8;">We are delighted to inform you that your artisan business has been reviewed and verified by our curator team. You are now officially invited to join our premium marketplace platform.</p>
+                                              
+                                              <div style="background: white; padding: 25px; border-radius: 8px; margin: 30px 0; border: 1px dashed #d1d5db;">
+                                                <h3 style="color: #4a5d23; font-size: 16px; margin-top: 0;">Next Steps to Onboard:</h3>
+                                                <ol style="color: #4b5563; padding-left: 20px;">
+                                                  <li style="margin-bottom: 10px;">Visit our <a href="https://craftifue.store/vendor-signup" style="color: #4a5d23; font-weight: bold;">Vendor Registration Portal</a></li>
+                                                  <li style="margin-bottom: 10px;">Create an account using this email address: <strong>${v.email}</strong></li>
+                                                  <li style="margin-bottom: 15px;">Complete your store profile and list your first 5 products to go live.</li>
+                                                </ol>
+                                              </div>
+
+                                              <div style="text-align: center; margin-top: 40px;">
+                                                <a href="https://craftifue.store/vendor-signup" style="background: #4a5d23; color: white; padding: 16px 40px; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block;">CLAIM YOUR STOREFRONT</a>
+                                              </div>
+                                              
+                                              <p style="color: #9ca3af; font-size: 11px; text-align: center; margin-top: 60px; border-top: 1px solid #f3f4f6; pt-20">This is an automated invitation from our discovery pipeline. Please do not reply directly to this email.</p>
+                                            </div>
+                                          `
+                                        })
+                                      });
+                                      showToast(`${v.name} approved and invitation sent.`, 'success');
+                                    } catch (emailErr) {
+                                      console.error('Email send failure', emailErr);
+                                      showToast(`${v.name} approved, but email failed to send.`, 'info');
+                                    }
+                                  } else {
+                                    showToast(`${v.name} approved.`, 'success');
+                                  }
                                 } catch (e) { console.error(e); }
                               }}
                               className="p-1.5 text-green-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"

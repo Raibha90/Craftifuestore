@@ -66,7 +66,7 @@ async function startServer() {
 
   // 2. Gemini AI Proxy
   app.post("/api/gemini", async (req, res) => {
-    const { contents, prompt, model = "gemini-1.5-flash", type = "content", config } = req.body;
+    const { contents, prompt, model = "gemini-3-flash-preview", type = "content", config } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -77,9 +77,20 @@ async function startServer() {
       const ai = new GoogleGenAI({ apiKey });
       
       if (type === "image") {
-        const result = await ai.models.generateImages({
-          model: model || "gemini-3.1-flash-image-preview",
-          prompt: prompt,
+        // imagen models use generateImages
+        if (model.startsWith('imagen-')) {
+          const result = await ai.models.generateImages({
+            model: model,
+            prompt: prompt,
+            config: config
+          });
+          return res.json(result);
+        }
+        
+        // Nano banana models generate images via generateContent
+        const result = await ai.models.generateContent({
+          model: model || "gemini-2.5-flash-image",
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
           config: config
         });
         return res.json(result);
@@ -87,10 +98,16 @@ async function startServer() {
 
       const result = await ai.models.generateContent({
         model: model,
-        contents: contents,
+        contents: Array.isArray(contents) ? contents : [{ role: 'user', parts: [{ text: contents }] }],
         config: config,
       });
-      res.json(result);
+
+      // Include text getter manually for the frontend since it's not serialized by default
+      const responsePayload = {
+        ...result,
+        text: result.text
+      };
+      res.json(responsePayload);
     } catch (error: any) {
       console.error("Gemini Proxy Error:", error);
       res.status(500).json({ error: error.message });

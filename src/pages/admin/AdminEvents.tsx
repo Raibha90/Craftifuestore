@@ -66,29 +66,39 @@ export default function AdminEvents() {
       const copyPrompt = `Generate a single short compelling 1-sentence welcome message for a website popup celebrating the Indian festival/event: ${event.name}. This is for an artisan handicraft and jewellery store. Keep it warm, festive, and enticing. Don't use emojis.`;
       
       const aiMessageRes = await generateGeminiContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: copyPrompt
       });
       
-      const responseData = aiMessageRes.response || {};
-      const candidates = responseData.candidates || [];
-      const aiMessage = candidates[0]?.content?.parts?.[0]?.text?.replace(/["']/g, '').trim() || `Welcome to our ${event.name} celebration!`;
+      const aiMessage = aiMessageRes.text?.replace(/["']/g, '').trim() || `Welcome to our ${event.name} celebration!`;
 
-      // 2. Generate banner image. Note: Gemini 1.5 doesn't natively generate images via the content endpoint.
-      // We will use a dedicated model name if supported by the proxy.
+      // 2. Generate banner image.
       const imagePrompt = `A cinematic, ultra-wide luxury photography banner for ${event.name}. High-end jewellery and handicraft aesthetic, minimal background, soft ambient lighting, photorealistic. Festive Indian theme.`;
       
       const imageRes = await generateGeminiImage({
-        model: 'imagen-3.0-generate-001',
+        model: 'gemini-2.5-flash-image',
         prompt: imagePrompt,
         config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/jpeg',
           aspectRatio: '16:9'
         }
       });
 
-      const bannerUrl = `data:image/jpeg;base64,${imageRes.generatedImages[0].image.imageBytes}`;
+      let bannerUrl = '';
+      const candidates = imageRes.candidates || [];
+      const parts = candidates[0]?.content?.parts || [];
+      for (const part of parts) {
+        if (part.inlineData) {
+          bannerUrl = `data:image/png;base64,${part.inlineData.data}`;
+          break;
+        }
+      }
+
+      if (!bannerUrl) {
+         // Fallback if imagen model was used and returned results in standard imagen format
+         if (imageRes.generatedImages?.[0]?.image?.imageBytes) {
+           bannerUrl = `data:image/jpeg;base64,${imageRes.generatedImages[0].image.imageBytes}`;
+         }
+      }
 
       // Update in DB
       await updateDoc(doc(db, 'events', event.id), {
