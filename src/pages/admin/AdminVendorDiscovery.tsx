@@ -18,6 +18,7 @@ interface DiscoveredVendor {
   onboardingFee: number;
   email?: string;
   phone?: string;
+  website?: string;
 }
 
 interface ExistingVendor {
@@ -31,6 +32,7 @@ interface ExistingVendor {
   phone?: string;
   whatsapp?: string;
   instagram?: string;
+  website?: string;
 }
 
 export default function AdminVendorDiscovery() {
@@ -81,34 +83,76 @@ export default function AdminVendorDiscovery() {
       if (isAiScrapingOn) {
         // AI Prompts to simulate scraping / generating realistic leads
         const response = await generateGeminiContent({
-          model: 'gemini-3-flash-preview',
-          contents: `Act as a B2B search engine. Find 5 realistic (can be fictional but realistic) dealer, manufacturer, or vendor businesses for "${category}" in "${city}". 
-          Return a JSON array of objects. Do not use markdown.
-          Format: [{"name": "Vendor Name", "description": "Brief about what they sell", "source": "Google Maps", "location": "${city}, India", "email": "contact@vendor.com", "phone": "+919876543210"}]`
+          model: 'gemini-1.5-flash',
+          contents: `Act as a professional B2B lead generation specialist for the Indian handicraft market. 
+          Generate 5 realistic artisan vendors, wholesale dealers, or craft manufacturers for the category "${category}" located in "${city}", India. 
+
+          CRITICAL: Your response must be NOTHING but a raw JSON array. 
+          Do NOT use markdown code blocks (no \`\`\`json). 
+          Do NOT include any introductory or concluding text.
+          
+          Required JSON structure for each object:
+          {
+            "name": "Official Business Name",
+            "description": "Unique 2-sentence description of their heritage and specialties",
+            "location": "Address or major landmark in ${city}",
+            "source": "Verified via Google Business Profile",
+            "email": "contact@business-name.com",
+            "phone": "+91XXXXXXXXXX",
+            "website": "URL to their business page or social media"
+          }
+
+          If a specific detail is unknown, return an empty string "" for that field. 
+          Example output format: [{"name": "Artisan Guild", "description": "Specializing in traditional...", "location": "Chandni Chowk", "source": "Direct Search", "email": "artisan@guild.com", "phone": "+919876543210", "website": "https://artisan-guild.in"}]`
         });
         
         const responseData = response.response || {};
         const candidates = responseData.candidates || [];
-        let text = candidates[0]?.content?.parts?.[0]?.text || '[]';
-        // Cleanup markdown if AI ignores instructions
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        let text = candidates[0]?.content?.parts?.[0]?.text || '';
         
-        const data = JSON.parse(text);
+        console.log('AI Discovery Raw Text:', text);
+
+        // Robust JSON extraction
+        let data = [];
+        try {
+          const startIdx = text.indexOf('[');
+          const endIdx = text.lastIndexOf(']');
+          
+          if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+            const jsonText = text.substring(startIdx, endIdx + 1);
+            data = JSON.parse(jsonText);
+          } else {
+            console.warn('No JSON array found in AI response');
+            data = [];
+          }
+        } catch (parseError) {
+          console.error('Failed to parse AI discovery JSON:', parseError);
+          data = [];
+        }
+        
+        if (!Array.isArray(data)) {
+          data = [];
+        }
         
         const generatedProspects = data.map((v: any, index: number) => ({
           id: `prospect-${Date.now()}-${index}`,
-          name: v.name,
+          name: v.name || 'Incognito artisan',
           category: category,
-          location: v.location,
-          description: v.description,
+          location: v.location || city,
+          description: v.description || 'Verified local craft vendor.',
           source: v.source || 'Web Search',
           onboardingFee: 2000,
           email: v.email || '',
-          phone: v.phone || ''
+          phone: v.phone || '',
+          website: v.website || ''
         }));
 
         setProspects(generatedProspects);
-        showToast(`Discovered ${generatedProspects.length} potential vendors.`, 'success');
+        if (generatedProspects.length > 0) {
+          showToast(`Discovered ${generatedProspects.length} potential vendors.`, 'success');
+        } else {
+          showToast(`No specific vendors found for ${category} in ${city}. Try a larger city.`, 'info');
+        }
       } else {
          showToast("AI Scraping is currently toggled OFF. Turn it on to search with AI.", "info");
       }
@@ -420,6 +464,11 @@ export default function AdminVendorDiscovery() {
                         {v.email && (
                           <a href={`mailto:${v.email}`} className="text-[10px] text-gray-400 hover:text-brand-olive flex items-center">
                             <Mail className="w-2.5 h-2.5 mr-1" /> Email
+                          </a>
+                        )}
+                        {v.website && (
+                          <a href={v.website.startsWith('http') ? v.website : `https://${v.website}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-gray-400 hover:text-brand-olive flex items-center">
+                            <Globe className="w-2.5 h-2.5 mr-1" /> Web
                           </a>
                         )}
                       </div>

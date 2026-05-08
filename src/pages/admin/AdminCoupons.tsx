@@ -35,20 +35,48 @@ export default function AdminCoupons() {
     try {
       setGeneratingAI(true);
       const response = await generateGeminiContent({
-        model: 'gemini-3-flash-preview',
-        contents: "As an expert E-commerce Marketer in India, analyze upcoming public events, holidays, or seasons within the next 3 months. Generate 3 unique discount coupons. Format as JSON array: [{code: 'DIWALI20', discountType: 'percentage', discountValue: 20, minPurchase: 1000, expiryDate: 'YYYY-MM-DD'}]. Omit markdown."
+        model: 'gemini-1.5-flash',
+        contents: `Act as a senior e-commerce growth strategist in India. 
+        Identify 3 upcoming major events, festivals, or shopping seasons in India for the next 3 months.
+        Generate 3 unique, attractive promo codes for an artisan handicraft marketplace.
+        
+        CRITICAL: Output ONLY a raw valid JSON array. 
+        DO NOT use markdown code blocks (\`\`\`json). 
+        No filler text or explanation.
+
+        Structure of each object: 
+        {
+          "code": "STRING", 
+          "discountType": "fixed" | "percentage", 
+          "discountValue": NUMBER, 
+          "minPurchase": NUMBER, 
+          "expiryDate": "YYYY-MM-DD"
+        }
+        
+        Example: [{"code": "DIWALI25", "discountType": "percentage", "discountValue": 25, "minPurchase": 1500, "expiryDate": "2024-11-20"}]
+        `
       });
 
       const responseData = response.response || {};
       const candidates = responseData.candidates || [];
       let text = candidates[0]?.content?.parts?.[0]?.text || '[]';
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      // Better cleaning
+      text = text.trim();
+      if (text.includes('[')) {
+        text = text.substring(text.indexOf('['), text.lastIndexOf(']') + 1);
+      }
+      
+      console.log('AI Raw Coupon Output:', text);
       const generatedCoupons = JSON.parse(text);
 
+      if (!Array.isArray(generatedCoupons)) throw new Error('Invalid AI response: not an array');
+
       for (const coupon of generatedCoupons) {
+        if (!coupon.code) continue;
         await addDoc(collection(db, 'coupons'), {
           ...coupon,
-          code: coupon.code.toUpperCase(),
+          code: String(coupon.code).toUpperCase().replace(/\s/g, ''),
           active: true,
           createdAt: serverTimestamp()
         });

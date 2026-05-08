@@ -66,7 +66,7 @@ export default function AdminEvents() {
       const copyPrompt = `Generate a single short compelling 1-sentence welcome message for a website popup celebrating the Indian festival/event: ${event.name}. This is for an artisan handicraft and jewellery store. Keep it warm, festive, and enticing. Don't use emojis.`;
       
       const aiMessageRes = await generateGeminiContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: copyPrompt
       });
       
@@ -74,11 +74,12 @@ export default function AdminEvents() {
       const candidates = responseData.candidates || [];
       const aiMessage = candidates[0]?.content?.parts?.[0]?.text?.replace(/["']/g, '').trim() || `Welcome to our ${event.name} celebration!`;
 
-      // 2. Generate banner image using gemini-3.1-flash-image-preview
+      // 2. Generate banner image. Note: Gemini 1.5 doesn't natively generate images via the content endpoint.
+      // We will use a dedicated model name if supported by the proxy.
       const imagePrompt = `A cinematic, ultra-wide luxury photography banner for ${event.name}. High-end jewellery and handicraft aesthetic, minimal background, soft ambient lighting, photorealistic. Festive Indian theme.`;
       
       const imageRes = await generateGeminiImage({
-        model: 'gemini-3.1-flash-image-preview',
+        model: 'imagen-3.0-generate-001',
         prompt: imagePrompt,
         config: {
           numberOfImages: 1,

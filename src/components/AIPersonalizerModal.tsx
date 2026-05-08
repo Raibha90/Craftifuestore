@@ -94,26 +94,28 @@ export default function AIPersonalizerModal() {
       `;
 
       const response = await generateGeminiContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: promptContext,
         config: {
           systemInstruction,
           responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.STRING
-            }
-          }
         }
       });
 
       const responseData = response.response || {};
       const candidates = responseData.candidates || [];
-      const text = candidates[0]?.content?.parts?.[0]?.text || "[]";
+      const rawText = candidates[0]?.content?.parts?.[0]?.text || "[]";
+      
       let recommendedIds: string[] = [];
       try {
-        recommendedIds = JSON.parse(text);
+        // Handle potential markdown in response
+        const startIdx = rawText.indexOf('[');
+        const endIdx = rawText.lastIndexOf(']');
+        if (startIdx !== -1 && endIdx !== -1) {
+          recommendedIds = JSON.parse(rawText.substring(startIdx, endIdx + 1));
+        } else {
+          recommendedIds = JSON.parse(rawText);
+        }
       } catch (err) {
         console.error("Failed to parse AI response:", err);
       }
