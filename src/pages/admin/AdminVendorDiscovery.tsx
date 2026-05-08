@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateGeminiContent } from '../../lib/gemini';
-import { Search, Loader2, Target, Check, X, Building2, MapPin, Briefcase, Filter, Globe, Tag } from 'lucide-react';
+import { Search, Loader2, Target, Check, X, Building2, MapPin, Briefcase, Filter, Globe, Tag, Mail, Phone } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import { db } from '../../lib/firebase';
-import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc } from 'firebase/firestore';
 
 
 
@@ -16,6 +16,8 @@ interface DiscoveredVendor {
   description: string;
   source: string;
   onboardingFee: number;
+  email?: string;
+  phone?: string;
 }
 
 interface ExistingVendor {
@@ -25,6 +27,10 @@ interface ExistingVendor {
   status: 'pending' | 'approved' | 'rejected';
   country: string;
   city: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  instagram?: string;
 }
 
 export default function AdminVendorDiscovery() {
@@ -78,7 +84,7 @@ export default function AdminVendorDiscovery() {
           model: 'gemini-3-flash-preview',
           contents: `Act as a B2B search engine. Find 5 realistic (can be fictional but realistic) dealer, manufacturer, or vendor businesses for "${category}" in "${city}". 
           Return a JSON array of objects. Do not use markdown.
-          Format: [{"name": "Vendor Name", "description": "Brief about what they sell", "source": "Google Maps", "location": "${city}, India"}]`
+          Format: [{"name": "Vendor Name", "description": "Brief about what they sell", "source": "Google Maps", "location": "${city}, India", "email": "contact@vendor.com", "phone": "+919876543210"}]`
         });
         
         const responseData = response.response || {};
@@ -96,7 +102,9 @@ export default function AdminVendorDiscovery() {
           location: v.location,
           description: v.description,
           source: v.source || 'Web Search',
-          onboardingFee: 2000
+          onboardingFee: 2000,
+          email: v.email || '',
+          phone: v.phone || ''
         }));
 
         setProspects(generatedProspects);
@@ -133,6 +141,8 @@ export default function AdminVendorDiscovery() {
         status: 'pending',
         onboardingFee: currentProspect.onboardingFee,
         source: currentProspect.source,
+        email: currentProspect.email || '',
+        phone: currentProspect.phone || '',
         quality_score: 80,
         rating: 0,
         review_count: 0
@@ -254,6 +264,24 @@ export default function AdminVendorDiscovery() {
                          </div>
                       </div>
 
+                      {/* Contact Info if available */}
+                      {(currentProspect.phone || currentProspect.email) && (
+                        <div className="flex items-center justify-center space-x-4 pt-2">
+                          {currentProspect.phone && (
+                            <a href={`tel:${currentProspect.phone}`} className="flex items-center space-x-2 text-xs text-brand-olive/60 hover:text-brand-olive transition-colors">
+                              <Phone className="w-3 h-3" />
+                              <span>{currentProspect.phone}</span>
+                            </a>
+                          )}
+                          {currentProspect.email && (
+                            <a href={`mailto:${currentProspect.email}`} className="flex items-center space-x-2 text-xs text-brand-olive/60 hover:text-brand-olive transition-colors">
+                              <Mail className="w-3 h-3" />
+                              <span>Email</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+
                       {/* Actions */}
                       <div className="flex items-center justify-between gap-6 pt-6">
                           <button 
@@ -288,19 +316,34 @@ export default function AdminVendorDiscovery() {
       </div>
 
       {/* Database Filter Section */}
-      <div className="mt-24 space-y-8">
+      <div className="mt-24 space-y-8" id="repository">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center space-x-3 mb-2">
               <div className="w-8 h-8 bg-brand-gold/10 rounded-lg flex items-center justify-center">
-                <Filter className="w-4 h-4 text-brand-gold" />
+                <Target className="w-4 h-4 text-brand-gold" />
               </div>
-              <h2 className="text-2xl font-serif font-bold text-brand-olive uppercase tracking-tight">Marketplace Repository</h2>
+              <h2 className="text-2xl font-serif font-bold text-brand-olive uppercase tracking-tight">Discovery Pipeline</h2>
             </div>
-            <p className="text-gray-400 text-sm">Advanced filtering of the artisan database.</p>
+            <p className="text-gray-400 text-sm">Review recently discovered prospects and manage their approval status.</p>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
+             <div className="flex bg-white p-1 rounded-2xl border border-gray-100 shadow-sm">
+                <button 
+                  onClick={() => setStatusFilter('')}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${!statusFilter ? 'bg-brand-olive text-white' : 'text-gray-400 hover:text-brand-olive'}`}
+                >
+                  All
+                </button>
+                <button 
+                  onClick={() => setStatusFilter('pending')}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${statusFilter === 'pending' ? 'bg-brand-gold text-brand-olive shadow-md' : 'text-gray-400 hover:text-brand-olive'}`}
+                >
+                  Pending ({existingVendors.filter(v => v.status === 'pending').length})
+                </button>
+             </div>
+
              <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-brand-gold transition-colors" />
                 <input 
@@ -311,17 +354,6 @@ export default function AdminVendorDiscovery() {
                   className="pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-gold/30 w-48 text-sm"
                 />
              </div>
-
-             <select 
-               value={statusFilter}
-               onChange={e => setStatusFilter(e.target.value)}
-               className="px-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-gold/30 text-sm font-bold uppercase tracking-widest text-brand-olive"
-             >
-               <option value="">All Status</option>
-               <option value="pending">Pending</option>
-               <option value="approved">Approved</option>
-               <option value="rejected">Rejected</option>
-             </select>
 
              <select 
                value={categoryFilter}
@@ -367,7 +399,7 @@ export default function AdminVendorDiscovery() {
                   <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Artisan Name</th>
                   <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Category</th>
                   <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Location</th>
-                  <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Status</th>
+                  <th className="px-8 py-5 text-[10px] uppercase tracking-widest font-bold text-gray-400">Status & Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -379,6 +411,18 @@ export default function AdminVendorDiscovery() {
                   <tr key={v.id} className="hover:bg-brand-olive/[0.02] transition-colors group">
                     <td className="px-8 py-6">
                       <p className="font-bold text-brand-olive group-hover:text-brand-gold transition-colors">{v.name}</p>
+                      <div className="flex items-center space-x-3 mt-1">
+                        {v.phone && (
+                          <a href={`tel:${v.phone}`} className="text-[10px] text-gray-400 hover:text-brand-olive flex items-center">
+                            <Phone className="w-2.5 h-2.5 mr-1" /> Contact
+                          </a>
+                        )}
+                        {v.email && (
+                          <a href={`mailto:${v.email}`} className="text-[10px] text-gray-400 hover:text-brand-olive flex items-center">
+                            <Mail className="w-2.5 h-2.5 mr-1" /> Email
+                          </a>
+                        )}
+                      </div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center text-xs text-gray-500 uppercase tracking-widest">
@@ -387,16 +431,48 @@ export default function AdminVendorDiscovery() {
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                       <span className="text-xs text-gray-400 font-medium">{v.city}, {v.country}</span>
+                       <span className="text-xs text-gray-400 font-medium">{v.city || 'Unknown'}, {v.country || 'India'}</span>
                     </td>
                     <td className="px-8 py-6">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                        v.status === 'approved' ? 'bg-green-100 text-green-700' :
-                        v.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                        'bg-brand-gold/10 text-brand-gold'
-                      }`}>
-                        {v.status}
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                          v.status === 'approved' ? 'bg-green-100 text-green-700' :
+                          v.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-brand-gold/10 text-brand-gold'
+                        }`}>
+                          {v.status}
+                        </span>
+                        
+                        {v.status === 'pending' && (
+                          <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  await updateDoc(doc(db, 'vendors', v.id), { status: 'rejected' });
+                                  showToast(`${v.name} rejected.`, 'info');
+                                } catch (e) { console.error(e); }
+                              }}
+                              className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Reject"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  await updateDoc(doc(db, 'vendors', v.id), { status: 'approved' });
+                                  // NOTE: We could also trigger email here if we had vendor email in existingVendor record
+                                  showToast(`${v.name} approved.`, 'success');
+                                } catch (e) { console.error(e); }
+                              }}
+                              className="p-1.5 text-green-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Approve"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )) : (

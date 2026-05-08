@@ -111,11 +111,49 @@ export default function AdminVendors() {
 
   const updateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
     try {
+      const vendor = vendors.find(v => v.id === id);
       await updateDoc(doc(db, 'vendors', id), { status });
-      showToast(`Vendor ${status}.`, 'info');
+      
+      if (status === 'approved' && vendor?.email) {
+        // Send invitation email if approve
+        try {
+          await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: vendor.email,
+              subject: 'Your Vendor Account on Craftifue has been Approved!',
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6; padding: 40px; border-radius: 12px;">
+                  <h2 style="color: #4a5d23; text-align: center;">Congratulations, ${vendor.name}!</h2>
+                  <p>Your business profile has been reviewed and approved by our team.</p>
+                  <p>You can now join our marketplace and start selling your handcrafted products.</p>
+                  <p><strong>Next Steps:</strong></p>
+                  <ul>
+                    <li>Visit <a href="https://craftifue.store/vendor-signup">Vendor Registration</a></li>
+                    <li>Register with the email: <strong>${vendor.email}</strong></li>
+                    <li>Choose your password and complete your detailed profile.</li>
+                  </ul>
+                  <div style="text-align: center; margin-top: 30px;">
+                    <a href="https://craftifue.store/vendor-signup" style="background: #d4af37; color: white; padding: 12px 25px; border-radius: 30px; text-decoration: none; font-weight: bold;">Claim Your Profile</a>
+                  </div>
+                </div>
+              `
+            })
+          });
+          showToast(`Vendor ${status} and invitation sent to ${vendor.email}.`, 'success');
+        } catch (emailErr) {
+          console.error('Failed to send approval email', emailErr);
+          showToast(`Vendor ${status}, but failed to send invitation email.`, 'info');
+        }
+      } else {
+        showToast(`Vendor ${status}.`, 'info');
+      }
+      
       fetchVendors();
     } catch (err) {
       console.error(err);
+      showToast('Failed to update vendor status.', 'error');
     }
   };
 
@@ -135,17 +173,26 @@ export default function AdminVendors() {
           <h1 className="text-3xl font-serif font-bold text-brand-olive tracking-tight">Vendor Search Module</h1>
           <p className="text-brand-olive/60 mt-1 uppercase text-[10px] font-bold tracking-[0.2em]">Data Acquisition & AI Pipeline</p>
         </div>
-        <button 
-          onClick={() => {
-            setEditingVendor(null);
-            setNewVendor({ name: '', category: 'jewelry', tags: [], city: '', country: 'India', phone: '', email: '', whatsapp: '', instagram: '', quality_score: 50, rating: 0, review_count: 0, source: 'manual', status: 'pending', commission_rate: 15 });
-            setIsModalOpen(true);
-          }}
-          className="flex items-center justify-center space-x-2 bg-brand-olive text-brand-cream px-6 py-3 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-olive/90 transition-all shadow-xl hover:shadow-brand-olive/20 active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Manual Vendor</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button 
+            onClick={() => window.location.href = '/admin/discovery'}
+            className="flex items-center justify-center space-x-2 bg-brand-gold text-brand-olive px-6 py-3 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-gold/90 transition-all shadow-xl hover:shadow-brand-gold/20 active:scale-95"
+          >
+            <Search className="w-4 h-4" />
+            <span>AI Discover Vendors</span>
+          </button>
+          <button 
+            onClick={() => {
+              setEditingVendor(null);
+              setNewVendor({ name: '', category: 'jewelry', tags: [], city: '', country: 'India', phone: '', email: '', whatsapp: '', instagram: '', quality_score: 50, rating: 0, review_count: 0, source: 'manual', status: 'pending', commission_rate: 15 });
+              setIsModalOpen(true);
+            }}
+            className="flex items-center justify-center space-x-2 bg-brand-olive text-brand-cream px-6 py-3 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-olive/90 transition-all shadow-xl hover:shadow-brand-olive/20 active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Manual Vendor</span>
+          </button>
+        </div>
       </header>
 
       {/* Filters */}
@@ -282,17 +329,45 @@ export default function AdminVendors() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="flex space-x-2">
-                    {vendor.status !== 'approved' && (
-                      <button onClick={() => updateStatus(vendor.id, 'approved')} className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors">
-                        Approve
-                      </button>
-                    )}
-                    {vendor.status !== 'rejected' && (
-                      <button onClick={() => updateStatus(vendor.id, 'rejected')} className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors">
-                        Reject
-                      </button>
-                    )}
+                  <div className="flex items-center space-x-2">
+                    {(() => {
+                      const contactLink = vendor.phone ? `tel:${vendor.phone}` : 
+                                         vendor.email ? `mailto:${vendor.email}` :
+                                         vendor.whatsapp ? `https://wa.me/${vendor.whatsapp.replace(/[^0-9]/g, '')}` :
+                                         vendor.instagram ? `https://instagram.com/${vendor.instagram}` : null;
+                      
+                      const ContactIcon = vendor.phone ? Phone :
+                                        vendor.email ? Mail :
+                                        vendor.whatsapp ? MessageSquare :
+                                        vendor.instagram ? Instagram : Phone;
+                      
+                      if (!contactLink) return null;
+
+                      return (
+                        <a 
+                          href={contactLink} 
+                          target={!vendor.phone && !vendor.email ? "_blank" : undefined}
+                          rel={!vendor.phone && !vendor.email ? "noreferrer" : undefined}
+                          className="flex items-center space-x-2 px-4 py-2 bg-brand-gold text-brand-olive rounded-xl text-[10px] font-bold uppercase tracking-widest hover:shadow-lg transition-all active:scale-95 shadow-sm"
+                        >
+                          <ContactIcon className="w-3 h-3" />
+                          <span>Contact</span>
+                        </a>
+                      );
+                    })()}
+
+                    <div className="flex space-x-2">
+                      {vendor.status !== 'approved' && (
+                        <button onClick={() => updateStatus(vendor.id, 'approved')} className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors">
+                          Approve
+                        </button>
+                      )}
+                      {vendor.status !== 'rejected' && (
+                        <button onClick={() => updateStatus(vendor.id, 'rejected')} className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors">
+                          Reject
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex space-x-2">
                     <button 

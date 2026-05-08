@@ -63,10 +63,16 @@ export default function AdminEvents() {
     setIsGenerating(event.id);
     try {
       // 1. Generate marketing copy
-      const chat = ai.chats.create({ model: 'gemini-2.5-flash' });
       const copyPrompt = `Generate a single short compelling 1-sentence welcome message for a website popup celebrating the Indian festival/event: ${event.name}. This is for an artisan handicraft and jewellery store. Keep it warm, festive, and enticing. Don't use emojis.`;
-      const aiMessageRes = await chat.sendMessage({ message: copyPrompt });
-      const aiMessage = aiMessageRes.text?.replace(/["']/g, '') || `Welcome to our ${event.name} celebration!`;
+      
+      const aiMessageRes = await generateGeminiContent({
+        model: 'gemini-2.5-flash',
+        contents: copyPrompt
+      });
+      
+      const responseData = aiMessageRes.response || {};
+      const candidates = responseData.candidates || [];
+      const aiMessage = candidates[0]?.content?.parts?.[0]?.text?.replace(/["']/g, '').trim() || `Welcome to our ${event.name} celebration!`;
 
       // 2. Generate banner image using gemini-3.1-flash-image-preview
       const imagePrompt = `A cinematic, ultra-wide luxury photography banner for ${event.name}. High-end jewellery and handicraft aesthetic, minimal background, soft ambient lighting, photorealistic. Festive Indian theme.`;
