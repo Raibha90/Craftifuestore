@@ -5,9 +5,7 @@ import { Banner } from '../../types';
 import { Plus, Trash2, LayoutPanelLeft, Link as LinkIcon, Eye, Save, X, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../../components/Toast';
-
-import { GoogleGenAI } from '@google/genai';
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { generateGeminiImage } from '../../lib/gemini';
 
 export default function AdminBanners() {
   const { showToast } = useToast();
@@ -80,7 +78,7 @@ export default function AdminBanners() {
       const explicitInstruction = `Cinematic, ultra-wide luxury photography. High-end jewellery brand aesthetic, minimal background.`;
       const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A cinematic, ultra-wide luxury photography of ${newBanner.title} - ${newBanner.subtitle}. High-end jewellery brand aesthetic, minimal background, soft ambient lighting, photorealistic.`;
       
-      const response = await ai.models.generateImages({
+      const response = await generateGeminiImage({
         model: 'gemini-3.1-flash-image-preview',
         prompt: prompt,
         config: {

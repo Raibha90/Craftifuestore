@@ -4,12 +4,13 @@ import { X, Sparkles, Wand2, Loader2, Heart, ShoppingBag } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product } from '../types';
-import { GoogleGenAI, Type } from '@google/genai';
+import { generateGeminiContent } from '../lib/gemini';
+import { Type } from '@google/genai';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useNavigate } from 'react-router-dom';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 interface AIConfig {
   promptContext: string;
@@ -92,7 +93,7 @@ export default function AIPersonalizerModal() {
         Return ONLY the list of recommended product IDs.
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await generateGeminiContent({
         model: "gemini-3-flash-preview",
         contents: promptContext,
         config: {
@@ -107,7 +108,9 @@ export default function AIPersonalizerModal() {
         }
       });
 
-      const text = response.text || "[]";
+      const responseData = response.response || {};
+      const candidates = responseData.candidates || [];
+      const text = candidates[0]?.content?.parts?.[0]?.text || "[]";
       let recommendedIds: string[] = [];
       try {
         recommendedIds = JSON.parse(text);

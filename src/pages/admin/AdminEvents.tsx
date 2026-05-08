@@ -3,10 +3,10 @@ import { motion } from 'motion/react';
 import { Calendar, Image as ImageIcon, Sparkles, Loader2, Plus, Trash2, SwitchCamera, Check, X } from 'lucide-react';
 import { collection, query, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { GoogleGenAI } from '@google/genai';
+import { generateGeminiContent, generateGeminiImage } from '../../lib/gemini';
 import { useToast } from '../../components/Toast';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 interface AppEvent {
   id: string;
@@ -71,7 +71,7 @@ export default function AdminEvents() {
       // 2. Generate banner image using gemini-3.1-flash-image-preview
       const imagePrompt = `A cinematic, ultra-wide luxury photography banner for ${event.name}. High-end jewellery and handicraft aesthetic, minimal background, soft ambient lighting, photorealistic. Festive Indian theme.`;
       
-      const imageRes = await ai.models.generateImages({
+      const imageRes = await generateGeminiImage({
         model: 'gemini-3.1-flash-image-preview',
         prompt: imagePrompt,
         config: {

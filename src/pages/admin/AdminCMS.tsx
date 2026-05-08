@@ -3,11 +3,11 @@ import { doc, onSnapshot, setDoc, collection, getDocs, addDoc, deleteDoc, update
 import { db } from '../../lib/firebase';
 import { Save, Loader2, Layout, FileText, Image as ImageIcon, Sparkles, Target, Eye, Upload, Plus, Trash2, Link as LinkIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from '@google/genai';
+import { generateGeminiContent, generateGeminiImage } from '../../lib/gemini';
 import { processImage } from '../../lib/imageUtils';
 import { useToast } from '../../components/Toast';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 type PageType = 'home' | 'about_story' | 'about_mission' | 'contact' | 'banners' | 'commission_info' | 'terms' | 'privacy' | 'return_policy' | 'refund_policy' | 'login';
 
@@ -55,14 +55,14 @@ export default function AdminCMS() {
       let base64Data = '';
       
       try {
-        const response = await ai.models.generateImages({
+        const response = await generateGeminiImage({
           model: 'gemini-3.1-flash-image-preview',
           prompt: prompt,
           config: {
             numberOfImages: 1,
             outputMimeType: 'image/jpeg',
             aspectRatio: "16:9"
-          },
+          }
         });
         
         if (response.generatedImages && response.generatedImages.length > 0) {

@@ -4,10 +4,10 @@ import { db } from '../../lib/firebase';
 import { Coupon } from '../../types';
 import { Plus, Trash2, Tag, Check, X, Calendar, Ticket, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from '@google/genai';
+import { generateGeminiContent } from '../../lib/gemini';
 import { useToast } from '../../components/Toast';
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
+
 
 export default function AdminCoupons() {
   const { showToast } = useToast();
@@ -34,12 +34,14 @@ export default function AdminCoupons() {
   const handleGenerateAICoupons = async () => {
     try {
       setGeneratingAI(true);
-      const result = await ai.models.generateContent({
+      const response = await generateGeminiContent({
         model: 'gemini-3-flash-preview',
         contents: "As an expert E-commerce Marketer in India, analyze upcoming public events, holidays, or seasons within the next 3 months. Generate 3 unique discount coupons. Format as JSON array: [{code: 'DIWALI20', discountType: 'percentage', discountValue: 20, minPurchase: 1000, expiryDate: 'YYYY-MM-DD'}]. Omit markdown."
       });
 
-      let text = result.text || '[]';
+      const responseData = response.response || {};
+      const candidates = responseData.candidates || [];
+      let text = candidates[0]?.content?.parts?.[0]?.text || '[]';
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       const generatedCoupons = JSON.parse(text);
 

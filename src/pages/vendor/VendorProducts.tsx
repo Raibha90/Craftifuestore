@@ -4,13 +4,12 @@ import { db } from '../../lib/firebase';
 import { Product } from '../../types';
 import { Plus, Trash2, Edit2, Image as ImageIcon, X, Search, ShoppingBag, Sparkles, Loader2, Upload, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI, Type } from '@google/genai';
+import { generateGeminiContent, generateGeminiImage } from '../../lib/gemini';
+import { Type } from '@google/genai';
 import { useToast } from '../../components/Toast';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { processImage } from '../../lib/imageUtils';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export default function VendorProducts() {
   const { user } = useAuth();
@@ -54,7 +53,7 @@ export default function VendorProducts() {
       Material: ${newProduct.material}
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await generateGeminiContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
@@ -71,7 +70,9 @@ export default function VendorProducts() {
         }
       });
 
-      const text = response.text || "{}";
+      const responseData = response.response || {};
+      const candidates = responseData.candidates || [];
+      const text = candidates[0]?.content?.parts?.[0]?.text || "{}";
       const data = JSON.parse(text);
 
       setNewProduct(prev => ({
@@ -100,7 +101,7 @@ export default function VendorProducts() {
       const explicitInstruction = `Product photography, pure white background, studio lighting.`;
       const prompt = aiPrompt ? `${aiPrompt}. ${explicitInstruction}` : `A high-quality, professional product photograph of ${newProduct.name} - ${newProduct.material}. Elegant aesthetic, soft lighting, clean white background.`;
       
-      const response = await ai.models.generateImages({
+      const response = await generateGeminiImage({
         model: 'gemini-3.1-flash-image-preview',
         prompt: prompt,
         config: {

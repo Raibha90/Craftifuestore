@@ -24,13 +24,14 @@ import {
   FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI, Type } from "@google/genai";
+import { generateGeminiContent, generateGeminiImage } from '../../lib/gemini';
+import { Type } from '@google/genai';
 import { useToast } from "../../components/Toast";
 import { Link } from "react-router-dom";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 import { processImage } from "../../lib/imageUtils";
 
@@ -83,7 +84,7 @@ export default function AdminProducts() {
       Material: ${newProduct.material}
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await generateGeminiContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
@@ -100,7 +101,9 @@ export default function AdminProducts() {
         },
       });
 
-      const text = response.text || "{}";
+      const responseData = response.response || {};
+      const candidates = responseData.candidates || [];
+      const text = candidates[0]?.content?.parts?.[0]?.text || "{}";
       const data = JSON.parse(text);
 
       setNewProduct((prev) => ({
@@ -131,7 +134,7 @@ export default function AdminProducts() {
         ? `${aiPrompt}. ${explicitInstruction}`
         : `A high-quality, professional product photograph of ${newProduct.name} - ${newProduct.material}. Elegant aesthetic, soft lighting, clean white background.`;
 
-      const response = await ai.models.generateImages({
+      const response = await generateGeminiImage({
         model: "gemini-3.1-flash-image-preview",
         prompt: prompt,
         config: {

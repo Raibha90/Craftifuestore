@@ -66,7 +66,7 @@ async function startServer() {
 
   // 2. Gemini AI Proxy
   app.post("/api/gemini", async (req, res) => {
-    const { contents, model = "gemini-3-flash-preview" } = req.body;
+    const { contents, prompt, model = "gemini-3-flash-preview", type = "content", config } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -75,12 +75,24 @@ async function startServer() {
 
     try {
       const ai = new GoogleGenAI({ apiKey });
+      
+      if (type === "image") {
+        const result = await ai.models.generateImages({
+          model: model || "gemini-3.1-flash-image-preview",
+          prompt: prompt,
+          config: config
+        });
+        return res.json(result);
+      }
+
       const result = await ai.models.generateContent({
         model: model,
         contents: contents,
+        config: config,
       });
       res.json(result);
     } catch (error: any) {
+      console.error("Gemini Proxy Error:", error);
       res.status(500).json({ error: error.message });
     }
   });

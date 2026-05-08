@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from '@google/genai';
+import { generateGeminiContent } from '../../lib/gemini';
 import { Search, Loader2, Target, Check, X, Building2, MapPin, Briefcase, Filter, Globe, Tag } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
+
 
 interface DiscoveredVendor {
   id: string;
@@ -74,14 +74,16 @@ export default function AdminVendorDiscovery() {
     try {
       if (isAiScrapingOn) {
         // AI Prompts to simulate scraping / generating realistic leads
-        const result = await ai.models.generateContent({
+        const response = await generateGeminiContent({
           model: 'gemini-3-flash-preview',
           contents: `Act as a B2B search engine. Find 5 realistic (can be fictional but realistic) dealer, manufacturer, or vendor businesses for "${category}" in "${city}". 
           Return a JSON array of objects. Do not use markdown.
           Format: [{"name": "Vendor Name", "description": "Brief about what they sell", "source": "Google Maps", "location": "${city}, India"}]`
         });
         
-        let text = result.text || '[]';
+        const responseData = response.response || {};
+        const candidates = responseData.candidates || [];
+        let text = candidates[0]?.content?.parts?.[0]?.text || '[]';
         // Cleanup markdown if AI ignores instructions
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
         
