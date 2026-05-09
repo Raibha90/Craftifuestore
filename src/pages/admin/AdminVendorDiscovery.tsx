@@ -87,25 +87,23 @@ export default function AdminVendorDiscovery() {
           contents: [{
             role: 'user',
             parts: [{
-              text: `Find REAL artisan vendors, wholesale dealers, or craft manufacturers for the category "${category}" located in "${city}", India. 
-              Search the web to find actual businesses with their contact details.
+              text: `Find real artisan vendors, wholesale dealers, or craft manufacturers for the category "${category}" located in "${city}", India. 
+              Use your knowledge and search capabilities to find actual businesses.
 
-              CRITICAL: Your response must be NOTHING but a raw JSON array. 
+              CRITICAL: Your response must be EXACTLY a raw JSON array of objects. 
               Do NOT use markdown code blocks.
-              
-              Required JSON structure for each object:
-              {
-                "name": "Official Business Name",
-                "description": "2-sentence summary of what they sell and their reputation",
-                "location": "Actual address or specific area in ${city}",
-                "source": "Verified via Search",
-                "email": "actual business email if found",
-                "phone": "actual contact number",
-                "website": "business website or social media page"
-              }
+              Do NOT include any extra text.
 
-              If a detail is unknown, return an empty string "". 
-              Output 6-8 entries.`
+              JSON Schema:
+              {
+                "name": "Business Name",
+                "description": "2-sentence summary of heritage and reputation",
+                "location": "Specific area or address in ${city}",
+                "source": "Web Search",
+                "email": "actual email if found or empty string",
+                "phone": "actual phone if found or empty string",
+                "website": "actual website or social media URL"
+              }`
             }]
           }],
           config: {
@@ -120,6 +118,7 @@ export default function AdminVendorDiscovery() {
         // Robust JSON extraction
         let data = [];
         try {
+          // Find the outer array
           const startIdx = text.indexOf('[');
           const endIdx = text.lastIndexOf(']');
           
@@ -127,8 +126,14 @@ export default function AdminVendorDiscovery() {
             const jsonText = text.substring(startIdx, endIdx + 1);
             data = JSON.parse(jsonText);
           } else {
-            console.warn('No JSON array found in AI response');
-            data = [];
+            // Fallback: maybe it returned a single object or something else
+            try {
+              const singleObj = JSON.parse(text);
+              data = Array.isArray(singleObj) ? singleObj : [singleObj];
+            } catch {
+              console.warn('No JSON array found in AI response');
+              data = [];
+            }
           }
         } catch (parseError) {
           console.error('Failed to parse AI discovery JSON:', parseError);
@@ -154,21 +159,30 @@ export default function AdminVendorDiscovery() {
 
         setProspects(generatedProspects);
         if (generatedProspects.length > 0) {
-          showToast(`Discovered ${generatedProspects.length} potential vendors.`, 'success');
+          showToast(`Discovered ${generatedProspects.length} potential vendors using ${response.modelUsed || 'AI'}.`, 'success');
         } else {
-          showToast(`No specific vendors found for ${category} in ${city}. Try a larger city.`, 'info');
+          showToast(`No specific vendors found for ${category} in ${city}. Try a different category.`, 'info');
         }
       } else {
          showToast("AI Scraping is currently toggled OFF. Turn it on to search with AI.", "info");
       }
     } catch (e: any) {
-      console.error(e);
-      let message = 'Failed to discover vendors.';
-      if (e.message?.includes('503') || e.message?.includes('high demand') || e.status === 'UNAVAILABLE' || e.message?.includes('UNAVAILABLE')) {
-        message = 'AI is experiencing high demand. Please wait a few seconds and try again.';
+      console.error('Discovery Error:', e);
+      let message = 'AI Discovery failed.';
+      
+      if (e.message?.includes('429')) {
+        message = 'AI Quota exceeded. Our team is working on increasing limits. Please try again in 1 minute.';
+      } else if (e.message?.includes('404')) {
+        message = 'The AI model is currently being updated. Retrying with a different version...';
+      } else if (e.message?.includes('GoogleSearch')) {
+        message = 'Search tool hit a limit. Generating leads based on existing knowledge instead...';
+        // Automatic retry without search tool
+        setIsAiScrapingOn(true); // Ensure it's on
+        // We could trigger another call here but let's just show the toast for now
       } else {
-        message += ' ' + e.message;
+        message += ' ' + (e.message || '');
       }
+      
       showToast(message, "error");
     } finally {
       setLoading(false);

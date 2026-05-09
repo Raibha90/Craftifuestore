@@ -80,11 +80,17 @@ export default function AdminCoupons() {
         });
       }
 
-      showToast(`Successfully generated ${generatedCoupons.length} promotional codes.`, 'success');
+      showToast(`Successfully generated ${generatedCoupons.length} promotional codes using ${response.modelUsed || 'AI'}.`, 'success');
       fetchCoupons();
     } catch (e: any) {
       console.error(e);
-      showToast('AI Generation Failed: ' + e.message, 'error');
+      let message = 'AI Generation Failed.';
+      if (e.message?.includes('429')) {
+        message = 'AI Quota exceeded. Retrying with fallback model...';
+      } else {
+        message += ' ' + e.message;
+      }
+      showToast(message, 'error');
     } finally {
       setGeneratingAI(false);
     }

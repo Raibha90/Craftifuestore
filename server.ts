@@ -66,67 +66,92 @@ async function startServer() {
 
   // 2. Gemini AI Proxy
   app.post("/api/gemini", async (req, res) => {
-    const { contents, prompt, model = "gemini-3-flash-preview", type = "content", config } = req.body;
+    const { contents, prompt, model: requestedModel, type = "content", config } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: "Gemini API key not configured" });
     }
 
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      
-      if (type === "image") {
-        // imagen models use generateImages
-        if (model.startsWith('imagen-')) {
-          const result = await ai.models.generateImages({
-            model: model,
-            prompt: prompt,
+    const ai = new GoogleGenAI({ apiKey });
+    
+    // Ordered list of models to try if the requested one fails
+    // Prefer gemini-3-flash-preview, then fallback to 2.0, then 1.5
+    const fallbackModels = [
+      requestedModel || "gemini-3-flash-preview",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-flash-8b"
+    ].filter((m, i, self) => m && self.indexOf(m) === i); // Unique models only
+
+    let lastError = null;
+
+    for (const model of fallbackModels) {
+      try {
+        if (type === "image") {
+          // imagen models use generateImages
+          if (model.startsWith('imagen-')) {
+            const result = await ai.models.generateImages({
+              model: model,
+              prompt: prompt,
+              config: config
+            });
+            return res.json(result);
+          }
+          
+          // Nano banana models generate images via generateContent
+          const result = await ai.models.generateContent({
+            model: model.includes('image') ? model : "gemini-2.5-flash-image",
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: config
           });
           return res.json(result);
         }
-        
-        // Nano banana models generate images via generateContent
+
         const result = await ai.models.generateContent({
-          model: model || "gemini-2.5-flash-image",
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          config: config
+          model: model,
+          contents: Array.isArray(contents) ? contents : [{ role: 'user', parts: [{ text: contents }] }],
+          config: config,
         });
-        return res.json(result);
-      }
 
-      const result = await ai.models.generateContent({
-        model: model,
-        contents: Array.isArray(contents) ? contents : [{ role: 'user', parts: [{ text: contents }] }],
-        config: config,
-      });
-
-      // Include text property for the frontend
-      let text = '';
-      try {
-        if (typeof result.text === 'function') {
-          text = result.text();
-        } else if (result.response && typeof result.response.text === 'function') {
-          text = result.response.text();
-        } else if (typeof result.text === 'string') {
-          text = result.text;
+        // Include text property for the frontend
+        let text = '';
+        try {
+          if (typeof (result as any).text === 'function') {
+            text = (result as any).text();
+          } else if (typeof (result as any).text === 'string') {
+            text = (result as any).text;
+          } else if ((result as any).response && typeof (result as any).response.text === 'function') {
+            text = (result as any).response.text();
+          }
+        } catch (e) {
+          console.warn(`Could not extract text from Gemini response (model: ${model}):`, e);
         }
-      } catch (e) {
-        console.warn("Could not extract text from Gemini response:", e);
-      }
 
-      res.json({
-        ...result,
-        text: text
-      });
-    } catch (error: any) {
-      console.error("Gemini Proxy Error:", error);
-      res.status(error.status || 500).json({ 
-        error: error.message,
-        details: error.response?.data || error
-      });
+        return res.json({
+          ...result,
+          text: text,
+          modelUsed: model
+        });
+      } catch (error: any) {
+        lastError = error;
+        console.error(`Gemini Proxy Attempt Failed (${model}):`, error.message);
+        
+        // If it's a 404 (model not found) or potentially an available quota issue, try the next one
+        const isRetryable = error.status === 404 || error.status === 429 || error.status === 503 || error.message?.includes('not found') || error.message?.includes('quota');
+        
+        if (!isRetryable) {
+          break; // Stop and report if it's a structural error (e.g. invalid prompt)
+        }
+      }
     }
+
+    // If we get here, all attempts failed
+    res.status(lastError?.status || 500).json({ 
+      error: lastError?.message || "All Gemini fallback attempts failed",
+      details: lastError?.response?.data || lastError,
+      triedModels: fallbackModels
+    });
   });
 
   // 1. AfterShip Tracking
