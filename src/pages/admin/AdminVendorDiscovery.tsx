@@ -171,14 +171,16 @@ export default function AdminVendorDiscovery() {
       let message = 'AI Discovery failed.';
       
       if (e.message?.includes('429')) {
-        message = 'AI Quota exceeded. Our team is working on increasing limits. Please try again in 1 minute.';
+        message = 'AI Quota exceeded. Retrying with fallback model...';
       } else if (e.message?.includes('404')) {
-        message = 'The AI model is currently being updated. Retrying with a different version...';
-      } else if (e.message?.includes('GoogleSearch')) {
-        message = 'Search tool hit a limit. Generating leads based on existing knowledge instead...';
-        // Automatic retry without search tool
-        setIsAiScrapingOn(true); // Ensure it's on
-        // We could trigger another call here but let's just show the toast for now
+        message = 'The AI model is currently being updated. Switching versions...';
+      } else if (e.message?.includes('GoogleSearch') || e.message?.includes('tool') || e.message?.includes('400')) {
+        message = 'Switching to internal artisan database (Search tool busy)...';
+        // Force a retry without tools next time if user clicks again
+        if (isAiScrapingOn) {
+           setTimeout(() => handleSearch(), 500);
+           return;
+        }
       } else {
         message += ' ' + (e.message || '');
       }

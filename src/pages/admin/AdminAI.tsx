@@ -7,6 +7,8 @@ import { useToast } from '../../components/Toast';
 interface AIConfig {
   id?: string;
   promptContext: string;
+  provider: 'google' | 'openai' | 'anthropic';
+  model: string;
   formFieldsVisibility: {
     occasion: boolean;
     style: boolean;
@@ -41,6 +43,8 @@ export default function AdminAI() {
       } else {
         setConfig({
           promptContext: "You are an AI personal shopper. Recommend exactly 5 products from the list.",
+          provider: 'google',
+          model: 'gemini-3-flash-preview',
           formFieldsVisibility: { occasion: true, style: true, budget: true, color: true, roomOutfit: true },
           weights: { priceImportance: 5, styleImportance: 8 }
         });
@@ -95,8 +99,53 @@ export default function AdminAI() {
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-brand-olive/5 space-y-6">
             <h2 className="text-xl font-serif font-bold text-brand-olive flex items-center space-x-2">
               <Sparkles className="w-5 h-5 text-brand-gold" />
-              <span>Prompt Configuration</span>
+              <span>Model Selection</span>
             </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-widest text-brand-olive">AI Provider</label>
+                <select 
+                  value={config?.provider || 'google'}
+                  onChange={(e) => setConfig({ ...config!, provider: e.target.value as any })}
+                  className="w-full p-4 bg-gray-50 border border-brand-olive/10 rounded-xl focus:border-brand-gold focus:ring-brand-gold"
+                >
+                  <option value="google">Google Gemini</option>
+                  <option value="openai">OpenAI (ChatGPT)</option>
+                  <option value="anthropic">Anthropic (Claude)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-widest text-brand-olive">Model Version</label>
+                <select 
+                  value={config?.model || ''}
+                  onChange={(e) => setConfig({ ...config!, model: e.target.value })}
+                  className="w-full p-4 bg-gray-50 border border-brand-olive/10 rounded-xl focus:border-brand-gold focus:ring-brand-gold"
+                >
+                  {config?.provider === 'google' && (
+                    <>
+                      <option value="gemini-3-flash-preview">Gemini 3 Flash (Fastest)</option>
+                      <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                      <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    </>
+                  )}
+                  {config?.provider === 'openai' && (
+                    <>
+                      <option value="gpt-4o">GPT-4o (Standard)</option>
+                      <option value="gpt-4o-mini">GPT-4o Mini (Efficient)</option>
+                      <option value="o1-preview">o1 Preview (Reasoning)</option>
+                    </>
+                  )}
+                  {config?.provider === 'anthropic' && (
+                    <>
+                      <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
+                      <option value="claude-3-opus-20240229">Claude 3 Opus (Most Capable)</option>
+                      <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-bold uppercase tracking-widest text-brand-olive">System Context prompt</label>
               <textarea 

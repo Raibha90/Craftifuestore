@@ -14,6 +14,8 @@ import { useNavigate } from 'react-router-dom';
 
 interface AIConfig {
   promptContext: string;
+  provider?: 'google' | 'openai' | 'anthropic';
+  model?: string;
 }
 
 export default function AIPersonalizerModal() {
@@ -55,10 +57,16 @@ export default function AIPersonalizerModal() {
 
       // Fetch AI config
       let systemInstruction = "You are an AI personal shopper. Recommend exactly 5 products from the list.";
+      let aiProvider: 'google' | 'openai' | 'anthropic' = 'google';
+      let aiModel = 'gemini-3-flash-preview';
+
       try {
         const aiConfigSnap = await getDocs(collection(db, 'aiConfig'));
         if (!aiConfigSnap.empty) {
-          systemInstruction = aiConfigSnap.docs[0].data()?.promptContext || systemInstruction;
+          const data = aiConfigSnap.docs[0].data();
+          systemInstruction = data.promptContext || systemInstruction;
+          aiProvider = data.provider || 'google';
+          aiModel = data.model || aiModel;
         }
       } catch (e) {
         console.warn('Failed to load AI config, using default', e);
@@ -94,7 +102,8 @@ export default function AIPersonalizerModal() {
       `;
 
       const response = await generateGeminiContent({
-        model: "gemini-3-flash-preview",
+        provider: aiProvider,
+        model: aiModel,
         contents: promptContext,
         config: {
           systemInstruction,

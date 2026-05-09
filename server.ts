@@ -8,6 +8,8 @@ import { AfterShip } from "aftership";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
 import passwordResetRoutes from "./server/routes/passwordReset";
@@ -64,94 +66,118 @@ async function startServer() {
     }
   });
 
-  // 2. Gemini AI Proxy
+  // 2. Multi-Model AI Proxy (Gemini, ChatGPT, Claude)
   app.post("/api/gemini", async (req, res) => {
-    const { contents, prompt, model: requestedModel, type = "content", config } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return res.status(500).json({ error: "Gemini API key not configured" });
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+    const { contents, prompt, model: requestedModel, type = "content", config, provider = "google" } = req.body;
     
-    // Ordered list of models to try if the requested one fails
-    // Prefer gemini-3-flash-preview, then fallback to 2.0, then 1.5
-    const fallbackModels = [
-      requestedModel || "gemini-3-flash-preview",
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-1.5-flash-8b"
-    ].filter((m, i, self) => m && self.indexOf(m) === i); // Unique models only
+    // --- Google Gemini Implementation ---
+    if (provider === "google") {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "Gemini API key not configured" });
 
-    let lastError = null;
+      const ai = new GoogleGenAI({ apiKey });
+      const fallbackModels = [
+        requestedModel || "gemini-3-flash-preview",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b"
+      ].filter((m, i, self) => m && self.indexOf(m) === i);
 
-    for (const model of fallbackModels) {
-      try {
-        if (type === "image") {
-          // imagen models use generateImages
-          if (model.startsWith('imagen-')) {
-            const result = await ai.models.generateImages({
-              model: model,
-              prompt: prompt,
-              config: config
+      let lastError: any = null;
+      for (const model of fallbackModels) {
+        try {
+          const currentConfig = { ...config };
+          if (model.includes('1.5-flash-8b') && currentConfig.tools) delete currentConfig.tools;
+
+          if (type === "image") {
+            if (model.startsWith('imagen-')) {
+              const result = await ai.models.generateImages({ model, prompt, config: currentConfig });
+              return res.json(result);
+            }
+            const result = await ai.models.generateContent({
+              model: model.includes('image') ? model : "gemini-2.5-flash-image",
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              config: currentConfig
             });
             return res.json(result);
           }
-          
-          // Nano banana models generate images via generateContent
+
           const result = await ai.models.generateContent({
-            model: model.includes('image') ? model : "gemini-2.5-flash-image",
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: config
+            model,
+            contents: Array.isArray(contents) ? contents : [{ role: 'user', parts: [{ text: contents }] }],
+            config: currentConfig,
           });
-          return res.json(result);
-        }
 
-        const result = await ai.models.generateContent({
-          model: model,
-          contents: Array.isArray(contents) ? contents : [{ role: 'user', parts: [{ text: contents }] }],
-          config: config,
-        });
-
-        // Include text property for the frontend
-        let text = '';
-        try {
-          if (typeof (result as any).text === 'function') {
-            text = (result as any).text();
-          } else if (typeof (result as any).text === 'string') {
-            text = (result as any).text;
-          } else if ((result as any).response && typeof (result as any).response.text === 'function') {
-            text = (result as any).response.text();
+          let text = '';
+          try {
+            if (typeof (result as any).text === 'function') text = (result as any).text();
+            else if (typeof (result as any).text === 'string') text = (result as any).text;
+            else if ((result as any).response && typeof (result as any).response.text === 'function') text = (result as any).response.text();
+          } catch (e) {
+            console.warn(`Could not extract text from Gemini response:`, e);
           }
-        } catch (e) {
-          console.warn(`Could not extract text from Gemini response (model: ${model}):`, e);
+
+          return res.json({ ...result, text, modelUsed: model });
+        } catch (error: any) {
+          lastError = error;
+          const isRetryable = error.status === 404 || error.status === 429 || error.status === 400 || error.status === 503;
+          if (!isRetryable) break; 
         }
+      }
+      return res.status(lastError?.status || 500).json({ error: lastError?.message || "Gemini failed", triedModels: fallbackModels });
+    }
+
+    // --- OpenAI (ChatGPT) Implementation ---
+    if (provider === "openai") {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "OpenAI API key not configured" });
+
+      try {
+        const openai = new OpenAI({ apiKey });
+        const userMessage = typeof contents === 'string' ? contents : (Array.isArray(contents) ? (contents[0].parts?.[0]?.text || contents[0].text) : prompt);
+        
+        const response = await openai.chat.completions.create({
+          model: requestedModel || "gpt-4o",
+          messages: [{ role: "user", content: userMessage }],
+          temperature: config?.temperature ?? 0.7,
+        });
 
         return res.json({
-          ...result,
-          text: text,
-          modelUsed: model
+          text: response.choices[0].message.content,
+          modelUsed: response.model,
+          raw: response
         });
       } catch (error: any) {
-        lastError = error;
-        console.error(`Gemini Proxy Attempt Failed (${model}):`, error.message);
-        
-        // If it's a 404 (model not found) or potentially an available quota issue, try the next one
-        const isRetryable = error.status === 404 || error.status === 429 || error.status === 503 || error.message?.includes('not found') || error.message?.includes('quota');
-        
-        if (!isRetryable) {
-          break; // Stop and report if it's a structural error (e.g. invalid prompt)
-        }
+        return res.status(error.status || 500).json({ error: error.message });
       }
     }
 
-    // If we get here, all attempts failed
-    res.status(lastError?.status || 500).json({ 
-      error: lastError?.message || "All Gemini fallback attempts failed",
-      details: lastError?.response?.data || lastError,
-      triedModels: fallbackModels
-    });
+    // --- Anthropic (Claude) Implementation ---
+    if (provider === "anthropic") {
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "Anthropic API key not configured" });
+
+      try {
+        const anthropic = new Anthropic({ apiKey });
+        const userMessage = typeof contents === 'string' ? contents : (Array.isArray(contents) ? (contents[0].parts?.[0]?.text || contents[0].text) : prompt);
+
+        const response = await anthropic.messages.create({
+          model: requestedModel || "claude-3-5-sonnet-20240620",
+          max_tokens: 1024,
+          messages: [{ role: "user", content: userMessage }],
+        });
+
+        return res.json({
+          text: (response.content[0] as any).text,
+          modelUsed: response.model,
+          raw: response
+        });
+      } catch (error: any) {
+        return res.status(error.status || 500).json({ error: error.message });
+      }
+    }
+
+    res.status(400).json({ error: "Invalid AI provider" });
   });
 
   // 1. AfterShip Tracking
