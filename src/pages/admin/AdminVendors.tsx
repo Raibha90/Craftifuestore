@@ -38,7 +38,7 @@ export default function AdminVendors() {
 
   const [newVendor, setNewVendor] = useState<Partial<Vendor>>({
     name: '',
-    category: 'jewelry',
+    category: 'Jewellery',
     tags: [],
     city: '',
     country: 'India',
@@ -54,7 +54,12 @@ export default function AdminVendors() {
     commission_rate: 15
   });
 
-  const categories = ['jewelry', 'home_decor', 'pottery', 'textiles'];
+  const categories = [
+    { id: 'Jewellery', name: 'Jewellery' },
+    { id: 'Home Decor', name: 'Home Decor' },
+    { id: 'Pottery', name: 'Pottery' },
+    { id: 'Textiles', name: 'Textiles' }
+  ];
 
   useEffect(() => {
     fetchVendors();
@@ -184,7 +189,7 @@ export default function AdminVendors() {
           <button 
             onClick={() => {
               setEditingVendor(null);
-              setNewVendor({ name: '', category: 'jewelry', tags: [], city: '', country: 'India', phone: '', email: '', whatsapp: '', instagram: '', quality_score: 50, rating: 0, review_count: 0, source: 'manual', status: 'pending', commission_rate: 15 });
+              setNewVendor({ name: '', category: 'Jewellery', tags: [], city: '', country: 'India', phone: '', email: '', whatsapp: '', instagram: '', quality_score: 50, rating: 0, review_count: 0, source: 'manual', status: 'pending', commission_rate: 15 });
               setIsModalOpen(true);
             }}
             className="flex items-center justify-center space-x-2 bg-brand-olive text-brand-cream px-6 py-3 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-olive/90 transition-all shadow-xl hover:shadow-brand-olive/20 active:scale-95"
@@ -226,7 +231,7 @@ export default function AdminVendors() {
             className="px-6 py-4 bg-gray-50 border-none rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-gold outline-none text-brand-olive font-bold uppercase tracking-widest text-[10px] min-w-[160px]"
           >
             <option value="">All Categories</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
 
           <input 
@@ -440,7 +445,7 @@ export default function AdminVendors() {
                     value={newVendor.category}
                     onChange={e => setNewVendor({...newVendor, category: e.target.value})} 
                   >
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 

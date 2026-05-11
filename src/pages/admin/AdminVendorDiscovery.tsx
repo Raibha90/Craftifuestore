@@ -40,7 +40,7 @@ export default function AdminVendorDiscovery() {
   
   // AI Discovery States
   const [city, setCity] = useState('');
-  const [category, setCategory] = useState('home_decor');
+  const [category, setCategory] = useState('Home Decor');
   const [selectedProvider, setSelectedProvider] = useState<'google' | 'openai' | 'anthropic'>('google');
   const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
   const [isAiScrapingOn, setIsAiScrapingOn] = useState(false);
@@ -57,10 +57,10 @@ export default function AdminVendorDiscovery() {
   const [searchFilter, setSearchFilter] = useState('');
 
   const categories = [
-    { id: 'jewelry', name: 'Jewellery' },
-    { id: 'home_decor', name: 'Home Decor' },
-    { id: 'pottery', name: 'Pottery' },
-    { id: 'textiles', name: 'Textiles' }
+    { id: 'Jewellery', name: 'Jewellery' },
+    { id: 'Home Decor', name: 'Home Decor' },
+    { id: 'Pottery', name: 'Pottery' },
+    { id: 'Textiles', name: 'Textiles' }
   ];
 
   useEffect(() => {
@@ -247,8 +247,8 @@ export default function AdminVendorDiscovery() {
 
       {/* Control Panel */}
       <div className="bg-white p-8 rounded-3xl shadow-sm border border-brand-olive/5">
-         <div className="flex flex-col md:flex-row items-end gap-6">
-            <div className="w-full md:w-1/3">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+            <div>
               <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">Location (City/State)</label>
               <input 
                 type="text" 
@@ -258,7 +258,7 @@ export default function AdminVendorDiscovery() {
                 className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold/30"
               />
             </div>
-            <div className="w-full md:w-1/3">
+            <div>
               <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">Category</label>
               <select 
                 value={category} 
@@ -269,14 +269,13 @@ export default function AdminVendorDiscovery() {
               </select>
             </div>
 
-            <div className="w-full md:w-1/3">
+            <div>
               <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">AI Provider</label>
               <select 
                 value={selectedProvider} 
                 onChange={e => {
                   const provider = e.target.value as any;
                   setSelectedProvider(provider);
-                  // Set sensible default models
                   if (provider === 'google') setSelectedModel('gemini-3-flash-preview');
                   if (provider === 'openai') setSelectedModel('gpt-4o');
                   if (provider === 'anthropic') setSelectedModel('claude-3-5-sonnet-20240620');
@@ -289,7 +288,7 @@ export default function AdminVendorDiscovery() {
               </select>
             </div>
 
-            <div className="w-full md:w-1/3">
+            <div>
               <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">AI Model</label>
               <select 
                 value={selectedModel} 
@@ -317,25 +316,33 @@ export default function AdminVendorDiscovery() {
                 )}
               </select>
             </div>
-            
-            <div className="flex items-center space-x-4 mb-4">
-              <span className="text-sm font-bold text-gray-600">AI Scraping</span>
-              <button 
-                onClick={() => setIsAiScrapingOn(!isAiScrapingOn)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isAiScrapingOn ? 'bg-brand-olive' : 'bg-gray-300'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAiScrapingOn ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mt-6 pt-6 border-t border-gray-50">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm font-bold text-gray-600">AI Scraping</span>
+                <button 
+                  onClick={() => setIsAiScrapingOn(!isAiScrapingOn)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isAiScrapingOn ? 'bg-brand-olive' : 'bg-gray-300'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAiScrapingOn ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+              
+              <div className="px-4 py-2 bg-brand-gold/10 rounded-xl">
+                <p className="text-[10px] font-bold text-brand-gold uppercase tracking-widest">Selected Model: {selectedModel}</p>
+              </div>
             </div>
 
             <button 
               onClick={handleSearch}
               disabled={loading || !city}
-              className="px-8 py-4 bg-brand-gold text-brand-olive font-bold uppercase tracking-widest text-xs rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+              className="w-full md:w-auto px-12 py-4 bg-brand-gold text-brand-olive font-bold uppercase tracking-widest text-xs rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Discover Vendors"}
             </button>
-         </div>
+          </div>
       </div>
 
       {/* Tinder Style UI View */}
