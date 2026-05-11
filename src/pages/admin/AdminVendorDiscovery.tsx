@@ -41,7 +41,7 @@ export default function AdminVendorDiscovery() {
   // AI Discovery States
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('Home Decor');
-  const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
   const [isAiScrapingOn, setIsAiScrapingOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [prospects, setProspects] = useState<DiscoveredVendor[]>([]);
@@ -79,11 +79,13 @@ export default function AdminVendorDiscovery() {
     return matchesStatus && matchesCategory && matchesCountry && matchesSearch;
   });
 
-  const handleSearch = async () => {
+  const handleSearch = async (retryWithoutTools = false) => {
     if (!city || !category) return;
     setLoading(true);
-    setProspects([]);
-    setCurrentIndex(0);
+    if (!retryWithoutTools) {
+      setProspects([]);
+      setCurrentIndex(0);
+    }
 
     try {
       if (isAiScrapingOn) {
@@ -95,7 +97,7 @@ export default function AdminVendorDiscovery() {
             role: 'user',
             parts: [{
               text: `Find real artisan vendors, wholesale dealers, or craft manufacturers for the category "${category}" located in "${city}", India. 
-              Use your knowledge and search capabilities to find actual businesses.
+              Use your knowledge ${retryWithoutTools ? '' : 'and search capabilities'} to find actual businesses.
 
               CRITICAL: Your response must be EXACTLY a raw JSON array of objects. 
               Do NOT use markdown code blocks.
@@ -113,7 +115,7 @@ export default function AdminVendorDiscovery() {
               }`
             }]
           }],
-          config: {
+          config: retryWithoutTools ? {} : {
             tools: [{ googleSearch: {} }]
           }
         });
@@ -184,8 +186,8 @@ export default function AdminVendorDiscovery() {
       } else if (e.message?.includes('GoogleSearch') || e.message?.includes('tool') || e.message?.includes('400')) {
         message = 'Switching to internal artisan database (Search tool busy)...';
         // Force a retry without tools next time if user clicks again
-        if (isAiScrapingOn) {
-           setTimeout(() => handleSearch(), 500);
+        if (isAiScrapingOn && !retryWithoutTools) {
+           setTimeout(() => handleSearch(true), 500);
            return;
         }
       } else {
@@ -275,9 +277,10 @@ export default function AdminVendorDiscovery() {
                 onChange={e => setSelectedModel(e.target.value)} 
                 className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold/30"
               >
-                <option value="gemini-3-flash-preview">Gemini 3 Flash (Fast & Smart)</option>
-                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Deep Discovery)</option>
-                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Speed)</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fast & Modern)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Stable)</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Discovery)</option>
+                <option value="gemini-2.0-flash-lite-preview-02-05">Gemini 2.0 Flash Lite (Newest)</option>
                 <option value="gemini-flash-latest">Gemini Flash Latest</option>
               </select>
             </div>
@@ -301,7 +304,7 @@ export default function AdminVendorDiscovery() {
             </div>
 
             <button 
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={loading || !city}
               className="w-full md:w-auto px-12 py-4 bg-brand-gold text-brand-olive font-bold uppercase tracking-widest text-xs rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
             >

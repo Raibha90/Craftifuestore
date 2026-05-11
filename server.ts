@@ -78,8 +78,11 @@ async function startServer() {
 
       const ai = new GoogleGenAI({ apiKey });
       const fallbackModels = [
-        requestedModel || "gemini-3-flash-preview",
-        "gemini-3.1-pro-preview",
+        requestedModel || "gemini-2.0-flash",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite-preview-02-05",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
         "gemini-flash-latest"
       ].filter((m, i, self) => m && self.indexOf(m) === i);
 
@@ -90,7 +93,10 @@ async function startServer() {
         try {
           const currentConfig = { ...config };
           // Clean up config for older models if needed
-          if (model.includes('1.5') && currentConfig.thinkingConfig) delete currentConfig.thinkingConfig;
+          if (model.includes('1.5')) {
+            delete currentConfig.thinkingConfig;
+            if (currentConfig.tools) delete currentConfig.tools;
+          }
 
           if (type === "image") {
             // Imagen logic...
