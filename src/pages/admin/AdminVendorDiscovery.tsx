@@ -41,8 +41,7 @@ export default function AdminVendorDiscovery() {
   // AI Discovery States
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('Home Decor');
-  const [selectedProvider, setSelectedProvider] = useState<'google' | 'openai' | 'anthropic'>('google');
-  const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
   const [isAiScrapingOn, setIsAiScrapingOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [prospects, setProspects] = useState<DiscoveredVendor[]>([]);
@@ -90,7 +89,7 @@ export default function AdminVendorDiscovery() {
       if (isAiScrapingOn) {
         // AI Prompts to simulate scraping / generating realistic leads
         const response = await generateGeminiContent({
-          provider: selectedProvider,
+          provider: 'google',
           model: selectedModel,
           contents: [{
             role: 'user',
@@ -190,7 +189,7 @@ export default function AdminVendorDiscovery() {
            return;
         }
       } else {
-        message += ' ' + (e.message || '');
+        message = 'AI Error: ' + (e.message || 'Unknown error occurred');
       }
       
       showToast(message, "error");
@@ -270,50 +269,16 @@ export default function AdminVendorDiscovery() {
             </div>
 
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">AI Provider</label>
-              <select 
-                value={selectedProvider} 
-                onChange={e => {
-                  const provider = e.target.value as any;
-                  setSelectedProvider(provider);
-                  if (provider === 'google') setSelectedModel('gemini-3-flash-preview');
-                  if (provider === 'openai') setSelectedModel('gpt-4o');
-                  if (provider === 'anthropic') setSelectedModel('claude-3-5-sonnet-20240620');
-                }} 
-                className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold/30"
-              >
-                <option value="google">Google Gemini</option>
-                <option value="openai">ChatGPT (OpenAI)</option>
-                <option value="anthropic">Claude (Anthropic)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">AI Model</label>
+              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">AI Model Selection</label>
               <select 
                 value={selectedModel} 
                 onChange={e => setSelectedModel(e.target.value)} 
                 className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold/30"
               >
-                {selectedProvider === 'google' && (
-                  <>
-                    <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
-                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                  </>
-                )}
-                {selectedProvider === 'openai' && (
-                  <>
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="gpt-4o-mini">GPT-4o Mini</option>
-                  </>
-                )}
-                {selectedProvider === 'anthropic' && (
-                  <>
-                    <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
-                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
-                  </>
-                )}
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast)</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Search)</option>
+                <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking (Experimental)</option>
               </select>
             </div>
           </div>

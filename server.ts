@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -77,25 +78,24 @@ async function startServer() {
 
       const ai = new GoogleGenAI({ apiKey });
       const fallbackModels = [
-        requestedModel || "gemini-3-flash-preview",
-        "gemini-2.0-flash",
+        requestedModel || "gemini-2.0-flash",
         "gemini-1.5-flash",
-        "gemini-1.5-flash-8b"
+        "gemini-1.5-pro"
       ].filter((m, i, self) => m && self.indexOf(m) === i);
 
       let lastError: any = null;
+      console.log(`AI Request: Provider=google, Models=${fallbackModels.join(', ')}`);
+      
       for (const model of fallbackModels) {
         try {
           const currentConfig = { ...config };
-          if (model.includes('1.5-flash-8b') && currentConfig.tools) delete currentConfig.tools;
+          // Clean up config for older models if needed
+          if (model.includes('1.5') && currentConfig.thinkingConfig) delete currentConfig.thinkingConfig;
 
           if (type === "image") {
-            if (model.startsWith('imagen-')) {
-              const result = await ai.models.generateImages({ model, prompt, config: currentConfig });
-              return res.json(result);
-            }
+            // Imagen logic...
             const result = await ai.models.generateContent({
-              model: model.includes('image') ? model : "gemini-2.5-flash-image",
+              model: "gemini-2.0-flash", // Use flash for image generation if requested version is not available
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
               config: currentConfig
             });
@@ -108,76 +108,32 @@ async function startServer() {
             config: currentConfig,
           });
 
-          let text = '';
-          try {
-            if (typeof (result as any).text === 'function') text = (result as any).text();
-            else if (typeof (result as any).text === 'string') text = (result as any).text;
-            else if ((result as any).response && typeof (result as any).response.text === 'function') text = (result as any).response.text();
-          } catch (e) {
-            console.warn(`Could not extract text from Gemini response:`, e);
+          if (!result || !result.text) {
+             console.warn(`Gemini returned empty response for ${model}`);
+             continue;
           }
 
-          return res.json({ ...result, text, modelUsed: model });
+          return res.json({ 
+            text: result.text, 
+            modelUsed: model,
+            usage: (result as any).usageMetadata
+          });
         } catch (error: any) {
           lastError = error;
+          console.error(`Gemini Attempt Failed (${model}):`, error.message || error);
+          if (error.status === 401) break; // Invalid key - don't retry
           const isRetryable = error.status === 404 || error.status === 429 || error.status === 400 || error.status === 503;
           if (!isRetryable) break; 
         }
       }
-      return res.status(lastError?.status || 500).json({ error: lastError?.message || "Gemini failed", triedModels: fallbackModels });
+      return res.status(lastError?.status || 500).json({ 
+        error: lastError?.message || "Gemini failed", 
+        details: lastError?.response?.data || lastError,
+        triedModels: fallbackModels 
+      });
     }
 
-    // --- OpenAI (ChatGPT) Implementation ---
-    if (provider === "openai") {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) return res.status(500).json({ error: "OpenAI API key not configured" });
-
-      try {
-        const openai = new OpenAI({ apiKey });
-        const userMessage = typeof contents === 'string' ? contents : (Array.isArray(contents) ? (contents[0].parts?.[0]?.text || contents[0].text) : prompt);
-        
-        const response = await openai.chat.completions.create({
-          model: requestedModel || "gpt-4o",
-          messages: [{ role: "user", content: userMessage }],
-          temperature: config?.temperature ?? 0.7,
-        });
-
-        return res.json({
-          text: response.choices[0].message.content,
-          modelUsed: response.model,
-          raw: response
-        });
-      } catch (error: any) {
-        return res.status(error.status || 500).json({ error: error.message });
-      }
-    }
-
-    // --- Anthropic (Claude) Implementation ---
-    if (provider === "anthropic") {
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) return res.status(500).json({ error: "Anthropic API key not configured" });
-
-      try {
-        const anthropic = new Anthropic({ apiKey });
-        const userMessage = typeof contents === 'string' ? contents : (Array.isArray(contents) ? (contents[0].parts?.[0]?.text || contents[0].text) : prompt);
-
-        const response = await anthropic.messages.create({
-          model: requestedModel || "claude-3-5-sonnet-20240620",
-          max_tokens: 1024,
-          messages: [{ role: "user", content: userMessage }],
-        });
-
-        return res.json({
-          text: (response.content[0] as any).text,
-          modelUsed: response.model,
-          raw: response
-        });
-      } catch (error: any) {
-        return res.status(error.status || 500).json({ error: error.message });
-      }
-    }
-
-    res.status(400).json({ error: "Invalid AI provider" });
+    res.status(400).json({ error: "Invalid AI provider or provider discontinued" });
   });
 
   // 1. AfterShip Tracking

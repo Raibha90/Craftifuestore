@@ -7,7 +7,7 @@ import { useToast } from '../../components/Toast';
 interface AIConfig {
   id?: string;
   promptContext: string;
-  provider: 'google' | 'openai' | 'anthropic';
+  provider: 'google';
   model: string;
   formFieldsVisibility: {
     occasion: boolean;
@@ -44,7 +44,7 @@ export default function AdminAI() {
         setConfig({
           promptContext: "You are an AI personal shopper. Recommend exactly 5 products from the list.",
           provider: 'google',
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-1.5-flash',
           formFieldsVisibility: { occasion: true, style: true, budget: true, color: true, roomOutfit: true },
           weights: { priceImportance: 5, styleImportance: 8 }
         });
@@ -106,12 +106,10 @@ export default function AdminAI() {
                 <label className="text-sm font-bold uppercase tracking-widest text-brand-olive">AI Provider</label>
                 <select 
                   value={config?.provider || 'google'}
-                  onChange={(e) => setConfig({ ...config!, provider: e.target.value as any })}
-                  className="w-full p-4 bg-gray-50 border border-brand-olive/10 rounded-xl focus:border-brand-gold focus:ring-brand-gold"
+                  disabled
+                  className="w-full p-4 bg-gray-50 border border-brand-olive/10 rounded-xl focus:border-brand-gold focus:ring-brand-gold cursor-not-allowed opacity-75"
                 >
-                  <option value="google">Google Gemini</option>
-                  <option value="openai">OpenAI (ChatGPT)</option>
-                  <option value="anthropic">Anthropic (Claude)</option>
+                  <option value="google">Google Gemini (Active)</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -121,27 +119,10 @@ export default function AdminAI() {
                   onChange={(e) => setConfig({ ...config!, model: e.target.value })}
                   className="w-full p-4 bg-gray-50 border border-brand-olive/10 rounded-xl focus:border-brand-gold focus:ring-brand-gold"
                 >
-                  {config?.provider === 'google' && (
-                    <>
-                      <option value="gemini-3-flash-preview">Gemini 3 Flash (Fastest)</option>
-                      <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                      <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                    </>
-                  )}
-                  {config?.provider === 'openai' && (
-                    <>
-                      <option value="gpt-4o">GPT-4o (Standard)</option>
-                      <option value="gpt-4o-mini">GPT-4o Mini (Efficient)</option>
-                      <option value="o1-preview">o1 Preview (Reasoning)</option>
-                    </>
-                  )}
-                  {config?.provider === 'anthropic' && (
-                    <>
-                      <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
-                      <option value="claude-3-opus-20240229">Claude 3 Opus (Most Capable)</option>
-                      <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-                    </>
-                  )}
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fastest)</option>
+                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Capable)</option>
+                  <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking (Experimental)</option>
                 </select>
               </div>
             </div>
