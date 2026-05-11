@@ -2,7 +2,7 @@ export async function generateGeminiContent(params: {
   contents: any;
   model?: string;
   config?: any;
-  provider?: 'google' | 'openai' | 'anthropic';
+  provider?: 'google';
 }) {
   const response = await fetch('/api/gemini', {
     method: 'POST',

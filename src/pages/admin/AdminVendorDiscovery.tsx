@@ -41,7 +41,7 @@ export default function AdminVendorDiscovery() {
   // AI Discovery States
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('Home Decor');
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
   const [isAiScrapingOn, setIsAiScrapingOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [prospects, setProspects] = useState<DiscoveredVendor[]>([]);
@@ -275,10 +275,10 @@ export default function AdminVendorDiscovery() {
                 onChange={e => setSelectedModel(e.target.value)} 
                 className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold/30"
               >
-                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
-                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast)</option>
-                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Search)</option>
-                <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking (Experimental)</option>
+                <option value="gemini-3-flash-preview">Gemini 3 Flash (Fast & Smart)</option>
+                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Deep Discovery)</option>
+                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Speed)</option>
+                <option value="gemini-flash-latest">Gemini Flash Latest</option>
               </select>
             </div>
           </div>

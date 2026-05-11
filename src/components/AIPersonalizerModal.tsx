@@ -57,8 +57,8 @@ export default function AIPersonalizerModal() {
 
       // Fetch AI config
       let systemInstruction = "You are an AI personal shopper. Recommend exactly 5 products from the list.";
-      let aiProvider: 'google' | 'openai' | 'anthropic' = 'google';
-      let aiModel = 'gemini-2.0-flash';
+      let aiProvider: 'google' = 'google';
+      let aiModel = 'gemini-3-flash-preview';
 
       try {
         const aiConfigSnap = await getDocs(collection(db, 'aiConfig'));

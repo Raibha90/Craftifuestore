@@ -78,9 +78,9 @@ async function startServer() {
 
       const ai = new GoogleGenAI({ apiKey });
       const fallbackModels = [
-        requestedModel || "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
+        requestedModel || "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-flash-latest"
       ].filter((m, i, self) => m && self.indexOf(m) === i);
 
       let lastError: any = null;

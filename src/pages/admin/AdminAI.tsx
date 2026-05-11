@@ -44,7 +44,7 @@ export default function AdminAI() {
         setConfig({
           promptContext: "You are an AI personal shopper. Recommend exactly 5 products from the list.",
           provider: 'google',
-          model: 'gemini-1.5-flash',
+          model: 'gemini-3-flash-preview',
           formFieldsVisibility: { occasion: true, style: true, budget: true, color: true, roomOutfit: true },
           weights: { priceImportance: 5, styleImportance: 8 }
         });
@@ -119,10 +119,10 @@ export default function AdminAI() {
                   onChange={(e) => setConfig({ ...config!, model: e.target.value })}
                   className="w-full p-4 bg-gray-50 border border-brand-olive/10 rounded-xl focus:border-brand-gold focus:ring-brand-gold"
                 >
-                  <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
-                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fastest)</option>
-                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Capable)</option>
-                  <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking (Experimental)</option>
+                  <option value="gemini-3-flash-preview">Gemini 3 Flash (Recommended)</option>
+                  <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (In-depth Reasoning)</option>
+                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Fastest)</option>
+                  <option value="gemini-flash-latest">Gemini Flash Latest</option>
                 </select>
               </div>
             </div>
