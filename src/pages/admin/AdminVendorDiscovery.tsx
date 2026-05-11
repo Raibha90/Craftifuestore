@@ -41,6 +41,8 @@ export default function AdminVendorDiscovery() {
   // AI Discovery States
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('home_decor');
+  const [selectedProvider, setSelectedProvider] = useState<'google' | 'openai' | 'anthropic'>('google');
+  const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
   const [isAiScrapingOn, setIsAiScrapingOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [prospects, setProspects] = useState<DiscoveredVendor[]>([]);
@@ -54,7 +56,12 @@ export default function AdminVendorDiscovery() {
   const [countryFilter, setCountryFilter] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
 
-  const categories = ['jewelry', 'home_decor', 'pottery', 'textiles'];
+  const categories = [
+    { id: 'jewelry', name: 'Jewellery' },
+    { id: 'home_decor', name: 'Home Decor' },
+    { id: 'pottery', name: 'Pottery' },
+    { id: 'textiles', name: 'Textiles' }
+  ];
 
   useEffect(() => {
     const q = query(collection(db, 'vendors'), orderBy('name', 'asc'));
@@ -83,7 +90,8 @@ export default function AdminVendorDiscovery() {
       if (isAiScrapingOn) {
         // AI Prompts to simulate scraping / generating realistic leads
         const response = await generateGeminiContent({
-          model: 'gemini-3-flash-preview',
+          provider: selectedProvider,
+          model: selectedModel,
           contents: [{
             role: 'user',
             parts: [{
@@ -257,7 +265,56 @@ export default function AdminVendorDiscovery() {
                 onChange={e => setCategory(e.target.value)} 
                 className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold/30"
               >
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+
+            <div className="w-full md:w-1/3">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">AI Provider</label>
+              <select 
+                value={selectedProvider} 
+                onChange={e => {
+                  const provider = e.target.value as any;
+                  setSelectedProvider(provider);
+                  // Set sensible default models
+                  if (provider === 'google') setSelectedModel('gemini-3-flash-preview');
+                  if (provider === 'openai') setSelectedModel('gpt-4o');
+                  if (provider === 'anthropic') setSelectedModel('claude-3-5-sonnet-20240620');
+                }} 
+                className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold/30"
+              >
+                <option value="google">Google Gemini</option>
+                <option value="openai">ChatGPT (OpenAI)</option>
+                <option value="anthropic">Claude (Anthropic)</option>
+              </select>
+            </div>
+
+            <div className="w-full md:w-1/3">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2 block">AI Model</label>
+              <select 
+                value={selectedModel} 
+                onChange={e => setSelectedModel(e.target.value)} 
+                className="w-full px-6 py-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-gold/30"
+              >
+                {selectedProvider === 'google' && (
+                  <>
+                    <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                  </>
+                )}
+                {selectedProvider === 'openai' && (
+                  <>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                  </>
+                )}
+                {selectedProvider === 'anthropic' && (
+                  <>
+                    <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
+                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                  </>
+                )}
               </select>
             </div>
             
@@ -422,13 +479,13 @@ export default function AdminVendorDiscovery() {
              </div>
 
              <select 
-               value={categoryFilter}
-               onChange={e => setCategoryFilter(e.target.value)}
-               className="px-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-gold/30 text-sm font-bold uppercase tracking-widest text-brand-olive"
-             >
-               <option value="">All Categories</option>
-               {categories.map(c => <option key={c} value={c}>{c}</option>)}
-             </select>
+                value={categoryFilter}
+                onChange={e => setCategoryFilter(e.target.value)}
+                className="px-4 py-3 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-gold/30 text-sm font-bold uppercase tracking-widest text-brand-olive"
+              >
+                <option value="">All Categories</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
 
              <div className="relative group">
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
